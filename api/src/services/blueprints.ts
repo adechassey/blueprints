@@ -13,7 +13,12 @@ import type {
 	ListBlueprintsInput,
 	UpdateBlueprintInput,
 } from '../lib/validation.js';
-import { generateSlug, normalizeTagName, shouldCreateNewVersion } from './blueprints.core.js';
+import {
+	appendSlugSuffix,
+	generateSlug,
+	normalizeTagName,
+	shouldCreateNewVersion,
+} from './blueprints.core.js';
 import { prepareEmbeddingText } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
 
@@ -36,7 +41,23 @@ async function upsertTags(db: DB, tagNames: string[]) {
 }
 
 export async function createBlueprint(db: DB, input: CreateBlueprintInput, authorId: string) {
-	const slug = generateSlug(input.name);
+	let slug = generateSlug(input.name);
+
+	// Check for slug collision within the same project
+	const existingSlug = await db
+		.select({ id: blueprints.id })
+		.from(blueprints)
+		.where(
+			and(
+				eq(blueprints.slug, slug),
+				input.projectId ? eq(blueprints.projectId, input.projectId) : undefined,
+			),
+		)
+		.limit(1);
+
+	if (existingSlug.length > 0) {
+		slug = appendSlugSuffix(slug);
+	}
 
 	const [blueprint] = await db
 		.insert(blueprints)

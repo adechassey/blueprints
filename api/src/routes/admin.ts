@@ -82,12 +82,24 @@ export const adminRoutes = new Hono()
 	})
 	.delete('/admin/comments/:id', async (c) => {
 		const id = c.req.param('id');
+		const [existing] = await db
+			.select({ id: comments.id })
+			.from(comments)
+			.where(eq(comments.id, id))
+			.limit(1);
+		if (!existing) return c.json({ error: 'Comment not found' }, 404);
 		await db.delete(comments).where(eq(comments.parentId, id));
 		await db.delete(comments).where(eq(comments.id, id));
 		return c.json({ success: true });
 	})
 	.delete('/admin/projects/:id', async (c) => {
 		const id = c.req.param('id');
+		const [existing] = await db
+			.select({ id: projects.id })
+			.from(projects)
+			.where(eq(projects.id, id))
+			.limit(1);
+		if (!existing) return c.json({ error: 'Project not found' }, 404);
 		// Unlink blueprints from project first
 		await db.update(blueprints).set({ projectId: null }).where(eq(blueprints.projectId, id));
 		await db.delete(projects).where(eq(projects.id, id));

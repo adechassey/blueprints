@@ -19,6 +19,10 @@ export function normalizeTagName(tag: string): string {
 	return tag.toLowerCase().trim();
 }
 
+export function appendSlugSuffix(slug: string): string {
+	return `${slug}-${Date.now().toString(36)}`;
+}
+
 export function shouldCreateNewVersion(
 	existingContent: string | null,
 	newContent: string | undefined,

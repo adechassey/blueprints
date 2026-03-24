@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { generateSlug, normalizeTagName, shouldCreateNewVersion } from './blueprints.core.js';
+import {
+	appendSlugSuffix,
+	generateSlug,
+	normalizeTagName,
+	shouldCreateNewVersion,
+} from './blueprints.core.js';
 
 describe('generateSlug', () => {
 	it('converts simple name to kebab-case', () => {
@@ -39,6 +44,22 @@ describe('normalizeTagName', () => {
 
 	it('trims whitespace', () => {
 		expect(normalizeTagName('  react  ')).toBe('react');
+	});
+});
+
+describe('appendSlugSuffix', () => {
+	it('appends a base36 timestamp suffix', () => {
+		const result = appendSlugSuffix('my-blueprint');
+		expect(result).toMatch(/^my-blueprint-[a-z0-9]+$/);
+	});
+
+	it('returns a different slug than the original', () => {
+		expect(appendSlugSuffix('test')).not.toBe('test');
+	});
+
+	it('handles empty slug', () => {
+		const result = appendSlugSuffix('');
+		expect(result).toMatch(/^-[a-z0-9]+$/);
 	});
 });
 
