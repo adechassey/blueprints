@@ -17,9 +17,9 @@
 		"3": {
 			"name": "search",
 			"folder": "phase-3-search",
-			"status": "pending",
-			"validationHash": null,
-			"completedAt": null
+			"status": "validated",
+			"validationHash": "ddb1d477ecb2e675c0d6c75aa20a11d3afc85bc07f39ba546a47d3e3bf5790d8",
+			"completedAt": "2026-03-24T01:43:48.420Z"
 		},
 		"4": {
 			"name": "social",

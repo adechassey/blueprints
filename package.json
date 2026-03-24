@@ -12,7 +12,8 @@
 		"knip": "knip",
 		"db:generate": "pnpm --filter api db:generate",
 		"db:migrate": "pnpm --filter api db:migrate",
-		"db:studio": "pnpm --filter api db:studio"
+		"db:studio": "pnpm --filter api db:studio",
+		"db:seed": "pnpm --filter api db:seed"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.8",

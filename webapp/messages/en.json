@@ -49,5 +49,10 @@
 	"tags_title": "Tags",
 	"empty_state": "No results found",
 	"loading": "Loading...",
-	"error_generic": "Something went wrong"
+	"error_generic": "Something went wrong",
+	"search_placeholder": "Search blueprints...",
+	"search_button": "Search",
+	"search_clear": "Clear search",
+	"search_results_title": "Search results for \"{query}\"",
+	"search_no_results": "No blueprints found for \"{query}\""
 }

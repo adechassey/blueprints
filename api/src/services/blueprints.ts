@@ -14,6 +14,8 @@ import type {
 	UpdateBlueprintInput,
 } from '../lib/validation.js';
 import { generateSlug, normalizeTagName, shouldCreateNewVersion } from './blueprints.core.js';
+import { prepareEmbeddingText } from './embeddings.core.js';
+import { generateEmbedding } from './embeddings.js';
 
 async function upsertTags(db: DB, tagNames: string[]) {
 	const normalized = tagNames.map(normalizeTagName).filter(Boolean);
@@ -65,6 +67,22 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		.update(blueprints)
 		.set({ currentVersionId: version.id })
 		.where(eq(blueprints.id, blueprint.id));
+
+	// Generate embedding asynchronously — don't block create
+	try {
+		const text = prepareEmbeddingText({
+			description: input.description,
+			usage: input.usage,
+			content: input.content,
+		});
+		const embedding = await generateEmbedding(text);
+		await db
+			.update(blueprintVersions)
+			.set({ embedding })
+			.where(eq(blueprintVersions.id, version.id));
+	} catch (err) {
+		console.error('Failed to generate embedding for new blueprint:', err);
+	}
 
 	if (input.tags && input.tags.length > 0) {
 		const tagRecords = await upsertTags(db, input.tags);
@@ -134,6 +152,22 @@ export async function updateBlueprint(
 			.returning();
 
 		metadataUpdate.currentVersionId = newVersion.id;
+
+		// Generate embedding for new version — don't block update
+		try {
+			const text = prepareEmbeddingText({
+				description: input.description ?? existing.description,
+				usage: input.usage ?? existing.usage,
+				content: input.content,
+			});
+			const embedding = await generateEmbedding(text);
+			await db
+				.update(blueprintVersions)
+				.set({ embedding })
+				.where(eq(blueprintVersions.id, newVersion.id));
+		} catch (err) {
+			console.error('Failed to generate embedding for updated blueprint:', err);
+		}
 	}
 
 	if (Object.keys(metadataUpdate).length > 0) {
