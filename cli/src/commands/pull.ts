@@ -39,7 +39,9 @@ export function registerPullCommand(program: Command) {
 				// Increment download count
 				client.api.blueprints[':id'].download
 					.$post({ param: { id: blueprint.id } })
-					.catch(() => {});
+					.catch((err: Error) => {
+						console.warn('Download tracking failed:', err.message);
+					});
 
 				if (opts.output) {
 					writeFileSync(opts.output, content);

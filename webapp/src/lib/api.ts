@@ -1,7 +1,6 @@
 import type { AppType } from 'api/app';
 import { hc } from 'hono/client';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import { API_URL } from './config.js';
 
 export const api = hc<AppType>(API_URL, {
 	fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),

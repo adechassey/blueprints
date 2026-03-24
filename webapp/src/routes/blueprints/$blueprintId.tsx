@@ -39,7 +39,11 @@ function BlueprintDetailPage() {
 	const handleCopy = async () => {
 		if (blueprint.currentVersion?.content) {
 			await navigator.clipboard.writeText(blueprint.currentVersion.content);
-			api.api.blueprints[':id'].download.$post({ param: { id: blueprintId } }).catch(() => {});
+			api.api.blueprints[':id'].download
+				.$post({ param: { id: blueprintId } })
+				.catch((err: Error) => {
+					console.warn('Download tracking failed:', err.message);
+				});
 		}
 	};
 

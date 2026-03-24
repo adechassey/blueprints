@@ -1,6 +1,7 @@
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import { blueprints, blueprintTags, blueprintVersions, tags, users } from '../db/schema.js';
+import { logger } from '../lib/logger.js';
 import { cosineSimilarityToScore } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
 
@@ -29,7 +30,7 @@ export async function semanticSearch(db: DB, query: string, filters: SearchFilte
 	try {
 		queryEmbedding = await generateEmbedding(query);
 	} catch (err) {
-		console.error('Failed to generate query embedding, falling back to text search:', err);
+		logger.error({ err }, 'Failed to generate query embedding, falling back to text search');
 	}
 
 	if (queryEmbedding) {

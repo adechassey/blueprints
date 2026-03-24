@@ -8,6 +8,7 @@ import {
 	tags,
 	users,
 } from '../db/schema.js';
+import { logger } from '../lib/logger.js';
 import type {
 	CreateBlueprintInput,
 	ListBlueprintsInput,
@@ -102,7 +103,7 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			.set({ embedding })
 			.where(eq(blueprintVersions.id, version.id));
 	} catch (err) {
-		console.error('Failed to generate embedding for new blueprint:', err);
+		logger.error({ err }, 'Failed to generate embedding for new blueprint');
 	}
 
 	if (input.tags && input.tags.length > 0) {
@@ -187,7 +188,7 @@ export async function updateBlueprint(
 				.set({ embedding })
 				.where(eq(blueprintVersions.id, newVersion.id));
 		} catch (err) {
-			console.error('Failed to generate embedding for updated blueprint:', err);
+			logger.error({ err }, 'Failed to generate embedding for updated blueprint');
 		}
 	}
 
