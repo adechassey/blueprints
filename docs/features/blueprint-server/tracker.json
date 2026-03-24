@@ -1,46 +1,46 @@
 {
-  "phases": {
-    "1": {
-      "name": "foundation",
-      "folder": "phase-1-foundation",
-      "status": "validated",
-      "validationHash": "ab035778897a526c156f610ed5e9ff980a6533f1b86fa0c9b43910eb7030eed1",
-      "completedAt": "2026-03-24T01:05:36.917Z"
-    },
-    "2": {
-      "name": "core",
-      "folder": "phase-2-core",
-      "status": "pending",
-      "validationHash": null,
-      "completedAt": null
-    },
-    "3": {
-      "name": "search",
-      "folder": "phase-3-search",
-      "status": "pending",
-      "validationHash": null,
-      "completedAt": null
-    },
-    "4": {
-      "name": "social",
-      "folder": "phase-4-social",
-      "status": "pending",
-      "validationHash": null,
-      "completedAt": null
-    },
-    "5": {
-      "name": "cli-mcp",
-      "folder": "phase-5-cli-mcp",
-      "status": "pending",
-      "validationHash": null,
-      "completedAt": null
-    },
-    "6": {
-      "name": "polish",
-      "folder": "phase-6-polish",
-      "status": "pending",
-      "validationHash": null,
-      "completedAt": null
-    }
-  }
+	"phases": {
+		"1": {
+			"name": "foundation",
+			"folder": "phase-1-foundation",
+			"status": "validated",
+			"validationHash": "ab035778897a526c156f610ed5e9ff980a6533f1b86fa0c9b43910eb7030eed1",
+			"completedAt": "2026-03-24T01:05:36.917Z"
+		},
+		"2": {
+			"name": "core",
+			"folder": "phase-2-core",
+			"status": "validated",
+			"validationHash": "e1bad3529b8f84dc43a9b3359989fd0b0d4f8d64e491c4b946f0fe6b70638a94",
+			"completedAt": "2026-03-24T01:28:13.711Z"
+		},
+		"3": {
+			"name": "search",
+			"folder": "phase-3-search",
+			"status": "pending",
+			"validationHash": null,
+			"completedAt": null
+		},
+		"4": {
+			"name": "social",
+			"folder": "phase-4-social",
+			"status": "pending",
+			"validationHash": null,
+			"completedAt": null
+		},
+		"5": {
+			"name": "cli-mcp",
+			"folder": "phase-5-cli-mcp",
+			"status": "pending",
+			"validationHash": null,
+			"completedAt": null
+		},
+		"6": {
+			"name": "polish",
+			"folder": "phase-6-polish",
+			"status": "pending",
+			"validationHash": null,
+			"completedAt": null
+		}
+	}
 }

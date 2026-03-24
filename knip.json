@@ -5,12 +5,12 @@
 			"entry": ["scripts/*.ts"]
 		},
 		"webapp": {
-			"entry": ["src/routes/**/*.tsx"],
+			"entry": ["src/routes/**/*.tsx", "src/hooks/*.ts", "src/lib/*.ts"],
 			"project": ["src/**/*.{ts,tsx}"],
 			"ignoreDependencies": ["@tanstack/router-devtools", "tailwindcss"]
 		},
 		"api": {
-			"entry": ["src/db/index.ts"],
+			"entry": ["src/db/index.ts", "src/middleware/*.ts", "src/lib/*.ts"],
 			"project": ["src/**/*.ts"],
 			"ignoreDependencies": ["pgvector"]
 		},

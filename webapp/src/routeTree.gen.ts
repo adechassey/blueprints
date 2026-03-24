@@ -9,48 +9,147 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TagsRouteImport } from './routes/tags'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StackStackRouteImport } from './routes/stack/$stack'
+import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
+import { Route as BlueprintsNewRouteImport } from './routes/blueprints/new'
+import { Route as BlueprintsBlueprintIdRouteImport } from './routes/blueprints/$blueprintId'
+import { Route as BlueprintsBlueprintIdEditRouteImport } from './routes/blueprints/$blueprintId/edit'
 
+const TagsRoute = TagsRouteImport.update({
+  id: '/tags',
+  path: '/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StackStackRoute = StackStackRouteImport.update({
-  id: '/stack/$stack',
-  path: '/stack/$stack',
+const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
+  id: '/projects/$slug',
+  path: '/projects/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlueprintsNewRoute = BlueprintsNewRouteImport.update({
+  id: '/blueprints/new',
+  path: '/blueprints/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlueprintsBlueprintIdRoute = BlueprintsBlueprintIdRouteImport.update({
+  id: '/blueprints/$blueprintId',
+  path: '/blueprints/$blueprintId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlueprintsBlueprintIdEditRoute =
+  BlueprintsBlueprintIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => BlueprintsBlueprintIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/stack/$stack': typeof StackStackRoute
+  '/login': typeof LoginRoute
+  '/tags': typeof TagsRoute
+  '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
+  '/blueprints/new': typeof BlueprintsNewRoute
+  '/projects/$slug': typeof ProjectsSlugRoute
+  '/projects/': typeof ProjectsIndexRoute
+  '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/stack/$stack': typeof StackStackRoute
+  '/login': typeof LoginRoute
+  '/tags': typeof TagsRoute
+  '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
+  '/blueprints/new': typeof BlueprintsNewRoute
+  '/projects/$slug': typeof ProjectsSlugRoute
+  '/projects': typeof ProjectsIndexRoute
+  '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/stack/$stack': typeof StackStackRoute
+  '/login': typeof LoginRoute
+  '/tags': typeof TagsRoute
+  '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
+  '/blueprints/new': typeof BlueprintsNewRoute
+  '/projects/$slug': typeof ProjectsSlugRoute
+  '/projects/': typeof ProjectsIndexRoute
+  '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/stack/$stack'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/tags'
+    | '/blueprints/$blueprintId'
+    | '/blueprints/new'
+    | '/projects/$slug'
+    | '/projects/'
+    | '/blueprints/$blueprintId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/stack/$stack'
-  id: '__root__' | '/' | '/stack/$stack'
+  to:
+    | '/'
+    | '/login'
+    | '/tags'
+    | '/blueprints/$blueprintId'
+    | '/blueprints/new'
+    | '/projects/$slug'
+    | '/projects'
+    | '/blueprints/$blueprintId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/tags'
+    | '/blueprints/$blueprintId'
+    | '/blueprints/new'
+    | '/projects/$slug'
+    | '/projects/'
+    | '/blueprints/$blueprintId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  StackStackRoute: typeof StackStackRoute
+  LoginRoute: typeof LoginRoute
+  TagsRoute: typeof TagsRoute
+  BlueprintsBlueprintIdRoute: typeof BlueprintsBlueprintIdRouteWithChildren
+  BlueprintsNewRoute: typeof BlueprintsNewRoute
+  ProjectsSlugRoute: typeof ProjectsSlugRoute
+  ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tags': {
+      id: '/tags'
+      path: '/tags'
+      fullPath: '/tags'
+      preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -58,19 +157,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/stack/$stack': {
-      id: '/stack/$stack'
-      path: '/stack/$stack'
-      fullPath: '/stack/$stack'
-      preLoaderRoute: typeof StackStackRouteImport
+    '/projects/': {
+      id: '/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/projects/$slug': {
+      id: '/projects/$slug'
+      path: '/projects/$slug'
+      fullPath: '/projects/$slug'
+      preLoaderRoute: typeof ProjectsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blueprints/new': {
+      id: '/blueprints/new'
+      path: '/blueprints/new'
+      fullPath: '/blueprints/new'
+      preLoaderRoute: typeof BlueprintsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blueprints/$blueprintId': {
+      id: '/blueprints/$blueprintId'
+      path: '/blueprints/$blueprintId'
+      fullPath: '/blueprints/$blueprintId'
+      preLoaderRoute: typeof BlueprintsBlueprintIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blueprints/$blueprintId/edit': {
+      id: '/blueprints/$blueprintId/edit'
+      path: '/edit'
+      fullPath: '/blueprints/$blueprintId/edit'
+      preLoaderRoute: typeof BlueprintsBlueprintIdEditRouteImport
+      parentRoute: typeof BlueprintsBlueprintIdRoute
     }
   }
 }
 
+interface BlueprintsBlueprintIdRouteChildren {
+  BlueprintsBlueprintIdEditRoute: typeof BlueprintsBlueprintIdEditRoute
+}
+
+const BlueprintsBlueprintIdRouteChildren: BlueprintsBlueprintIdRouteChildren = {
+  BlueprintsBlueprintIdEditRoute: BlueprintsBlueprintIdEditRoute,
+}
+
+const BlueprintsBlueprintIdRouteWithChildren =
+  BlueprintsBlueprintIdRoute._addFileChildren(
+    BlueprintsBlueprintIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  StackStackRoute: StackStackRoute,
+  LoginRoute: LoginRoute,
+  TagsRoute: TagsRoute,
+  BlueprintsBlueprintIdRoute: BlueprintsBlueprintIdRouteWithChildren,
+  BlueprintsNewRoute: BlueprintsNewRoute,
+  ProjectsSlugRoute: ProjectsSlugRoute,
+  ProjectsIndexRoute: ProjectsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

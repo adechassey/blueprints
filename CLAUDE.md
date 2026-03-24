@@ -59,3 +59,4 @@ A blueprint registry and discovery platform where developers can publish, browse
 
 # Guidelines
 Write your learnings in .claude/notes.md as you work on the project. This is a shared knowledge base for the team. Add tips, gotchas, and patterns you discover.
+Write conventionnal ATOMIC commits with clear messages. Use the format: `type(scope): description`. For example: `feat(api): add blueprint search endpoint`. Be careful to keep commits focused and atomic for better traceability and easier code reviews. Avoid large, monolithic commits that mix multiple changes.

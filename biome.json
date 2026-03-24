@@ -28,7 +28,8 @@
 			"!**/.vite",
 			"!**/*.gen.ts",
 			"!**/api/src/db/migrations",
-			"!**/webapp/src/paraglide"
+			"!**/webapp/src/paraglide",
+			"!**/coverage"
 		]
 	}
 }

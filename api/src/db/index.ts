@@ -5,3 +5,4 @@ import * as schema from './schema.js';
 // biome-ignore lint/style/noNonNullAssertion: env var validated at startup
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, { schema });
+export type DB = typeof db;
