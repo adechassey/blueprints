@@ -1,0 +1,46 @@
+{
+  "phases": {
+    "1": {
+      "name": "foundation",
+      "folder": "phase-1-foundation",
+      "status": "pending",
+      "validationHash": null,
+      "completedAt": null
+    },
+    "2": {
+      "name": "core",
+      "folder": "phase-2-core",
+      "status": "pending",
+      "validationHash": null,
+      "completedAt": null
+    },
+    "3": {
+      "name": "search",
+      "folder": "phase-3-search",
+      "status": "pending",
+      "validationHash": null,
+      "completedAt": null
+    },
+    "4": {
+      "name": "social",
+      "folder": "phase-4-social",
+      "status": "pending",
+      "validationHash": null,
+      "completedAt": null
+    },
+    "5": {
+      "name": "cli-mcp",
+      "folder": "phase-5-cli-mcp",
+      "status": "pending",
+      "validationHash": null,
+      "completedAt": null
+    },
+    "6": {
+      "name": "polish",
+      "folder": "phase-6-polish",
+      "status": "pending",
+      "validationHash": null,
+      "completedAt": null
+    }
+  }
+}

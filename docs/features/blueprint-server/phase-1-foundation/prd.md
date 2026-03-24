@@ -83,13 +83,16 @@ Bootstrap the monorepo infrastructure, quality tooling, local dev environment, i
 - Schema file with all tables
 - Migration output directory
 - Database client module (`db/index.ts`) using `postgres` driver
-- Scripts: `db:generate`, `db:migrate`, `db:studio`, `db:push` (dev only)
+- Scripts: `db:generate`, `db:migrate`, `db:studio`, `db:push`
+- After any schema edit: always run `db:generate` then `db:migrate`
 
 ### FR-1.4: Quality tooling
 - Biome 2: lint + format config (strict mode, consistent with pr-aquila-ap-v2 style)
 - Knip: unused code detection config per workspace
 - Lefthook: pre-commit hook running check, check-types, test, knip
 - Vitest: configured per workspace with coverage
+- 100% test coverage required on pure functions (`*.core.ts` files)
+- Pure business logic must live in `.core.ts` files, separated from I/O
 
 ### FR-1.5: Docker Compose
 - PostgreSQL 17 with pgvector extension
