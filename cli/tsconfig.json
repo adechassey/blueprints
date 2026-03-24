@@ -7,7 +7,9 @@
 		"noEmit": true,
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
-		"moduleDetection": "force"
+		"moduleDetection": "force",
+		"outDir": "./dist",
+		"lib": ["ES2023"]
 	},
 	"include": ["src"]
 }
