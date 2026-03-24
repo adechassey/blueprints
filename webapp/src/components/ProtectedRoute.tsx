@@ -20,7 +20,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 	}
 
 	if (!session?.user) {
-		return <Navigate to="/login" />;
+		return <Navigate to="/login" search={{}} />;
 	}
 
 	return <>{children}</>;
