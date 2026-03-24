@@ -5,7 +5,8 @@
 		"moduleResolution": "bundler",
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
-		"noEmit": true,
+		"outDir": "./dist",
+		"declaration": true,
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
 		"moduleDetection": "force"
