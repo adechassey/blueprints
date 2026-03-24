@@ -243,10 +243,13 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 			updatedAt: blueprints.updatedAt,
 			authorId: blueprints.authorId,
 			authorName: users.name,
+			authorImage: users.image,
 			projectId: blueprints.projectId,
+			projectName: projects.name,
 		})
 		.from(blueprints)
 		.leftJoin(users, eq(blueprints.authorId, users.id))
+		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
 
 	if (tag) {

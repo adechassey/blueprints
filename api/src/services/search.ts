@@ -1,6 +1,13 @@
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
-import { blueprints, blueprintTags, blueprintVersions, tags, users } from '../db/schema.js';
+import {
+	blueprints,
+	blueprintTags,
+	blueprintVersions,
+	projects,
+	tags,
+	users,
+} from '../db/schema.js';
 import { logger } from '../lib/logger.js';
 import { cosineSimilarityToScore } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
@@ -68,12 +75,15 @@ async function vectorSearch(
 			createdAt: blueprints.createdAt,
 			authorId: blueprints.authorId,
 			authorName: users.name,
+			authorImage: users.image,
 			projectId: blueprints.projectId,
+			projectName: projects.name,
 			distance: sql<number>`${blueprintVersions.embedding} <=> ${embeddingStr}::vector`,
 		})
 		.from(blueprints)
 		.innerJoin(blueprintVersions, eq(blueprints.currentVersionId, blueprintVersions.id))
 		.leftJoin(users, eq(blueprints.authorId, users.id))
+		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
 
 	if (tag) {
@@ -122,10 +132,13 @@ async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
 			createdAt: blueprints.createdAt,
 			authorId: blueprints.authorId,
 			authorName: users.name,
+			authorImage: users.image,
 			projectId: blueprints.projectId,
+			projectName: projects.name,
 		})
 		.from(blueprints)
 		.leftJoin(users, eq(blueprints.authorId, users.id))
+		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
 
 	if (tag) {

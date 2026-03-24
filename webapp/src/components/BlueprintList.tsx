@@ -10,7 +10,9 @@ interface Blueprint {
 	stack: string;
 	layer: string;
 	authorName?: string | null;
+	authorImage?: string | null;
 	downloadCount?: number;
+	projectName?: string | null;
 	score?: number | null;
 	createdAt: string;
 }
@@ -47,14 +49,24 @@ function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 			{blueprint.description && (
 				<p className="mt-1 text-xs text-gray-500">{blueprint.description}</p>
 			)}
-			<div className="mt-2 flex items-center gap-2">
+			<div className="mt-2 flex flex-wrap items-center gap-2">
 				<span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500">
 					{blueprint.layer}
 				</span>
-				{blueprint.authorName && (
-					<span className="text-xs text-gray-400">{blueprint.authorName}</span>
+				{blueprint.projectName && (
+					<span className="rounded bg-violet-50 px-1.5 py-0.5 text-xs text-violet-600">
+						{blueprint.projectName}
+					</span>
 				)}
-				{blueprint.downloadCount !== undefined && blueprint.downloadCount > 0 && (
+				{blueprint.authorName && (
+					<span className="flex items-center gap-1 text-xs text-gray-400">
+						{blueprint.authorImage ? (
+							<img src={blueprint.authorImage} alt="" className="h-4 w-4 rounded-full" />
+						) : null}
+						{blueprint.authorName}
+					</span>
+				)}
+				{blueprint.downloadCount != null && blueprint.downloadCount > 0 && (
 					<span className="text-xs text-gray-400">
 						{m.blueprint_detail_downloads({ count: blueprint.downloadCount })}
 					</span>

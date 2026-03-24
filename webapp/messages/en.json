@@ -1,5 +1,5 @@
 {
-	"app_title": "Blueprints",
+	"app_title": "Theodo Blueprints",
 	"nav_all": "All",
 	"nav_webapp": "Webapp",
 	"nav_server": "Server",
@@ -13,7 +13,7 @@
 	"blueprint_count_other": "{count} blueprints",
 	"auth_sign_in_google": "Sign in with Google",
 	"auth_sign_out": "Sign out",
-	"auth_login_title": "Sign in to Blueprints",
+	"auth_login_title": "Sign in to Theodo Blueprints",
 	"auth_login_subtitle": "Sign in with your Google account to publish and manage blueprints.",
 	"form_name": "Name",
 	"form_description": "Description",
