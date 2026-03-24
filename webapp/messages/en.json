@@ -1,0 +1,11 @@
+{
+	"app_title": "Blueprints",
+	"nav_all": "All",
+	"nav_webapp": "Webapp",
+	"nav_server": "Server",
+	"nav_shared": "Shared",
+	"page_all_title": "All Blueprints",
+	"blueprint_count_one": "{count} blueprint",
+	"blueprint_count_other": "{count} blueprints",
+	"page_stack_title": "{stack} Blueprints"
+}

@@ -56,3 +56,6 @@ A blueprint registry and discovery platform where developers can publish, browse
 - Follow patterns from `pr-aquila-ap-v2` for quality tooling (Biome, Knip, etc.)
 - Blueprint annotation format follows `pr-aquila-ap-v2/.claude/skills/blueprint/`
 - English only in code. i18n for user-facing strings via Paraglide JS.
+
+# Guidelines
+Write your learnings in .claude/notes.md as you work on the project. This is a shared knowledge base for the team. Add tips, gotchas, and patterns you discover.

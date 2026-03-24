@@ -12,69 +12,56 @@
  *   { "done": true }
  */
 
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-const STATUS_PATH = join(
-  __dirname,
-  "..",
-  "docs",
-  "features",
-  "blueprint-server",
-  "tracker.json",
-);
-const PHASES_DIR = join(
-  __dirname,
-  "..",
-  "docs",
-  "features",
-  "blueprint-server",
-);
+const STATUS_PATH = join(__dirname, '..', 'docs', 'features', 'blueprint-server', 'tracker.json');
+const PHASES_DIR = join(__dirname, '..', 'docs', 'features', 'blueprint-server');
 
 interface PhaseEntry {
-  name: string;
-  folder: string;
-  status: string;
-  validationHash: string | null;
-  completedAt: string | null;
+	name: string;
+	folder: string;
+	status: string;
+	validationHash: string | null;
+	completedAt: string | null;
 }
 
 interface PhaseStatus {
-  phases: Record<string, PhaseEntry>;
+	phases: Record<string, PhaseEntry>;
 }
 
 function main(): void {
-  if (!existsSync(STATUS_PATH)) {
-    console.log(JSON.stringify({ error: "tracker.json not found" }));
-    process.exit(1);
-  }
+	if (!existsSync(STATUS_PATH)) {
+		console.log(JSON.stringify({ error: 'tracker.json not found' }));
+		process.exit(1);
+	}
 
-  const status: PhaseStatus = JSON.parse(readFileSync(STATUS_PATH, "utf-8"));
+	const status: PhaseStatus = JSON.parse(readFileSync(STATUS_PATH, 'utf-8'));
 
-  // Find first pending phase
-  for (const [num, phase] of Object.entries(status.phases)) {
-    if (phase.status === "pending") {
-      const specPath = join(PHASES_DIR, phase.folder, "spec.md");
-      const hasSpec = existsSync(specPath);
-      const prdPath = join(PHASES_DIR, phase.folder, "prd.md");
+	// Find first pending phase
+	for (const [num, phase] of Object.entries(status.phases)) {
+		if (phase.status === 'pending') {
+			const specPath = join(PHASES_DIR, phase.folder, 'spec.md');
+			const hasSpec = existsSync(specPath);
+			const _prdPath = join(PHASES_DIR, phase.folder, 'prd.md');
 
-      console.log(
-        JSON.stringify({
-          done: false,
-          phase: num,
-          name: phase.name,
-          folder: phase.folder,
-          hasSpec,
-          prdPath: `docs/features/blueprint-server/${phase.folder}/prd.md`,
-          specPath: `docs/features/blueprint-server/${phase.folder}/spec.md`,
-        }),
-      );
-      return;
-    }
-  }
+			console.log(
+				JSON.stringify({
+					done: false,
+					phase: num,
+					name: phase.name,
+					folder: phase.folder,
+					hasSpec,
+					prdPath: `docs/features/blueprint-server/${phase.folder}/prd.md`,
+					specPath: `docs/features/blueprint-server/${phase.folder}/spec.md`,
+				}),
+			);
+			return;
+		}
+	}
 
-  // All phases validated
-  console.log(JSON.stringify({ done: true }));
+	// All phases validated
+	console.log(JSON.stringify({ done: true }));
 }
 
 main();
