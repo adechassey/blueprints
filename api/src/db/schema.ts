@@ -22,8 +22,9 @@ export const blueprintStack = pgEnum('blueprint_stack', [
 
 // Users
 export const users = pgTable('users', {
-	id: uuid('id').primaryKey().defaultRandom(),
+	id: text('id').primaryKey(),
 	email: text('email').notNull().unique(),
+	emailVerified: boolean('emailVerified').notNull().default(false),
 	name: text('name').notNull(),
 	image: text('image'),
 	role: userRole('role').notNull().default('user'),
@@ -34,13 +35,56 @@ export const users = pgTable('users', {
 		.$onUpdate(() => new Date()),
 });
 
+// Better Auth — sessions
+export const session = pgTable('session', {
+	id: text('id').primaryKey(),
+	expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+	token: text('token').notNull().unique(),
+	createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+	ipAddress: text('ipAddress'),
+	userAgent: text('userAgent'),
+	userId: text('userId')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+});
+
+// Better Auth — accounts (OAuth providers)
+export const account = pgTable('account', {
+	id: text('id').primaryKey(),
+	accountId: text('accountId').notNull(),
+	providerId: text('providerId').notNull(),
+	userId: text('userId')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	accessToken: text('accessToken'),
+	refreshToken: text('refreshToken'),
+	idToken: text('idToken'),
+	accessTokenExpiresAt: timestamp('accessTokenExpiresAt', { withTimezone: true }),
+	refreshTokenExpiresAt: timestamp('refreshTokenExpiresAt', { withTimezone: true }),
+	scope: text('scope'),
+	password: text('password'),
+	createdAt: timestamp('createdAt', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updatedAt', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Better Auth — verification tokens
+export const verification = pgTable('verification', {
+	id: text('id').primaryKey(),
+	identifier: text('identifier').notNull(),
+	value: text('value').notNull(),
+	expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+	createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow(),
+	updatedAt: timestamp('updatedAt', { withTimezone: true }).defaultNow(),
+});
+
 // Projects
 export const projects = pgTable('projects', {
 	id: uuid('id').primaryKey().defaultRandom(),
 	name: text('name').notNull().unique(),
 	slug: text('slug').notNull().unique(),
 	description: text('description'),
-	createdBy: uuid('created_by')
+	createdBy: text('created_by')
 		.notNull()
 		.references(() => users.id),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -61,7 +105,7 @@ export const blueprints = pgTable(
 		usage: text('usage'),
 		currentVersionId: uuid('current_version_id'),
 		projectId: uuid('project_id').references(() => projects.id),
-		authorId: uuid('author_id')
+		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
 		stack: blueprintStack('stack').notNull(),
@@ -86,7 +130,7 @@ export const blueprintVersions = pgTable('blueprint_versions', {
 	version: integer('version').notNull(),
 	content: text('content').notNull(),
 	changelog: text('changelog'),
-	authorId: uuid('author_id')
+	authorId: text('author_id')
 		.notNull()
 		.references(() => users.id),
 	embedding: vector('embedding', { dimensions: 384 }),
@@ -121,7 +165,7 @@ export const comments = pgTable('comments', {
 	blueprintId: uuid('blueprint_id')
 		.notNull()
 		.references(() => blueprints.id),
-	authorId: uuid('author_id')
+	authorId: text('author_id')
 		.notNull()
 		.references(() => users.id),
 	parentId: uuid('parent_id'),

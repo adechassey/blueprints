@@ -24,7 +24,9 @@ export function AuthButton() {
 	return (
 		<button
 			type="button"
-			onClick={() => authClient.signIn.social({ provider: 'google' })}
+			onClick={() =>
+				authClient.signIn.social({ provider: 'google', callbackURL: window.location.origin })
+			}
 			className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
 		>
 			{m.auth_sign_in_google()}

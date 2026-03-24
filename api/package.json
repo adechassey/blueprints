@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "tsx watch src/index.ts",
+		"dev": "tsx watch --env-file=../.env src/index.ts",
 		"build": "tsc",
 		"check-types": "tsc --noEmit",
 		"test": "vitest run --coverage",
@@ -12,7 +12,7 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"db:push": "drizzle-kit push",
-		"db:seed": "tsx scripts/seed.ts"
+		"db:seed": "tsx --env-file=../.env scripts/seed.ts"
 	},
 	"exports": {
 		".": "./src/index.ts",
@@ -24,6 +24,7 @@
 		"@hono/zod-validator": "^0.7.6",
 		"@huggingface/transformers": "^3.8.1",
 		"better-auth": "^1.5.6",
+		"dotenv": "^17.3.1",
 		"drizzle-orm": "^0.45.1",
 		"hono": "^4.12.9",
 		"hono-rate-limiter": "^0.5.3",

@@ -8,7 +8,8 @@
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { eq } from 'drizzle-orm';
 import { db } from '../src/db/index.js';
 import {
@@ -23,6 +24,8 @@ import { generateSlug } from '../src/services/blueprints.core.js';
 import { prepareEmbeddingText } from '../src/services/embeddings.core.js';
 import { generateEmbedding } from '../src/services/embeddings.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const BLUEPRINTS_DIR = join(__dirname, '..', '..', 'webapp', 'src', 'assets', 'blueprints');
 
 interface FrontmatterMeta {
@@ -71,7 +74,7 @@ async function main() {
 	if (!systemUser) {
 		[systemUser] = await db
 			.insert(users)
-			.values({ email: systemEmail, name: 'System', role: 'admin' })
+			.values({ id: 'system', email: systemEmail, name: 'System', role: 'admin' })
 			.returning();
 		console.log('  ✓ Created system user');
 	} else {

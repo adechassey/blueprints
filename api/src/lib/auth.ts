@@ -1,11 +1,21 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '../db/index.js';
+import * as schema from '../db/schema.js';
 import { isDefaultAdmin } from './admin.core.js';
 
 export const auth = betterAuth({
-	database: drizzleAdapter(db, { provider: 'pg' }),
+	database: drizzleAdapter(db, {
+		provider: 'pg',
+		schema: {
+			user: schema.users,
+			session: schema.session,
+			account: schema.account,
+			verification: schema.verification,
+		},
+	}),
 	basePath: '/api/auth',
+	trustedOrigins: [process.env.CORS_ORIGIN || 'http://localhost:5173', 'http://localhost:5174'],
 	socialProviders: {
 		google: {
 			// biome-ignore lint/style/noNonNullAssertion: env vars required at startup
