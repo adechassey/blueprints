@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { BlueprintForm } from '../../components/BlueprintForm.js';
+import { BlueprintForm, type BlueprintFormData } from '../../components/BlueprintForm.js';
 import { ProtectedRoute } from '../../components/ProtectedRoute.js';
 import { useCreateBlueprint } from '../../hooks/useBlueprints.js';
 import * as m from '../../paraglide/messages.js';
@@ -12,7 +12,7 @@ function NewBlueprintPage() {
 	const createMutation = useCreateBlueprint();
 	const navigate = useNavigate();
 
-	const handleSubmit = async (data: Record<string, unknown>) => {
+	const handleSubmit = async (data: BlueprintFormData) => {
 		await createMutation.mutateAsync(data);
 		navigate({ to: '/' });
 	};

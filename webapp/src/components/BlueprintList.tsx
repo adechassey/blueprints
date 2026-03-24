@@ -60,8 +60,7 @@ function blueprintCountLabel(count: number): string {
 	return count === 1 ? m.blueprint_count_one({ count }) : m.blueprint_count_other({ count });
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: flexible blueprint data from API
-export function BlueprintList({ blueprints }: { blueprints: any[] }) {
+export function BlueprintList({ blueprints }: { blueprints: Blueprint[] }) {
 	return (
 		<div className="space-y-4">
 			<p className="text-sm text-gray-500">{blueprintCountLabel(blueprints.length)}</p>

@@ -1,4 +1,11 @@
+import type { AppType } from 'api/app';
+import { hc } from 'hono/client';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+export const api = hc<AppType>(API_URL, {
+	fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
+});
 
 export class ApiError extends Error {
 	constructor(
@@ -10,20 +17,19 @@ export class ApiError extends Error {
 	}
 }
 
-export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-	const res = await fetch(`${API_URL}/api${path}`, {
-		...options,
-		credentials: 'include',
-		headers: {
-			'Content-Type': 'application/json',
-			...options?.headers,
-		},
-	});
+type JSONResponse<T> = T extends { json(): Promise<infer R> } ? R : never;
 
+export async function unwrapResponse<T extends Response>(res: T): Promise<JSONResponse<T>> {
 	if (!res.ok) {
-		const body = await res.json().catch(() => ({ error: res.statusText }));
-		throw new ApiError(res.status, body.error || res.statusText);
+		const text = await res.text();
+		let message = res.statusText;
+		try {
+			const body = JSON.parse(text);
+			if (body.error) message = body.error;
+		} catch {
+			// use statusText
+		}
+		throw new ApiError(res.status, message);
 	}
-
-	return res.json() as Promise<T>;
+	return res.json() as Promise<JSONResponse<T>>;
 }

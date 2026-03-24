@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { apiFetch } from '../lib/api.js';
+import { createApiClient, unwrapResponse } from '../lib/api.js';
 
 export function registerSearchCommand(program: Command) {
 	program
@@ -23,24 +23,19 @@ export function registerSearchCommand(program: Command) {
 				},
 			) => {
 				try {
-					const params = new URLSearchParams({ q: query });
-					if (opts.stack) params.set('stack', opts.stack);
-					if (opts.layer) params.set('layer', opts.layer);
-					if (opts.tag) params.set('tag', opts.tag);
-					if (opts.project) params.set('projectId', opts.project);
-					if (opts.author) params.set('authorId', opts.author);
+					const client = createApiClient();
+					const filters: Record<string, string> = {};
+					if (opts.stack) filters.stack = opts.stack;
+					if (opts.layer) filters.layer = opts.layer;
+					if (opts.tag) filters.tag = opts.tag;
+					if (opts.project) filters.projectId = opts.project;
 
-					const result = (await apiFetch(`/blueprints/search?${params}`)) as {
-						items: {
-							name: string;
-							slug: string;
-							description?: string;
-							stack: string;
-							score?: number;
-						}[];
-					};
+					const res = await client.api.blueprints.search.$get({
+						query: { q: query, ...filters },
+					});
+					const result = await unwrapResponse(res);
 
-					if (result.items.length === 0) {
+					if (!result.items || result.items.length === 0) {
 						console.log(chalk.yellow('No results found.'));
 						return;
 					}

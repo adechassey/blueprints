@@ -1,5 +1,6 @@
+import type { CreateBlueprintInput, UpdateBlueprintInput } from '@blueprints/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '../lib/api.js';
+import { api, unwrapResponse } from '../lib/api.js';
 
 interface BlueprintListFilters {
 	page?: number;
@@ -12,27 +13,28 @@ interface BlueprintListFilters {
 }
 
 export function useBlueprints(filters: BlueprintListFilters = {}) {
-	const params = new URLSearchParams();
-	for (const [key, value] of Object.entries(filters)) {
-		if (value !== undefined && value !== '') {
-			params.set(key, String(value));
-		}
-	}
-	const query = params.toString();
-
 	return useQuery({
 		queryKey: ['blueprints', filters],
-		queryFn: () =>
-			apiFetch<{ items: unknown[]; total: number; page: number; limit: number }>(
-				`/blueprints${query ? `?${query}` : ''}`,
-			),
+		queryFn: async () => {
+			const query: Record<string, string> = {};
+			for (const [key, value] of Object.entries(filters)) {
+				if (value !== undefined && value !== '') {
+					query[key] = String(value);
+				}
+			}
+			const res = await api.api.blueprints.$get({ query });
+			return unwrapResponse(res);
+		},
 	});
 }
 
 export function useBlueprint(id: string) {
 	return useQuery({
 		queryKey: ['blueprint', id],
-		queryFn: () => apiFetch(`/blueprints/${id}`),
+		queryFn: async () => {
+			const res = await api.api.blueprints[':id'].$get({ param: { id } });
+			return unwrapResponse(res);
+		},
 		enabled: !!id,
 	});
 }
@@ -40,7 +42,10 @@ export function useBlueprint(id: string) {
 export function useBlueprintVersions(id: string) {
 	return useQuery({
 		queryKey: ['blueprint-versions', id],
-		queryFn: () => apiFetch(`/blueprints/${id}/versions`),
+		queryFn: async () => {
+			const res = await api.api.blueprints[':id'].versions.$get({ param: { id } });
+			return unwrapResponse(res);
+		},
 		enabled: !!id,
 	});
 }
@@ -48,11 +53,10 @@ export function useBlueprintVersions(id: string) {
 export function useCreateBlueprint() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Record<string, unknown>) =>
-			apiFetch('/blueprints', {
-				method: 'POST',
-				body: JSON.stringify(data),
-			}),
+		mutationFn: async (data: CreateBlueprintInput) => {
+			const res = await api.api.blueprints.$post({ json: data });
+			return unwrapResponse(res);
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['blueprints'] });
 		},
@@ -62,11 +66,13 @@ export function useCreateBlueprint() {
 export function useUpdateBlueprint(id: string) {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (data: Record<string, unknown>) =>
-			apiFetch(`/blueprints/${id}`, {
-				method: 'PUT',
-				body: JSON.stringify(data),
-			}),
+		mutationFn: async (data: UpdateBlueprintInput) => {
+			const res = await api.api.blueprints[':id'].$put({
+				param: { id },
+				json: data,
+			});
+			return unwrapResponse(res);
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['blueprints'] });
 			queryClient.invalidateQueries({ queryKey: ['blueprint', id] });
@@ -77,7 +83,10 @@ export function useUpdateBlueprint(id: string) {
 export function useDeleteBlueprint() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (id: string) => apiFetch(`/blueprints/${id}`, { method: 'DELETE' }),
+		mutationFn: async (id: string) => {
+			const res = await api.api.blueprints[':id'].$delete({ param: { id } });
+			return unwrapResponse(res);
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['blueprints'] });
 		},

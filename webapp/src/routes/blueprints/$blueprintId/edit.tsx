@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { BlueprintForm } from '../../../components/BlueprintForm.js';
+import { BlueprintForm, type BlueprintFormData } from '../../../components/BlueprintForm.js';
 import { ProtectedRoute } from '../../../components/ProtectedRoute.js';
 import { useBlueprint, useUpdateBlueprint } from '../../../hooks/useBlueprints.js';
 import * as m from '../../../paraglide/messages.js';
@@ -10,15 +10,15 @@ export const Route = createFileRoute('/blueprints/$blueprintId/edit')({
 
 function EditBlueprintPage() {
 	const { blueprintId } = Route.useParams();
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: blueprint, isLoading } = useBlueprint(blueprintId) as any;
+	const { data: blueprint, isLoading } = useBlueprint(blueprintId);
 	const updateMutation = useUpdateBlueprint(blueprintId);
 	const navigate = useNavigate();
 
 	if (isLoading) return <p className="text-sm text-gray-500">{m.loading()}</p>;
-	if (!blueprint) return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
+	if (!blueprint || 'error' in blueprint)
+		return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
 
-	const handleSubmit = async (data: Record<string, unknown>) => {
+	const handleSubmit = async (data: BlueprintFormData) => {
 		await updateMutation.mutateAsync(data);
 		navigate({ to: '/blueprints/$blueprintId', params: { blueprintId } });
 	};

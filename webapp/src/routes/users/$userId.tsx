@@ -9,12 +9,11 @@ export const Route = createFileRoute('/users/$userId')({
 
 function UserProfilePage() {
 	const { userId } = Route.useParams();
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: user, isLoading: userLoading } = useUser(userId) as any;
+	const { data: user, isLoading: userLoading } = useUser(userId);
 	const { data: blueprintsData, isLoading: bpLoading } = useUserBlueprints(userId);
 
 	if (userLoading) return <p className="text-sm text-gray-500">{m.loading()}</p>;
-	if (!user) return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
+	if (!user || 'error' in user) return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
 
 	const roleBadge: Record<string, string> = {
 		admin: 'bg-red-100 text-red-700',
@@ -30,7 +29,7 @@ function UserProfilePage() {
 					<h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
 					<div className="mt-1 flex items-center gap-2">
 						<span
-							className={`rounded-full px-2 py-0.5 text-xs font-medium ${roleBadge[user.role] || roleBadge.user}`}
+							className={`rounded-full px-2 py-0.5 text-xs font-medium ${roleBadge[user.role ?? 'user'] || roleBadge.user}`}
 						>
 							{user.role}
 						</span>

@@ -66,6 +66,8 @@ function IndexPage() {
 		});
 	};
 
+	const paginationData = !isSearchMode ? browseQuery.data : undefined;
+
 	return (
 		<>
 			<h1 className="mb-6 text-2xl font-bold text-gray-900">
@@ -82,12 +84,12 @@ function IndexPage() {
 			) : data?.items?.length ? (
 				<>
 					<BlueprintList blueprints={data.items} />
-					{'page' in data && 'limit' in data && (
+					{paginationData && 'page' in paginationData && 'limit' in paginationData && (
 						<div className="mt-6">
 							<Pagination
-								page={(data as { page: number }).page}
-								total={data.total}
-								limit={(data as { limit: number }).limit}
+								page={paginationData.page}
+								total={paginationData.total}
+								limit={paginationData.limit}
 								onPageChange={handlePageChange}
 							/>
 						</div>

@@ -1,7 +1,12 @@
+import type { CreateBlueprintInput, Stack } from '@blueprints/shared';
 import { useState } from 'react';
 import type { BlueprintFrontmatter } from '../lib/frontmatter.core.js';
 import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
+
+export interface BlueprintFormData extends Omit<CreateBlueprintInput, 'isPublic'> {
+	changelog?: string;
+}
 
 interface BlueprintFormProps {
 	initialValues?: {
@@ -14,12 +19,12 @@ interface BlueprintFormProps {
 		content?: string;
 		projectId?: string;
 	};
-	onSubmit: (data: Record<string, unknown>) => void;
+	onSubmit: (data: BlueprintFormData) => void;
 	isSubmitting?: boolean;
 	showChangelog?: boolean;
 }
 
-const STACKS = ['server', 'webapp', 'shared', 'fullstack'];
+const STACKS: Stack[] = ['server', 'webapp', 'shared', 'fullstack'];
 
 export function BlueprintForm({
 	initialValues = {},
@@ -30,7 +35,7 @@ export function BlueprintForm({
 	const [name, setName] = useState(initialValues.name || '');
 	const [description, setDescription] = useState(initialValues.description || '');
 	const [usage, setUsage] = useState(initialValues.usage || '');
-	const [stack, setStack] = useState(initialValues.stack || 'server');
+	const [stack, setStack] = useState<Stack>((initialValues.stack as Stack) || 'server');
 	const [layer, setLayer] = useState(initialValues.layer || '');
 	const [tagsInput, setTagsInput] = useState((initialValues.tags || []).join(', '));
 	const [content, setContent] = useState(initialValues.content || '');
@@ -40,7 +45,7 @@ export function BlueprintForm({
 		if (meta.name) setName(meta.name);
 		if (meta.description) setDescription(meta.description);
 		if (meta.usage) setUsage(meta.usage);
-		if (meta.stack) setStack(meta.stack);
+		if (meta.stack) setStack(meta.stack as Stack);
 		if (meta.layer) setLayer(meta.layer);
 		if (meta.tags) setTagsInput(meta.tags.join(', '));
 		if (parsedContent) setContent(parsedContent);
@@ -52,10 +57,10 @@ export function BlueprintForm({
 			.split(',')
 			.map((t) => t.trim())
 			.filter(Boolean);
-		const data: Record<string, unknown> = {
+		const data: BlueprintFormData = {
 			name,
-			description,
-			usage,
+			description: description || undefined,
+			usage: usage || undefined,
 			stack,
 			layer,
 			tags,
@@ -114,7 +119,7 @@ export function BlueprintForm({
 						{m.form_stack()}
 						<select
 							value={stack}
-							onChange={(e) => setStack(e.target.value)}
+							onChange={(e) => setStack(e.target.value as Stack)}
 							className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
 						>
 							{STACKS.map((s) => (

@@ -3,9 +3,7 @@ import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { blueprintTags, tags } from '../db/schema.js';
 
-export const tagRoutes = new Hono();
-
-tagRoutes.get('/tags', async (c) => {
+export const tagRoutes = new Hono().get('/tags', async (c) => {
 	const result = await db
 		.select({
 			id: tags.id,

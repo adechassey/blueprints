@@ -14,9 +14,13 @@
 		"db:push": "drizzle-kit push",
 		"db:seed": "tsx scripts/seed.ts"
 	},
+	"exports": {
+		".": "./src/index.ts",
+		"./app": "./src/app.ts"
+	},
 	"dependencies": {
+		"@blueprints/shared": "workspace:*",
 		"@hono/node-server": "^1.19.11",
-		"@hono/zod-openapi": "^1.2.3",
 		"@hono/zod-validator": "^0.7.6",
 		"@huggingface/transformers": "^3.8.1",
 		"@modelcontextprotocol/sdk": "^1.27.1",

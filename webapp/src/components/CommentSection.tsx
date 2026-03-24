@@ -15,8 +15,7 @@ interface CommentSectionProps {
 
 export function CommentSection({ blueprintId }: CommentSectionProps) {
 	const { data: session } = authClient.useSession();
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: comments, isLoading } = useComments(blueprintId) as any;
+	const { data: comments, isLoading } = useComments(blueprintId);
 	const createMutation = useCreateComment(blueprintId);
 	const updateMutation = useUpdateComment(blueprintId);
 	const deleteMutation = useDeleteComment(blueprintId);
@@ -49,18 +48,15 @@ export function CommentSection({ blueprintId }: CommentSectionProps) {
 				<p className="text-sm text-gray-500">{m.loading()}</p>
 			) : comments?.length ? (
 				<div className="space-y-3">
-					{comments.map(
-						// biome-ignore lint/suspicious/noExplicitAny: API response shape
-						(comment: any) => (
-							<CommentThread
-								key={comment.id}
-								comment={comment}
-								onReply={handleReply}
-								onEdit={handleEdit}
-								onDelete={handleDelete}
-							/>
-						),
-					)}
+					{comments.map((comment) => (
+						<CommentThread
+							key={comment.id}
+							comment={comment}
+							onReply={handleReply}
+							onEdit={handleEdit}
+							onDelete={handleDelete}
+						/>
+					))}
 				</div>
 			) : (
 				<p className="text-sm text-gray-500">{m.comments_empty()}</p>

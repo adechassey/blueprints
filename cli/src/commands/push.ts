@@ -1,8 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { Stack } from '@blueprints/shared';
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { apiFetch } from '../lib/api.js';
+import { createApiClient, unwrapResponse } from '../lib/api.js';
+import { getConfig } from '../lib/config.js';
 import { parseFrontmatter } from '../lib/frontmatter.core.js';
 
 export function registerPushCommand(program: Command) {
@@ -27,6 +29,9 @@ export function registerPushCommand(program: Command) {
 				process.exit(1);
 			}
 
+			const client = createApiClient();
+			const config = getConfig();
+
 			for (const filePath of files) {
 				try {
 					const raw = readFileSync(filePath, 'utf-8');
@@ -36,18 +41,19 @@ export function registerPushCommand(program: Command) {
 						name: meta.name || filePath.replace(/.*\//, '').replace(/\.md$/, ''),
 						description: meta.description,
 						usage: meta.usage,
-						stack: meta.stack || 'server',
+						stack: (meta.stack || 'server') as Stack,
 						layer: meta.layer || 'unknown',
 						tags: meta.tags,
 						content,
-						...(opts.project && { projectSlug: opts.project }),
 					};
 
-					const config = (await import('../lib/config.js')).getConfig();
-					const result = (await apiFetch('/blueprints', {
-						method: 'POST',
-						body: JSON.stringify(payload),
-					})) as { id: string; name: string; slug: string; currentVersionId: string };
+					const res = await client.api.blueprints.$post({ json: payload });
+					const result = await unwrapResponse(res);
+
+					if ('error' in result) {
+						console.error(chalk.red(`✗ Failed to push ${filePath}: ${result.error}`));
+						continue;
+					}
 
 					const url = `${config.server}/blueprints/${result.id}`;
 					console.log(chalk.green(`✓ Created: ${result.name} (${result.slug}) v1`));

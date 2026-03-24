@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { apiFetch } from '../lib/api.js';
+import { createApiClient, unwrapResponse } from '../lib/api.js';
 
 export function registerInfoCommand(program: Command) {
 	program
@@ -8,8 +8,14 @@ export function registerInfoCommand(program: Command) {
 		.description('Show full details of a blueprint')
 		.action(async (slug: string) => {
 			try {
-				// biome-ignore lint/suspicious/noExplicitAny: API response shape
-				const blueprint = (await apiFetch(`/blueprints/${slug}`)) as any;
+				const client = createApiClient();
+				const res = await client.api.blueprints[':id'].$get({ param: { id: slug } });
+				const blueprint = await unwrapResponse(res);
+
+				if ('error' in blueprint) {
+					console.error(chalk.red(`Error: ${blueprint.error}`));
+					process.exit(1);
+				}
 
 				console.log(chalk.bold.underline(blueprint.name));
 				console.log();

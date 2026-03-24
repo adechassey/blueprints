@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { apiFetch } from '../lib/api.js';
+import { createApiClient, unwrapResponse } from '../lib/api.js';
 import { clearToken, getConfig, saveToken } from '../lib/config.js';
 
 export function registerAuthCommands(program: Command) {
@@ -35,7 +35,9 @@ export function registerAuthCommands(program: Command) {
 				return;
 			}
 			try {
-				const user = (await apiFetch('/users/me')) as { name: string; email: string; role: string };
+				const client = createApiClient();
+				const res = await client.api.users.me.$get();
+				const user = await unwrapResponse(res);
 				console.log(chalk.green(`Logged in as ${user.name} (${user.email})`));
 				console.log(`  Role: ${user.role}`);
 				console.log(`  Server: ${config.server}`);

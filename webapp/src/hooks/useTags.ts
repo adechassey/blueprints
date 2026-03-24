@@ -1,16 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from '../lib/api.js';
-
-interface Tag {
-	id: string;
-	name: string;
-	slug: string;
-	count: number;
-}
+import { api, unwrapResponse } from '../lib/api.js';
 
 export function useTags() {
 	return useQuery({
 		queryKey: ['tags'],
-		queryFn: () => apiFetch<Tag[]>('/tags'),
+		queryFn: async () => {
+			const res = await api.api.tags.$get();
+			return unwrapResponse(res);
+		},
 	});
 }

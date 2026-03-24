@@ -1,26 +1,24 @@
+import type { CreateProjectInput } from '@blueprints/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '../lib/api.js';
-
-interface Project {
-	id: string;
-	name: string;
-	slug: string;
-	description: string | null;
-	createdBy: string;
-	createdAt: string;
-}
+import { api, unwrapResponse } from '../lib/api.js';
 
 export function useProjects() {
 	return useQuery({
 		queryKey: ['projects'],
-		queryFn: () => apiFetch<Project[]>('/projects'),
+		queryFn: async () => {
+			const res = await api.api.projects.$get();
+			return unwrapResponse(res);
+		},
 	});
 }
 
 export function useProject(slug: string) {
 	return useQuery({
 		queryKey: ['project', slug],
-		queryFn: () => apiFetch(`/projects/${slug}`),
+		queryFn: async () => {
+			const res = await api.api.projects[':slug'].$get({ param: { slug } });
+			return unwrapResponse(res);
+		},
 		enabled: !!slug,
 	});
 }
@@ -28,11 +26,10 @@ export function useProject(slug: string) {
 export function useCreateProject() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: (data: { name: string; slug: string; description?: string }) =>
-			apiFetch('/projects', {
-				method: 'POST',
-				body: JSON.stringify(data),
-			}),
+		mutationFn: async (data: CreateProjectInput) => {
+			const res = await api.api.projects.$post({ json: data });
+			return unwrapResponse(res);
+		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['projects'] });
 		},

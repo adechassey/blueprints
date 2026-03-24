@@ -1,13 +1,16 @@
 export {
 	type CreateBlueprintInput,
-	type CreateProjectInput,
 	createBlueprintSchema,
-	createProjectSchema,
 	type ListBlueprintsInput,
 	listBlueprintsSchema,
 	type Stack,
 	type UpdateBlueprintInput,
-	type UpdateProjectInput,
 	updateBlueprintSchema,
+} from './blueprint.js';
+
+export {
+	type CreateProjectInput,
+	createProjectSchema,
+	type UpdateProjectInput,
 	updateProjectSchema,
-} from './schemas/index.js';
+} from './project.js';

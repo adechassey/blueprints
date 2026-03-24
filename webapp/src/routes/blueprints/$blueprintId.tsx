@@ -6,7 +6,7 @@ import {
 	useBlueprintVersions,
 	useDeleteBlueprint,
 } from '../../hooks/useBlueprints.js';
-import { apiFetch } from '../../lib/api.js';
+import { api } from '../../lib/api.js';
 import { authClient } from '../../lib/auth-client.js';
 import * as m from '../../paraglide/messages.js';
 
@@ -16,16 +16,15 @@ export const Route = createFileRoute('/blueprints/$blueprintId')({
 
 function BlueprintDetailPage() {
 	const { blueprintId } = Route.useParams();
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: blueprint, isLoading } = useBlueprint(blueprintId) as any;
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: versions } = useBlueprintVersions(blueprintId) as any;
+	const { data: blueprint, isLoading } = useBlueprint(blueprintId);
+	const { data: versions } = useBlueprintVersions(blueprintId);
 	const { data: session } = authClient.useSession();
 	const deleteMutation = useDeleteBlueprint();
 	const navigate = useNavigate();
 
 	if (isLoading) return <p className="text-sm text-gray-500">{m.loading()}</p>;
-	if (!blueprint) return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
+	if (!blueprint || 'error' in blueprint)
+		return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
 
 	const isOwner = session?.user?.id === blueprint.authorId;
 	const isAdmin = session?.user?.role === 'admin';
@@ -40,7 +39,7 @@ function BlueprintDetailPage() {
 	const handleCopy = async () => {
 		if (blueprint.currentVersion?.content) {
 			await navigator.clipboard.writeText(blueprint.currentVersion.content);
-			apiFetch(`/blueprints/${blueprintId}/download`, { method: 'POST' }).catch(() => {});
+			api.api.blueprints[':id'].download.$post({ param: { id: blueprintId } }).catch(() => {});
 		}
 	};
 
@@ -105,12 +104,17 @@ function BlueprintDetailPage() {
 				</div>
 			)}
 
-			{versions && versions.length > 0 && (
+			{versions && !('error' in versions) && versions.length > 0 && (
 				<div>
 					<h2 className="mb-3 text-lg font-semibold">{m.blueprint_detail_versions()}</h2>
 					<div className="space-y-2">
 						{versions.map(
-							(v: { id: string; version: number; createdAt: string; changelog?: string }) => (
+							(v: {
+								id: string;
+								version: number;
+								createdAt: string;
+								changelog?: string | null;
+							}) => (
 								<div
 									key={v.id}
 									className="flex items-center gap-3 rounded border bg-white px-4 py-2 text-sm"

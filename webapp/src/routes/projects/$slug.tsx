@@ -9,11 +9,11 @@ export const Route = createFileRoute('/projects/$slug')({
 
 function ProjectDetailPage() {
 	const { slug } = Route.useParams();
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: project, isLoading } = useProject(slug) as { data: any; isLoading: boolean };
+	const { data: project, isLoading } = useProject(slug);
 
 	if (isLoading) return <p className="text-sm text-gray-500">{m.loading()}</p>;
-	if (!project) return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
+	if (!project || 'error' in project)
+		return <p className="text-sm text-gray-500">{m.empty_state()}</p>;
 
 	return (
 		<>

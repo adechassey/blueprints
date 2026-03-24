@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { apiFetch } from '../lib/api.js';
+import { createApiClient, unwrapResponse } from '../lib/api.js';
 
 export function registerListCommand(program: Command) {
 	program
@@ -20,24 +20,16 @@ export function registerListCommand(program: Command) {
 				author?: string;
 			}) => {
 				try {
-					const params = new URLSearchParams();
-					if (opts.stack) params.set('stack', opts.stack);
-					if (opts.layer) params.set('layer', opts.layer);
-					if (opts.tag) params.set('tag', opts.tag);
-					if (opts.project) params.set('projectId', opts.project);
-					if (opts.author) params.set('authorId', opts.author);
+					const client = createApiClient();
+					const queryParams: Record<string, string> = {};
+					if (opts.stack) queryParams.stack = opts.stack;
+					if (opts.layer) queryParams.layer = opts.layer;
+					if (opts.tag) queryParams.tag = opts.tag;
+					if (opts.project) queryParams.projectId = opts.project;
+					if (opts.author) queryParams.authorId = opts.author;
 
-					const query = params.toString();
-					const result = (await apiFetch(`/blueprints${query ? `?${query}` : ''}`)) as {
-						items: {
-							name: string;
-							slug: string;
-							stack: string;
-							layer: string;
-							downloadCount: number;
-						}[];
-						total: number;
-					};
+					const res = await client.api.blueprints.$get({ query: queryParams });
+					const result = await unwrapResponse(res);
 
 					if (result.items.length === 0) {
 						console.log(chalk.yellow('No blueprints found.'));

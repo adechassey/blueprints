@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from '../lib/api.js';
+import { api, unwrapResponse } from '../lib/api.js';
 
 interface SearchFilters {
 	stack?: string;
@@ -10,20 +10,18 @@ interface SearchFilters {
 }
 
 export function useSearch(query: string, filters: SearchFilters = {}) {
-	const params = new URLSearchParams();
-	params.set('q', query);
-	for (const [key, value] of Object.entries(filters)) {
-		if (value !== undefined && value !== '') {
-			params.set(key, String(value));
-		}
-	}
-
 	return useQuery({
 		queryKey: ['search', query, filters],
-		queryFn: () =>
-			apiFetch<{ items: unknown[]; total: number; query: string }>(
-				`/blueprints/search?${params.toString()}`,
-			),
+		queryFn: async () => {
+			const queryParams: Record<string, string> = { q: query };
+			for (const [key, value] of Object.entries(filters)) {
+				if (value !== undefined && value !== '') {
+					queryParams[key] = String(value);
+				}
+			}
+			const res = await api.api.blueprints.search.$get({ query: queryParams });
+			return unwrapResponse(res);
+		},
 		enabled: query.length > 0,
 	});
 }

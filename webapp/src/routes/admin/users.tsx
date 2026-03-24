@@ -10,8 +10,7 @@ export const Route = createFileRoute('/admin/users')({
 });
 
 function AdminUsersPage() {
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: users, isLoading } = useAdminUsers() as any;
+	const { data: users, isLoading } = useAdminUsers();
 	const changeRole = useChangeRole();
 	const { data: session } = authClient.useSession();
 	const [search, setSearch] = useState('');
@@ -26,7 +25,7 @@ function AdminUsersPage() {
 	};
 
 	const filtered = users?.filter(
-		(u: { name: string; email: string }) =>
+		(u) =>
 			u.name.toLowerCase().includes(search.toLowerCase()) ||
 			u.email.toLowerCase().includes(search.toLowerCase()),
 	);
@@ -47,43 +46,34 @@ function AdminUsersPage() {
 				<p className="text-sm text-gray-500">{m.loading()}</p>
 			) : filtered?.length ? (
 				<div className="space-y-2">
-					{filtered.map(
-						(user: {
-							id: string;
-							name: string;
-							email: string;
-							role: string;
-							createdAt: string;
-							blueprintCount: number;
-						}) => (
-							<div
-								key={user.id}
-								className="flex items-center justify-between rounded border bg-white p-4"
-							>
-								<div>
-									<p className="font-medium">{user.name}</p>
-									<p className="text-sm text-gray-500">{user.email}</p>
-									<p className="text-xs text-gray-400">
-										{m.profile_joined({
-											date: new Date(user.createdAt).toLocaleDateString(),
-										})}
-										{' · '}
-										{m.admin_user_blueprints({ count: user.blueprintCount ?? 0 })}
-									</p>
-								</div>
-								<select
-									value={user.role}
-									onChange={(e) => handleRoleChange(user.id, e.target.value)}
-									disabled={user.id === session?.user?.id}
-									className="rounded border px-3 py-1.5 text-sm disabled:opacity-50"
-								>
-									<option value="user">user</option>
-									<option value="maintainer">maintainer</option>
-									<option value="admin">admin</option>
-								</select>
+					{filtered.map((user) => (
+						<div
+							key={user.id}
+							className="flex items-center justify-between rounded border bg-white p-4"
+						>
+							<div>
+								<p className="font-medium">{user.name}</p>
+								<p className="text-sm text-gray-500">{user.email}</p>
+								<p className="text-xs text-gray-400">
+									{m.profile_joined({
+										date: new Date(user.createdAt).toLocaleDateString(),
+									})}
+									{' · '}
+									{m.admin_user_blueprints({ count: user.blueprintCount ?? 0 })}
+								</p>
 							</div>
-						),
-					)}
+							<select
+								value={user.role ?? 'user'}
+								onChange={(e) => handleRoleChange(user.id, e.target.value)}
+								disabled={user.id === session?.user?.id}
+								className="rounded border px-3 py-1.5 text-sm disabled:opacity-50"
+							>
+								<option value="user">user</option>
+								<option value="maintainer">maintainer</option>
+								<option value="admin">admin</option>
+							</select>
+						</div>
+					))}
 				</div>
 			) : (
 				<p className="text-sm text-gray-500">{m.empty_state()}</p>

@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { db } from '../db/index.js';
 import { semanticSearch } from '../services/search.js';
 
-export const searchRoutes = new Hono();
-
 const searchSchema = z.object({
 	q: z.string().min(1),
 	stack: z.enum(['server', 'webapp', 'shared', 'fullstack']).optional(),
@@ -16,8 +14,12 @@ const searchSchema = z.object({
 	offset: z.coerce.number().int().min(0).default(0),
 });
 
-searchRoutes.get('/blueprints/search', zValidator('query', searchSchema), async (c) => {
-	const { q, ...filters } = c.req.valid('query');
-	const result = await semanticSearch(db, q, filters);
-	return c.json(result);
-});
+export const searchRoutes = new Hono().get(
+	'/blueprints/search',
+	zValidator('query', searchSchema),
+	async (c) => {
+		const { q, ...filters } = c.req.valid('query');
+		const result = await semanticSearch(db, q, filters);
+		return c.json(result);
+	},
+);

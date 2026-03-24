@@ -7,8 +7,7 @@ export const Route = createFileRoute('/projects/')({
 });
 
 function ProjectsPage() {
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: projects, isLoading } = useProjects() as any;
+	const { data: projects, isLoading } = useProjects();
 
 	return (
 		<>

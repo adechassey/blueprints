@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import chalk from 'chalk';
 import type { Command } from 'commander';
-import { apiFetch } from '../lib/api.js';
+import { createApiClient, unwrapResponse } from '../lib/api.js';
 
 export function registerPullCommand(program: Command) {
 	program
@@ -12,24 +12,34 @@ export function registerPullCommand(program: Command) {
 		.option('--project <name>', 'Project scope')
 		.action(async (slug: string, opts: { output?: string; version?: string; project?: string }) => {
 			try {
-				const params = new URLSearchParams();
-				if (opts.project) params.set('project', opts.project);
-				const query = params.toString();
-				// biome-ignore lint/suspicious/noExplicitAny: API response shape
-				const blueprint = (await apiFetch(`/blueprints/${slug}${query ? `?${query}` : ''}`)) as any;
+				const client = createApiClient();
+				const res = await client.api.blueprints[':id'].$get({ param: { id: slug } });
+				const blueprint = await unwrapResponse(res);
+
+				if ('error' in blueprint) {
+					console.error(chalk.red(`Error: ${blueprint.error}`));
+					process.exit(1);
+				}
 
 				let content: string;
 				if (opts.version) {
-					const version = (await apiFetch(
-						`/blueprints/${blueprint.id}/versions/${opts.version}`,
-					)) as { content: string };
+					const versionRes = await client.api.blueprints[':id'].versions[':version'].$get({
+						param: { id: blueprint.id, version: opts.version },
+					});
+					const version = await unwrapResponse(versionRes);
+					if ('error' in version) {
+						console.error(chalk.red(`Error: ${version.error}`));
+						process.exit(1);
+					}
 					content = version.content;
 				} else {
 					content = blueprint.currentVersion?.content ?? '';
 				}
 
 				// Increment download count
-				apiFetch(`/blueprints/${blueprint.id}/download`, { method: 'POST' }).catch(() => {});
+				client.api.blueprints[':id'].download
+					.$post({ param: { id: blueprint.id } })
+					.catch(() => {});
 
 				if (opts.output) {
 					writeFileSync(opts.output, content);

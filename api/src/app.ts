@@ -1,4 +1,4 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
+import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { errorHandler } from './middleware/error-handler.js';
 import { adminRoutes } from './routes/admin.js';
@@ -13,25 +13,28 @@ import { searchRoutes } from './routes/search.js';
 import { tagRoutes } from './routes/tags.js';
 import { userRoutes } from './routes/users.js';
 
-export const app = new OpenAPIHono();
+const baseApp = new Hono();
 
-app.use(
+baseApp.use(
 	'*',
 	cors({
 		origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 		credentials: true,
 	}),
 );
-app.onError(errorHandler);
+baseApp.onError(errorHandler);
 
-app.route('/api', healthRoute);
-app.route('/api', authRoute);
-app.route('/api', blueprintRoutes);
-app.route('/api', tagRoutes);
-app.route('/api', projectRoutes);
-app.route('/api', searchRoutes);
-app.route('/api', embeddingsRoute);
-app.route('/api', commentRoutes);
-app.route('/api', userRoutes);
-app.route('/api', mcpRoute);
-app.route('/api', adminRoutes);
+export const app = baseApp
+	.route('/api', healthRoute)
+	.route('/api', authRoute)
+	.route('/api', blueprintRoutes)
+	.route('/api', tagRoutes)
+	.route('/api', projectRoutes)
+	.route('/api', searchRoutes)
+	.route('/api', embeddingsRoute)
+	.route('/api', commentRoutes)
+	.route('/api', userRoutes)
+	.route('/api', mcpRoute)
+	.route('/api', adminRoutes);
+
+export type AppType = typeof app;

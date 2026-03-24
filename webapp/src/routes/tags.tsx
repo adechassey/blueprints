@@ -7,8 +7,7 @@ export const Route = createFileRoute('/tags')({
 });
 
 function TagsPage() {
-	// biome-ignore lint/suspicious/noExplicitAny: API response shape
-	const { data: tags, isLoading } = useTags() as { data: any[] | undefined; isLoading: boolean };
+	const { data: tags, isLoading } = useTags();
 
 	return (
 		<>
