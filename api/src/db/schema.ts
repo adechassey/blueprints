@@ -176,3 +176,29 @@ export const comments = pgTable('comments', {
 		.defaultNow()
 		.$onUpdate(() => new Date()),
 });
+
+// Blueprint matches
+export const matchStatus = pgEnum('match_status', ['possible', 'confirmed', 'dismissed']);
+
+export const blueprintMatches = pgTable(
+	'blueprint_matches',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		blueprintId: uuid('blueprint_id')
+			.notNull()
+			.references(() => blueprints.id, { onDelete: 'cascade' }),
+		matchedBlueprintId: uuid('matched_blueprint_id')
+			.notNull()
+			.references(() => blueprints.id, { onDelete: 'cascade' }),
+		reason: text('reason').notNull(),
+		score: integer('score'),
+		status: matchStatus('status').notNull().default('possible'),
+		reviewedBy: text('reviewed_by').references(() => users.id),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true })
+			.notNull()
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+	},
+	(t) => [unique('blueprint_matches_pair').on(t.blueprintId, t.matchedBlueprintId)],
+);

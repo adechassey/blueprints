@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { CommentSection } from '../../components/CommentSection.js';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer.js';
+import { MatchSection } from '../../components/MatchSection.js';
 import {
 	useBlueprint,
 	useBlueprintVersions,
@@ -136,6 +137,8 @@ function BlueprintDetailPage() {
 					</div>
 				</div>
 			)}
+
+			<MatchSection blueprintId={blueprintId} />
 
 			<CommentSection blueprintId={blueprintId} />
 		</div>

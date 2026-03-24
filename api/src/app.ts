@@ -8,6 +8,7 @@ import { blueprintRoutes } from './routes/blueprints.js';
 import { commentRoutes } from './routes/comments.js';
 import { embeddingsRoute } from './routes/embeddings.js';
 import { healthRoute } from './routes/health.js';
+import { matchRoutes } from './routes/matches.js';
 import { mcpRoute } from './routes/mcp.js';
 import { projectRoutes } from './routes/projects.js';
 import { tagRoutes } from './routes/tags.js';
@@ -33,6 +34,7 @@ export const app = baseApp
 	.route('/api', embeddingsRoute)
 	.route('/api', commentRoutes)
 	.route('/api', userRoutes)
+	.route('/api', matchRoutes)
 	.route('/api', mcpRoute)
 	.route('/api', adminRoutes);
 
