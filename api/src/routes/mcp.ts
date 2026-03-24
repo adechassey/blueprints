@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { dispatchTool, mcpTools } from '../mcp/server.js';
+import { getUser, requireAuth } from '../middleware/auth.js';
 
 export const mcpRoute = new Hono()
 	.get('/mcp', (c) => {
@@ -6,19 +8,12 @@ export const mcpRoute = new Hono()
 			name: 'theodo-blueprints',
 			version: '0.0.0',
 			description: 'Theodo Blueprints MCP Server',
-			tools: [
-				'search_blueprints',
-				'get_blueprint',
-				'list_blueprints',
-				'list_projects',
-				'publish_blueprint',
-				'update_blueprint',
-				'download_blueprint',
-			],
+			tools: mcpTools.map((t) => t.name),
 			resources: ['blueprint://{id}', 'project://{slug}'],
 		});
 	})
-	.post('/mcp', async (c) => {
+	.post('/mcp', requireAuth, async (c) => {
+		const user = getUser(c);
 		const body = await c.req.json();
 
 		if (body.method === 'initialize') {
@@ -33,12 +28,37 @@ export const mcpRoute = new Hono()
 			});
 		}
 
-		return c.json(
-			{
+		if (body.method === 'tools/list') {
+			return c.json({
 				jsonrpc: '2.0',
 				id: body.id,
-				error: { code: -32601, message: 'Method not yet implemented via HTTP' },
-			},
-			200,
-		);
+				result: {
+					tools: mcpTools.map((t) => ({
+						name: t.name,
+						description: t.description,
+					})),
+				},
+			});
+		}
+
+		if (body.method === 'tools/call') {
+			const { name, arguments: args } = body.params;
+			try {
+				const result = await dispatchTool(name, args || {}, user.id);
+				return c.json({ jsonrpc: '2.0', id: body.id, result });
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : 'Unknown error';
+				return c.json({
+					jsonrpc: '2.0',
+					id: body.id,
+					error: { code: -32603, message: msg },
+				});
+			}
+		}
+
+		return c.json({
+			jsonrpc: '2.0',
+			id: body.id,
+			error: { code: -32601, message: `Method not supported: ${body.method}` },
+		});
 	});
