@@ -54,5 +54,20 @@
 	"search_button": "Search",
 	"search_clear": "Clear search",
 	"search_results_title": "Search results for \"{query}\"",
-	"search_no_results": "No blueprints found for \"{query}\""
+	"search_no_results": "No blueprints found for \"{query}\"",
+	"comments_title": "Comments",
+	"comments_empty": "No comments yet. Be the first to comment!",
+	"comment_placeholder": "Write a comment...",
+	"comment_submit": "Post",
+	"comment_reply": "Reply",
+	"comment_reply_placeholder": "Write a reply...",
+	"comment_edit": "Edit",
+	"comment_delete": "Delete",
+	"comment_anonymous": "Anonymous",
+	"blueprint_detail_copy": "Copy",
+	"profile_joined": "Joined {date}",
+	"profile_blueprints": "Published Blueprints",
+	"profile_no_blueprints": "No blueprints published yet",
+	"comment_show_replies": "Show {count} replies",
+	"comment_hide_replies": "Hide {count} replies"
 }

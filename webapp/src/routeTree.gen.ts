@@ -13,6 +13,7 @@ import { Route as TagsRouteImport } from './routes/tags'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as UsersUserIdRouteImport } from './routes/users/$userId'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as BlueprintsNewRouteImport } from './routes/blueprints/new'
 import { Route as BlueprintsBlueprintIdRouteImport } from './routes/blueprints/$blueprintId'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersUserIdRoute = UsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/projects/': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/projects': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/projects/': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
+    | '/users/$userId'
     | '/projects/'
     | '/blueprints/$blueprintId/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
+    | '/users/$userId'
     | '/projects'
     | '/blueprints/$blueprintId/edit'
   id:
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
+    | '/users/$userId'
     | '/projects/'
     | '/blueprints/$blueprintId/edit'
   fileRoutesById: FileRoutesById
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   BlueprintsBlueprintIdRoute: typeof BlueprintsBlueprintIdRouteWithChildren
   BlueprintsNewRoute: typeof BlueprintsNewRoute
   ProjectsSlugRoute: typeof ProjectsSlugRoute
+  UsersUserIdRoute: typeof UsersUserIdRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects/'
       preLoaderRoute: typeof ProjectsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/$userId': {
+      id: '/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof UsersUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/$slug': {
@@ -215,6 +235,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlueprintsBlueprintIdRoute: BlueprintsBlueprintIdRouteWithChildren,
   BlueprintsNewRoute: BlueprintsNewRoute,
   ProjectsSlugRoute: ProjectsSlugRoute,
+  UsersUserIdRoute: UsersUserIdRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
 }
 export const routeTree = rootRouteImport

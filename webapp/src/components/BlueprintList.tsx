@@ -10,6 +10,7 @@ interface Blueprint {
 	stack: string;
 	layer: string;
 	authorName?: string | null;
+	downloadCount?: number;
 	createdAt: string;
 }
 
@@ -44,6 +45,11 @@ function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 				</span>
 				{blueprint.authorName && (
 					<span className="text-xs text-gray-400">{blueprint.authorName}</span>
+				)}
+				{blueprint.downloadCount !== undefined && blueprint.downloadCount > 0 && (
+					<span className="text-xs text-gray-400">
+						{m.blueprint_detail_downloads({ count: blueprint.downloadCount })}
+					</span>
 				)}
 			</div>
 		</Link>

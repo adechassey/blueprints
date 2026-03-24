@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { CommentSection } from '../../components/CommentSection.js';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer.js';
 import {
 	useBlueprint,
 	useBlueprintVersions,
 	useDeleteBlueprint,
 } from '../../hooks/useBlueprints.js';
+import { apiFetch } from '../../lib/api.js';
 import { authClient } from '../../lib/auth-client.js';
 import * as m from '../../paraglide/messages.js';
 
@@ -35,6 +37,13 @@ function BlueprintDetailPage() {
 		navigate({ to: '/' });
 	};
 
+	const handleCopy = async () => {
+		if (blueprint.currentVersion?.content) {
+			await navigator.clipboard.writeText(blueprint.currentVersion.content);
+			apiFetch(`/blueprints/${blueprintId}/download`, { method: 'POST' }).catch(() => {});
+		}
+	};
+
 	return (
 		<div className="space-y-6">
 			<div className="flex items-start justify-between">
@@ -42,23 +51,32 @@ function BlueprintDetailPage() {
 					<h1 className="text-2xl font-bold text-gray-900">{blueprint.name}</h1>
 					{blueprint.description && <p className="mt-1 text-gray-600">{blueprint.description}</p>}
 				</div>
-				{canEdit && (
-					<div className="flex gap-2">
-						<a
-							href={`/blueprints/${blueprintId}/edit`}
-							className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 no-underline hover:bg-gray-200"
-						>
-							{m.blueprint_detail_edit()}
-						</a>
-						<button
-							type="button"
-							onClick={handleDelete}
-							className="rounded-md bg-red-100 px-3 py-1.5 text-sm text-red-700 hover:bg-red-200"
-						>
-							{m.blueprint_detail_delete()}
-						</button>
-					</div>
-				)}
+				<div className="flex gap-2">
+					<button
+						type="button"
+						onClick={handleCopy}
+						className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200"
+					>
+						{m.blueprint_detail_copy()}
+					</button>
+					{canEdit && (
+						<>
+							<a
+								href={`/blueprints/${blueprintId}/edit`}
+								className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 no-underline hover:bg-gray-200"
+							>
+								{m.blueprint_detail_edit()}
+							</a>
+							<button
+								type="button"
+								onClick={handleDelete}
+								className="rounded-md bg-red-100 px-3 py-1.5 text-sm text-red-700 hover:bg-red-200"
+							>
+								{m.blueprint_detail_delete()}
+							</button>
+						</>
+					)}
+				</div>
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2">
@@ -110,6 +128,8 @@ function BlueprintDetailPage() {
 					</div>
 				</div>
 			)}
+
+			<CommentSection blueprintId={blueprintId} />
 		</div>
 	);
 }

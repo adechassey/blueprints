@@ -1,6 +1,8 @@
 import { zValidator } from '@hono/zod-validator';
+import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
+import { blueprints as blueprintsTable } from '../db/schema.js';
 import {
 	createBlueprintSchema,
 	listBlueprintsSchema,
@@ -108,4 +110,17 @@ blueprintRoutes.get('/blueprints/:id/versions/:version', async (c) => {
 		return c.json({ error: 'Version not found' }, 404);
 	}
 	return c.json(ver);
+});
+
+// Increment download count (no auth required)
+blueprintRoutes.post('/blueprints/:id/download', async (c) => {
+	const id = c.req.param('id');
+	const [updated] = await db
+		.update(blueprintsTable)
+		.set({ downloadCount: sql`${blueprintsTable.downloadCount} + 1` })
+		.where(eq(blueprintsTable.id, id))
+		.returning({ downloadCount: blueprintsTable.downloadCount });
+
+	if (!updated) return c.json({ error: 'Blueprint not found' }, 404);
+	return c.json({ downloadCount: updated.downloadCount });
 });

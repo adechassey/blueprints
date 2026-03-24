@@ -3,11 +3,13 @@ import { cors } from 'hono/cors';
 import { errorHandler } from './middleware/error-handler.js';
 import { authRoute } from './routes/auth.js';
 import { blueprintRoutes } from './routes/blueprints.js';
+import { commentRoutes } from './routes/comments.js';
 import { embeddingsRoute } from './routes/embeddings.js';
 import { healthRoute } from './routes/health.js';
 import { projectRoutes } from './routes/projects.js';
 import { searchRoutes } from './routes/search.js';
 import { tagRoutes } from './routes/tags.js';
+import { userRoutes } from './routes/users.js';
 
 export const app = new OpenAPIHono();
 
@@ -27,3 +29,5 @@ app.route('/api', tagRoutes);
 app.route('/api', projectRoutes);
 app.route('/api', searchRoutes);
 app.route('/api', embeddingsRoute);
+app.route('/api', commentRoutes);
+app.route('/api', userRoutes);
