@@ -1,0 +1,44 @@
+{
+	"name": "api",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch --env-file=../.env src/index.ts",
+		"build": "tsc",
+		"check-types": "tsc --noEmit",
+		"test": "vitest run --coverage",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio",
+		"db:push": "drizzle-kit push",
+		"db:seed": "tsx --env-file=../.env scripts/seed.ts"
+	},
+	"exports": {
+		".": "./src/index.ts",
+		"./app": "./src/app.ts"
+	},
+	"dependencies": {
+		"@blueprints/shared": "workspace:*",
+		"@hono/node-server": "^1.19.11",
+		"@hono/zod-validator": "^0.7.6",
+		"@huggingface/transformers": "^3.8.1",
+		"better-auth": "^1.5.6",
+		"dotenv": "^17.3.1",
+		"drizzle-orm": "^0.45.1",
+		"hono": "^4.12.9",
+		"hono-rate-limiter": "^0.5.3",
+		"pgvector": "^0.2.1",
+		"pino": "^10.3.1",
+		"postgres": "^3.4.8",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/node": "^24.12.0",
+		"@vitest/coverage-v8": "^4.1.1",
+		"drizzle-kit": "^0.31.10",
+		"tsx": "^4.21.0",
+		"typescript": "~5.9.3",
+		"vitest": "^4.1.1"
+	}
+}

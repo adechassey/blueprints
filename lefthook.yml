@@ -1,0 +1,11 @@
+pre-commit:
+  parallel: true
+  commands:
+    check:
+      run: pnpm check
+    check-types:
+      run: pnpm check-types
+    test:
+      run: pnpm test
+    knip:
+      run: pnpm knip

@@ -1,60 +1,89 @@
-import type { Blueprint } from '../blueprints'
-import { layers } from '../blueprints'
+import { Link } from '@tanstack/react-router';
+import { Blocks } from 'lucide-react';
+import { cn } from '../lib/utils.js';
+import * as m from '../paraglide/messages.js';
+import { Badge } from './ui/badge.js';
 
-const stackColors: Record<string, string> = {
-  webapp: 'bg-blue-100 text-blue-700',
-  server: 'bg-green-100 text-green-700',
-  shared: 'bg-amber-100 text-amber-700',
+interface Blueprint {
+	id: string;
+	name: string;
+	slug: string;
+	description?: string | null;
+	usage?: string | null;
+	stack: string;
+	layer: string;
+	authorName?: string | null;
+	authorImage?: string | null;
+	downloadCount?: number;
+	projectName?: string | null;
+	score?: number | null;
+	createdAt: string;
 }
 
+const stackVariant: Record<string, 'webapp' | 'server' | 'shared' | 'fullstack'> = {
+	webapp: 'webapp',
+	server: 'server',
+	shared: 'shared',
+	fullstack: 'fullstack',
+};
+
 function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 hover:shadow-sm transition-shadow">
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="font-medium text-gray-900 text-sm">{blueprint.name}</h3>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${stackColors[blueprint.stack] ?? 'bg-gray-100 text-gray-600'}`}
-        >
-          {blueprint.stack}
-        </span>
-      </div>
-      <p className="mt-1 text-xs text-gray-500">{blueprint.usage}</p>
-      <div className="mt-2 flex items-center gap-2">
-        <span className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-500">
-          {blueprint.layer}
-        </span>
-        <span className="font-mono text-xs text-gray-400">{blueprint.id}</span>
-      </div>
-    </div>
-  )
+	return (
+		<Link
+			to="/blueprints/$blueprintId"
+			params={{ blueprintId: blueprint.id }}
+			className="group flex flex-col bg-surface-container-lowest p-6 rounded-xl hover:bg-surface-bright transition-all duration-300 hover:-translate-y-1 shadow-rest hover:shadow-hover no-underline"
+		>
+			<div className="flex justify-between items-start mb-4">
+				<div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+					<Blocks className="h-5 w-5" />
+				</div>
+				{blueprint.score != null && (
+					<Badge variant="tertiary">{Math.round(blueprint.score * 100)}% Match</Badge>
+				)}
+			</div>
+			<h3 className="text-lg font-bold font-headline mb-2 text-on-surface group-hover:text-primary transition-colors">
+				{blueprint.name}
+			</h3>
+			{blueprint.description && (
+				<p className="text-sm text-on-surface-variant leading-relaxed mb-4 line-clamp-2">
+					{blueprint.description}
+				</p>
+			)}
+			<div className="flex flex-wrap items-center gap-2">
+				<Badge variant={stackVariant[blueprint.stack] ?? 'default'}>{blueprint.stack}</Badge>
+				<Badge variant="default">{blueprint.layer}</Badge>
+				{blueprint.projectName && (
+					<Badge variant="tertiary" className={cn('normal-case tracking-normal font-medium')}>
+						{blueprint.projectName}
+					</Badge>
+				)}
+			</div>
+			{blueprint.authorName && (
+				<div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-auto pt-4">
+					{blueprint.authorImage ? (
+						<img src={blueprint.authorImage} alt="" className="h-5 w-5 rounded-full" />
+					) : null}
+					{blueprint.authorName}
+				</div>
+			)}
+		</Link>
+	);
+}
+
+function blueprintCountLabel(count: number): string {
+	return count === 1 ? m.blueprint_count_one({ count }) : m.blueprint_count_other({ count });
 }
 
 export function BlueprintList({ blueprints }: { blueprints: Blueprint[] }) {
-  const grouped = layers
-    .map((layer) => ({
-      layer,
-      items: blueprints.filter((b) => b.layer === layer),
-    }))
-    .filter((g) => g.items.length > 0)
-
-  return (
-    <div className="space-y-8">
-      <p className="text-sm text-gray-500">
-        {blueprints.length} blueprint{blueprints.length !== 1 ? 's' : ''}
-      </p>
-      {grouped.map((group) => (
-        <section key={group.layer}>
-          <h2 className="mb-3 text-lg font-semibold capitalize text-gray-800">
-            {group.layer}
-            <span className="ml-2 text-sm font-normal text-gray-400">{group.items.length}</span>
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {group.items.map((b) => (
-              <BlueprintCard key={b.id} blueprint={b} />
-            ))}
-          </div>
-        </section>
-      ))}
-    </div>
-  )
+	return (
+		<div className="space-y-6">
+			<p className="text-sm text-on-surface-variant">{blueprintCountLabel(blueprints.length)}</p>
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+				{blueprints.map((b) => (
+					<BlueprintCard key={b.id} blueprint={b} />
+				))}
+			</div>
+		</div>
+	);
 }

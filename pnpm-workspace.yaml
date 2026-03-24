@@ -1,5 +1,8 @@
 packages:
   - webapp
+  - api
+  - cli
+  - packages/*
 
 ignoredBuiltDependencies:
   - esbuild
