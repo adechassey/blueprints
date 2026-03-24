@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router';
 import { LogOut } from 'lucide-react';
 import { authClient } from '../lib/auth-client.js';
 import * as m from '../paraglide/messages.js';
@@ -7,6 +8,7 @@ import { Button } from './ui/button.js';
 
 export function AuthButton() {
 	const { data: session, isPending } = authClient.useSession();
+	const navigate = useNavigate();
 
 	if (isPending) return null;
 
@@ -32,12 +34,7 @@ export function AuthButton() {
 	}
 
 	return (
-		<Button
-			variant="secondary"
-			onClick={() =>
-				authClient.signIn.social({ provider: 'google', callbackURL: window.location.origin })
-			}
-		>
+		<Button variant="secondary" onClick={() => navigate({ to: '/login', search: {} })}>
 			<GoogleIcon />
 			{m.auth_sign_in_google()}
 		</Button>

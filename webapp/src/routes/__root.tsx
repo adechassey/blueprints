@@ -42,7 +42,7 @@ function RootLayout() {
 	}
 
 	if (!session?.user && !isLoginPage) {
-		return <Navigate to="/login" />;
+		return <Navigate to="/login" search={{}} />;
 	}
 
 	return (
