@@ -10,7 +10,7 @@
 		"verbatimModuleSyntax": true,
 		"moduleDetection": "force",
 		"esModuleInterop": true,
-		"lib": ["ES2023"]
+		"lib": ["ES2023", "DOM"]
 	},
 	"include": ["src"]
 }
