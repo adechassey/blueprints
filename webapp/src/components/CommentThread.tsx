@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router';
+import { ChevronDown, ChevronUp, MessageSquare, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { authClient } from '../lib/auth-client.js';
 import * as m from '../paraglide/messages.js';
 import { CommentForm } from './CommentForm.js';
+import { Avatar } from './ui/avatar.js';
+import { Button } from './ui/button.js';
 
 interface Comment {
 	id: string;
@@ -34,71 +37,77 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 	const canDelete = isOwner || isAdmin;
 
 	return (
-		<div className="space-y-2">
-			<div className="rounded-md border bg-white p-3">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						{comment.authorImage && (
-							<img src={comment.authorImage} alt="" className="h-6 w-6 rounded-full" />
+		<div className="space-y-3">
+			<div className="flex gap-4 items-start">
+				<Avatar
+					src={comment.authorImage}
+					fallback={comment.authorName ?? '?'}
+					size="lg"
+					className="shrink-0"
+				/>
+				<div className="flex-1 space-y-2">
+					<div className="bg-surface-container-low p-4 rounded-xl rounded-tl-none">
+						{isEditing ? (
+							<CommentForm
+								initialContent={comment.content}
+								onSubmit={(content) => {
+									onEdit(comment.id, content);
+									setIsEditing(false);
+								}}
+							/>
+						) : (
+							<p className="text-sm leading-relaxed text-on-surface">{comment.content}</p>
 						)}
+					</div>
+					<div className="flex items-center gap-3 ml-1">
 						<Link
 							to="/users/$userId"
 							params={{ userId: comment.authorId }}
-							className="text-sm font-medium text-gray-900 no-underline hover:underline"
+							className="text-xs font-medium text-on-surface-variant no-underline hover:text-primary"
 						>
 							{comment.authorName || m.comment_anonymous()}
 						</Link>
-						<span className="text-xs text-gray-400">
+						<span className="text-[10px] text-outline">
 							{new Date(comment.createdAt).toLocaleDateString()}
 						</span>
-					</div>
-					<div className="flex gap-2">
-						{session?.user && (
-							<button
-								type="button"
-								onClick={() => setShowReplyForm(!showReplyForm)}
-								className="text-xs text-blue-600 hover:underline"
-							>
-								{m.comment_reply()}
-							</button>
-						)}
-						{canModify && (
-							<button
-								type="button"
-								onClick={() => setIsEditing(!isEditing)}
-								className="text-xs text-gray-500 hover:underline"
-							>
-								{m.comment_edit()}
-							</button>
-						)}
-						{canDelete && (
-							<button
-								type="button"
-								onClick={() => onDelete(comment.id)}
-								className="text-xs text-red-500 hover:underline"
-							>
-								{m.comment_delete()}
-							</button>
-						)}
+						<div className="flex gap-1 ml-auto">
+							{session?.user && (
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-7 w-7"
+									onClick={() => setShowReplyForm(!showReplyForm)}
+								>
+									<MessageSquare className="h-3.5 w-3.5" />
+								</Button>
+							)}
+							{canModify && (
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-7 w-7"
+									onClick={() => setIsEditing(!isEditing)}
+								>
+									<Pencil className="h-3.5 w-3.5" />
+								</Button>
+							)}
+							{canDelete && (
+								<Button
+									variant="ghost"
+									size="icon"
+									className="h-7 w-7 text-error hover:text-error"
+									onClick={() => onDelete(comment.id)}
+								>
+									<Trash2 className="h-3.5 w-3.5" />
+								</Button>
+							)}
+						</div>
 					</div>
 				</div>
-				{isEditing ? (
-					<div className="mt-2">
-						<CommentForm
-							initialContent={comment.content}
-							onSubmit={(content) => {
-								onEdit(comment.id, content);
-								setIsEditing(false);
-							}}
-						/>
-					</div>
-				) : (
-					<p className="mt-1 text-sm text-gray-700">{comment.content}</p>
-				)}
 			</div>
 
 			{showReplyForm && (
-				<div className="ml-6">
+				<div className="ml-14">
 					<CommentForm
 						placeholder={m.comment_reply_placeholder()}
 						onSubmit={(content) => {
@@ -110,57 +119,70 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 			)}
 
 			{hasReplies && (
-				<div className="ml-6 space-y-2">
+				<div className="ml-14 space-y-3">
 					<button
 						type="button"
 						onClick={() => setCollapsed(!collapsed)}
-						className="text-xs text-blue-600 hover:underline"
+						className="flex items-center gap-1 text-xs text-primary font-medium hover:underline"
 					>
+						{collapsed ? (
+							<ChevronDown className="h-3.5 w-3.5" />
+						) : (
+							<ChevronUp className="h-3.5 w-3.5" />
+						)}
 						{collapsed
-							? m.comment_show_replies({ count: comment.replies?.length })
-							: m.comment_hide_replies({ count: comment.replies?.length })}
+							? m.comment_show_replies({ count: comment.replies?.length ?? 0 })
+							: m.comment_hide_replies({ count: comment.replies?.length ?? 0 })}
 					</button>
 					{!collapsed &&
 						comment.replies?.map((reply) => (
-							<div key={reply.id} className="rounded-md border bg-gray-50 p-3">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										{reply.authorImage && (
-											<img src={reply.authorImage} alt="" className="h-5 w-5 rounded-full" />
-										)}
+							<div key={reply.id} className="flex gap-3 items-start">
+								<Avatar
+									src={reply.authorImage}
+									fallback={reply.authorName ?? '?'}
+									size="md"
+									className="shrink-0"
+								/>
+								<div className="flex-1 space-y-1">
+									<div className="bg-surface-container-low p-3 rounded-xl rounded-tl-none">
+										<p className="text-sm leading-relaxed text-on-surface">{reply.content}</p>
+									</div>
+									<div className="flex items-center gap-3 ml-1">
 										<Link
 											to="/users/$userId"
 											params={{ userId: reply.authorId }}
-											className="text-sm font-medium text-gray-900 no-underline hover:underline"
+											className="text-xs font-medium text-on-surface-variant no-underline hover:text-primary"
 										>
 											{reply.authorName || m.comment_anonymous()}
 										</Link>
-										<span className="text-xs text-gray-400">
+										<span className="text-[10px] text-outline">
 											{new Date(reply.createdAt).toLocaleDateString()}
 										</span>
-									</div>
-									<div className="flex gap-2">
-										{session?.user?.id === reply.authorId && (
-											<button
-												type="button"
-												onClick={() => onEdit(reply.id, reply.content)}
-												className="text-xs text-gray-500 hover:underline"
-											>
-												{m.comment_edit()}
-											</button>
-										)}
-										{(session?.user?.id === reply.authorId || session?.user?.role === 'admin') && (
-											<button
-												type="button"
-												onClick={() => onDelete(reply.id)}
-												className="text-xs text-red-500 hover:underline"
-											>
-												{m.comment_delete()}
-											</button>
-										)}
+										<div className="flex gap-1 ml-auto">
+											{session?.user?.id === reply.authorId && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-6 w-6"
+													onClick={() => onEdit(reply.id, reply.content)}
+												>
+													<Pencil className="h-3 w-3" />
+												</Button>
+											)}
+											{(session?.user?.id === reply.authorId ||
+												session?.user?.role === 'admin') && (
+												<Button
+													variant="ghost"
+													size="icon"
+													className="h-6 w-6 text-error hover:text-error"
+													onClick={() => onDelete(reply.id)}
+												>
+													<Trash2 className="h-3 w-3" />
+												</Button>
+											)}
+										</div>
 									</div>
 								</div>
-								<p className="mt-1 text-sm text-gray-700">{reply.content}</p>
 							</div>
 						))}
 				</div>

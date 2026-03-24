@@ -3,16 +3,16 @@ import { hc } from 'hono/client';
 import { API_URL } from './config.js';
 
 export const api = hc<AppType>(API_URL, {
-	fetch: (input, init) => fetch(input, { ...init, credentials: 'include' }),
+	fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+		fetch(input, { ...init, credentials: 'include' }),
 });
 
 export class ApiError extends Error {
-	constructor(
-		public status: number,
-		message: string,
-	) {
+	status: number;
+	constructor(status: number, message: string) {
 		super(message);
 		this.name = 'ApiError';
+		this.status = status;
 	}
 }
 

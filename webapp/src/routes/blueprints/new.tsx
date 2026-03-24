@@ -13,14 +13,18 @@ function NewBlueprintPage() {
 	const navigate = useNavigate();
 
 	const handleSubmit = async (data: BlueprintFormData) => {
-		await createMutation.mutateAsync(data);
+		await createMutation.mutateAsync({ ...data, isPublic: true });
 		navigate({ to: '/' });
 	};
 
 	return (
 		<ProtectedRoute>
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">{m.blueprint_create_title()}</h1>
-			<BlueprintForm onSubmit={handleSubmit} isSubmitting={createMutation.isPending} />
+			<div className="max-w-[1000px] mx-auto">
+				<h1 className="mb-8 text-4xl font-black font-headline tracking-tight text-on-surface">
+					{m.blueprint_create_title()}
+				</h1>
+				<BlueprintForm onSubmit={handleSubmit} isSubmitting={createMutation.isPending} />
+			</div>
 		</ProtectedRoute>
 	);
 }

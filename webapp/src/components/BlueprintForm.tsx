@@ -1,8 +1,13 @@
 import type { CreateBlueprintInput, Stack } from '@blueprints/shared';
 import { useState } from 'react';
+import { useProjects } from '../hooks/useProjects.js';
 import type { BlueprintFrontmatter } from '../lib/frontmatter.core.js';
 import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
+import { Button } from './ui/button.js';
+import { Input } from './ui/input.js';
+import { Select } from './ui/select.js';
+import { Textarea } from './ui/textarea.js';
 
 export interface BlueprintFormData extends Omit<CreateBlueprintInput, 'isPublic'> {
 	changelog?: string;
@@ -38,8 +43,10 @@ export function BlueprintForm({
 	const [stack, setStack] = useState<Stack>((initialValues.stack as Stack) || 'server');
 	const [layer, setLayer] = useState(initialValues.layer || '');
 	const [tagsInput, setTagsInput] = useState((initialValues.tags || []).join(', '));
+	const [projectId, setProjectId] = useState(initialValues.projectId || '');
 	const [content, setContent] = useState(initialValues.content || '');
 	const [changelog, setChangelog] = useState('');
+	const { data: projects } = useProjects();
 
 	const handleParsed = (meta: BlueprintFrontmatter, parsedContent: string) => {
 		if (meta.name) setName(meta.name);
@@ -63,6 +70,7 @@ export function BlueprintForm({
 			usage: usage || undefined,
 			stack,
 			layer,
+			projectId: projectId || undefined,
 			tags,
 			content,
 		};
@@ -73,124 +81,126 @@ export function BlueprintForm({
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="space-y-4">
+		<form onSubmit={handleSubmit} className="space-y-6 max-w-[800px]">
 			<DropZone onParsed={handleParsed} />
 
-			<div>
-				<label className="block text-sm font-medium text-gray-700">
+			<div className="space-y-2">
+				<label htmlFor="bp-name" className="block text-sm font-semibold text-on-surface">
 					{m.form_name()}
-					<input
-						type="text"
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						required
-						className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-					/>
 				</label>
+				<Input
+					id="bp-name"
+					type="text"
+					value={name}
+					onChange={(e) => setName(e.target.value)}
+					required
+				/>
 			</div>
 
-			<div>
-				<label className="block text-sm font-medium text-gray-700">
+			<div className="space-y-2">
+				<label htmlFor="bp-description" className="block text-sm font-semibold text-on-surface">
 					{m.form_description()}
-					<textarea
-						value={description}
-						onChange={(e) => setDescription(e.target.value)}
-						rows={2}
-						className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-					/>
 				</label>
+				<Textarea
+					id="bp-description"
+					value={description}
+					onChange={(e) => setDescription(e.target.value)}
+					rows={2}
+				/>
 			</div>
 
-			<div>
-				<label className="block text-sm font-medium text-gray-700">
+			<div className="space-y-2">
+				<label htmlFor="bp-usage" className="block text-sm font-semibold text-on-surface">
 					{m.form_usage()}
-					<textarea
-						value={usage}
-						onChange={(e) => setUsage(e.target.value)}
-						rows={2}
-						className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-					/>
 				</label>
+				<Textarea id="bp-usage" value={usage} onChange={(e) => setUsage(e.target.value)} rows={2} />
+			</div>
+
+			<div className="space-y-2">
+				<label htmlFor="bp-project" className="block text-sm font-semibold text-on-surface">
+					{m.form_project()}
+				</label>
+				<Select id="bp-project" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+					<option value="">{m.form_project_none()}</option>
+					{projects?.map((p: { id: string; name: string }) => (
+						<option key={p.id} value={p.id}>
+							{p.name}
+						</option>
+					))}
+				</Select>
 			</div>
 
 			<div className="grid grid-cols-2 gap-4">
-				<div>
-					<label className="block text-sm font-medium text-gray-700">
+				<div className="space-y-2">
+					<label htmlFor="bp-stack" className="block text-sm font-semibold text-on-surface">
 						{m.form_stack()}
-						<select
-							value={stack}
-							onChange={(e) => setStack(e.target.value as Stack)}
-							className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-						>
-							{STACKS.map((s) => (
-								<option key={s} value={s}>
-									{s}
-								</option>
-							))}
-						</select>
 					</label>
+					<Select id="bp-stack" value={stack} onChange={(e) => setStack(e.target.value as Stack)}>
+						{STACKS.map((s) => (
+							<option key={s} value={s}>
+								{s}
+							</option>
+						))}
+					</Select>
 				</div>
-				<div>
-					<label className="block text-sm font-medium text-gray-700">
+				<div className="space-y-2">
+					<label htmlFor="bp-layer" className="block text-sm font-semibold text-on-surface">
 						{m.form_layer()}
-						<input
-							type="text"
-							value={layer}
-							onChange={(e) => setLayer(e.target.value)}
-							required
-							className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-						/>
 					</label>
+					<Input
+						id="bp-layer"
+						type="text"
+						value={layer}
+						onChange={(e) => setLayer(e.target.value)}
+						required
+					/>
 				</div>
 			</div>
 
-			<div>
-				<label className="block text-sm font-medium text-gray-700">
+			<div className="space-y-2">
+				<label htmlFor="bp-tags" className="block text-sm font-semibold text-on-surface">
 					{m.form_tags()}
-					<input
-						type="text"
-						value={tagsInput}
-						onChange={(e) => setTagsInput(e.target.value)}
-						placeholder={m.form_tags_placeholder()}
-						className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-					/>
 				</label>
+				<Input
+					id="bp-tags"
+					type="text"
+					value={tagsInput}
+					onChange={(e) => setTagsInput(e.target.value)}
+					placeholder={m.form_tags_placeholder()}
+				/>
 			</div>
 
-			<div>
-				<label className="block text-sm font-medium text-gray-700">
+			<div className="space-y-2">
+				<label htmlFor="bp-content" className="block text-sm font-semibold text-on-surface">
 					{m.form_content()}
-					<textarea
-						value={content}
-						onChange={(e) => setContent(e.target.value)}
-						required
-						rows={12}
-						className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm"
-					/>
 				</label>
+				<Textarea
+					id="bp-content"
+					value={content}
+					onChange={(e) => setContent(e.target.value)}
+					required
+					rows={12}
+					className="font-mono"
+				/>
 			</div>
 
 			{showChangelog && (
-				<div>
-					<label className="block text-sm font-medium text-gray-700">
+				<div className="space-y-2">
+					<label htmlFor="bp-changelog" className="block text-sm font-semibold text-on-surface">
 						{m.form_changelog()}
-						<textarea
-							value={changelog}
-							onChange={(e) => setChangelog(e.target.value)}
-							rows={2}
-							className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-						/>
 					</label>
+					<Textarea
+						id="bp-changelog"
+						value={changelog}
+						onChange={(e) => setChangelog(e.target.value)}
+						rows={2}
+					/>
 				</div>
 			)}
 
-			<button
-				type="submit"
-				disabled={isSubmitting}
-				className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-			>
+			<Button type="submit" variant="primary" size="lg" disabled={isSubmitting}>
 				{isSubmitting ? m.form_submitting() : m.form_submit()}
-			</button>
+			</Button>
 		</form>
 	);
 }

@@ -1,10 +1,28 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, Link, Navigate, Outlet, useLocation } from '@tanstack/react-router';
+import { Moon, Plus, Sun } from 'lucide-react';
 import { AuthButton } from '../components/AuthButton.js';
+import { Button } from '../components/ui/button.js';
+import { Skeleton } from '../components/ui/skeleton.js';
 import { authClient } from '../lib/auth-client.js';
+import { ThemeProvider, useTheme } from '../lib/theme.js';
+import { cn } from '../lib/utils.js';
 import * as m from '../paraglide/messages.js';
 
 const queryClient = new QueryClient();
+
+function ThemeToggle() {
+	const { theme, toggleTheme } = useTheme();
+	return (
+		<Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+			{theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+		</Button>
+	);
+}
+
+const navLinkClass =
+	'font-headline font-bold tracking-tight text-on-surface-variant no-underline hover:text-primary transition-colors pb-1 border-b-2 border-transparent';
+const navLinkActiveClass = '[&.active]:text-primary [&.active]:border-primary';
 
 function RootLayout() {
 	const { data: session, isPending } = authClient.useSession();
@@ -14,8 +32,11 @@ function RootLayout() {
 
 	if (isPending) {
 		return (
-			<div className="flex min-h-screen items-center justify-center bg-gray-50">
-				<p className="text-sm text-gray-500">{m.loading()}</p>
+			<div className="flex min-h-screen items-center justify-center bg-surface">
+				<div className="space-y-4 text-center">
+					<Skeleton className="h-8 w-48 mx-auto" />
+					<Skeleton className="h-4 w-32 mx-auto" />
+				</div>
 			</div>
 		);
 	}
@@ -25,67 +46,68 @@ function RootLayout() {
 	}
 
 	return (
-		<QueryClientProvider client={queryClient}>
-			<div className="min-h-screen bg-gray-50 text-gray-900">
-				{!isLoginPage && (
-					<header className="border-b border-gray-200 bg-white">
-						<div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-							<div className="flex items-center gap-6">
+		<div className="min-h-screen bg-surface text-on-surface">
+			{!isLoginPage && (
+				<header className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md shadow-rest">
+					<div className="flex justify-between items-center w-full px-8 py-4 max-w-[1440px] mx-auto">
+						<div className="flex items-center gap-8">
+							<Link
+								to="/"
+								className="text-2xl font-black text-primary tracking-tighter font-headline no-underline"
+							>
+								{m.app_title()}
+							</Link>
+							<nav className="hidden md:flex gap-6 items-center">
 								<Link
 									to="/"
-									className="text-xl font-bold tracking-tight text-gray-900 no-underline"
+									className={cn(navLinkClass, navLinkActiveClass)}
+									activeOptions={{ exact: true }}
 								>
-									{m.app_title()}
+									{m.nav_all()}
 								</Link>
-								<nav className="flex gap-4 text-sm">
-									<Link
-										to="/"
-										className="text-gray-500 no-underline hover:text-gray-900 [&.active]:font-medium [&.active]:text-gray-900"
-									>
-										{m.nav_all()}
-									</Link>
-									<Link
-										to="/projects"
-										className="text-gray-500 no-underline hover:text-gray-900 [&.active]:font-medium [&.active]:text-gray-900"
-									>
-										{m.nav_projects()}
-									</Link>
-									<Link
-										to="/tags"
-										className="text-gray-500 no-underline hover:text-gray-900 [&.active]:font-medium [&.active]:text-gray-900"
-									>
-										{m.nav_tags()}
-									</Link>
-									{isAdmin && (
-										<Link
-											to="/admin"
-											className="text-gray-500 no-underline hover:text-gray-900 [&.active]:font-medium [&.active]:text-gray-900"
-										>
-											{m.nav_admin()}
-										</Link>
-									)}
-								</nav>
-							</div>
-							<div className="flex items-center gap-4">
-								<Link
-									to="/blueprints/new"
-									className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white no-underline hover:bg-blue-700"
-								>
-									{m.nav_new_blueprint()}
+								<Link to="/projects" className={cn(navLinkClass, navLinkActiveClass)}>
+									{m.nav_projects()}
 								</Link>
-								<AuthButton />
-							</div>
+								<Link to="/tags" className={cn(navLinkClass, navLinkActiveClass)}>
+									{m.nav_tags()}
+								</Link>
+								{isAdmin && (
+									<Link to="/admin" className={cn(navLinkClass, navLinkActiveClass)}>
+										{m.nav_admin()}
+									</Link>
+								)}
+							</nav>
 						</div>
-					</header>
-				)}
-				<main className={isLoginPage ? '' : 'mx-auto max-w-5xl px-6 py-8'}>
-					<Outlet />
-				</main>
-			</div>
-		</QueryClientProvider>
+						<div className="flex items-center gap-3">
+							<Link to="/blueprints/new" className="no-underline">
+								<Button variant="primary" size="sm">
+									<Plus className="h-4 w-4" />
+									{m.nav_new_blueprint()}
+								</Button>
+							</Link>
+							<ThemeToggle />
+							<AuthButton />
+						</div>
+					</div>
+				</header>
+			)}
+			<main className={isLoginPage ? '' : 'pt-24 pb-20 px-8 max-w-[1440px] mx-auto'}>
+				<Outlet />
+			</main>
+		</div>
+	);
+}
+
+function RootWithProviders() {
+	return (
+		<ThemeProvider>
+			<QueryClientProvider client={queryClient}>
+				<RootLayout />
+			</QueryClientProvider>
+		</ThemeProvider>
 	);
 }
 
 export const Route = createRootRoute({
-	component: RootLayout,
+	component: RootWithProviders,
 });

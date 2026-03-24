@@ -1,2 +1,202 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── Light Mode Tokens (Stitch / Material Design 3) ── */
+:root {
+	--primary: #0053de;
+	--primary-container: #0f62fe;
+	--primary-dim: #0048c4;
+	--on-primary: #faf8ff;
+	--on-primary-container: #ffffff;
+
+	--secondary: #5f5f5f;
+	--secondary-container: #e4e2e2;
+	--secondary-dim: #535353;
+	--on-secondary: #fbf8f8;
+	--on-secondary-container: #525252;
+
+	--tertiary: #6d567f;
+	--tertiary-container: #e1c4f4;
+	--tertiary-dim: #604a72;
+	--on-tertiary: #fff6fe;
+	--on-tertiary-container: #523d63;
+
+	--error: #a83836;
+	--error-container: #fa746f;
+	--error-dim: #67040d;
+	--on-error: #fff7f6;
+	--on-error-container: #6e0a12;
+
+	--surface: #f9f9f9;
+	--surface-dim: #d7dbdb;
+	--surface-bright: #f9f9f9;
+	--surface-container-lowest: #ffffff;
+	--surface-container-low: #f2f4f4;
+	--surface-container: #eceeee;
+	--surface-container-high: #e6e9e9;
+	--surface-container-highest: #dfe3e4;
+	--surface-variant: #dfe3e4;
+	--surface-tint: #0053de;
+
+	--on-surface: #2f3334;
+	--on-surface-variant: #5b6061;
+	--on-background: #2f3334;
+	--background: #f9f9f9;
+
+	--outline: #777b7c;
+	--outline-variant: #afb3b3;
+
+	--inverse-surface: #0c0f0f;
+	--inverse-on-surface: #9c9d9d;
+	--inverse-primary: #628aff;
+
+	--shadow-rest: 0 20px 40px rgba(12, 15, 15, 0.02);
+	--shadow-hover: 0 20px 40px rgba(12, 15, 15, 0.06);
+}
+
+/* ── Dark Mode Tokens ── */
+.dark {
+	--primary: #628aff;
+	--primary-container: #3d6bdf;
+	--primary-dim: #4a78f0;
+	--on-primary: #0c0f0f;
+	--on-primary-container: #ffffff;
+
+	--secondary: #c4c4c4;
+	--secondary-container: #3a3a3a;
+	--secondary-dim: #a0a0a0;
+	--on-secondary: #1a1a1a;
+	--on-secondary-container: #e4e2e2;
+
+	--tertiary: #d2b7e5;
+	--tertiary-container: #4a3558;
+	--tertiary-dim: #b89dcf;
+	--on-tertiary: #1a1a1a;
+	--on-tertiary-container: #e1c4f4;
+
+	--error: #fa746f;
+	--error-container: #5c1a18;
+	--error-dim: #e05550;
+	--on-error: #1a0505;
+	--on-error-container: #fa746f;
+
+	--surface: #111415;
+	--surface-dim: #0c0f0f;
+	--surface-bright: #1a1d1e;
+	--surface-container-lowest: #0c0f0f;
+	--surface-container-low: #161919;
+	--surface-container: #1a1d1e;
+	--surface-container-high: #222626;
+	--surface-container-highest: #2d3131;
+	--surface-variant: #2d3131;
+	--surface-tint: #628aff;
+
+	--on-surface: #e2e3e3;
+	--on-surface-variant: #9ca0a1;
+	--on-background: #e2e3e3;
+	--background: #111415;
+
+	--outline: #6d7172;
+	--outline-variant: #3d4142;
+
+	--inverse-surface: #e2e3e3;
+	--inverse-on-surface: #2f3334;
+	--inverse-primary: #0053de;
+
+	--shadow-rest: 0 20px 40px rgba(0, 0, 0, 0.2);
+	--shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Tailwind v4 Theme Extension ── */
+@theme {
+	/* Colors */
+	--color-primary: var(--primary);
+	--color-primary-container: var(--primary-container);
+	--color-primary-dim: var(--primary-dim);
+	--color-on-primary: var(--on-primary);
+	--color-on-primary-container: var(--on-primary-container);
+
+	--color-secondary: var(--secondary);
+	--color-secondary-container: var(--secondary-container);
+	--color-secondary-dim: var(--secondary-dim);
+	--color-on-secondary: var(--on-secondary);
+	--color-on-secondary-container: var(--on-secondary-container);
+
+	--color-tertiary: var(--tertiary);
+	--color-tertiary-container: var(--tertiary-container);
+	--color-tertiary-dim: var(--tertiary-dim);
+	--color-on-tertiary: var(--on-tertiary);
+	--color-on-tertiary-container: var(--on-tertiary-container);
+
+	--color-error: var(--error);
+	--color-error-container: var(--error-container);
+	--color-error-dim: var(--error-dim);
+	--color-on-error: var(--on-error);
+	--color-on-error-container: var(--on-error-container);
+
+	--color-surface: var(--surface);
+	--color-surface-dim: var(--surface-dim);
+	--color-surface-bright: var(--surface-bright);
+	--color-surface-container-lowest: var(--surface-container-lowest);
+	--color-surface-container-low: var(--surface-container-low);
+	--color-surface-container: var(--surface-container);
+	--color-surface-container-high: var(--surface-container-high);
+	--color-surface-container-highest: var(--surface-container-highest);
+	--color-surface-variant: var(--surface-variant);
+	--color-surface-tint: var(--surface-tint);
+
+	--color-on-surface: var(--on-surface);
+	--color-on-surface-variant: var(--on-surface-variant);
+	--color-on-background: var(--on-background);
+	--color-background: var(--background);
+
+	--color-outline: var(--outline);
+	--color-outline-variant: var(--outline-variant);
+
+	--color-inverse-surface: var(--inverse-surface);
+	--color-inverse-on-surface: var(--inverse-on-surface);
+	--color-inverse-primary: var(--inverse-primary);
+
+	/* Fonts */
+	--font-headline: "Manrope", sans-serif;
+	--font-body: "Inter", sans-serif;
+	--font-mono: "Fira Code", monospace;
+
+	/* Shadows */
+	--shadow-rest: var(--shadow-rest);
+	--shadow-hover: var(--shadow-hover);
+}
+
+/* ── Base Styles ── */
+body {
+	font-family: var(--font-body);
+	background: var(--surface);
+	color: var(--on-surface);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	font-family: var(--font-headline);
+}
+
+/* Prose dark mode overrides */
+.dark .prose {
+	--tw-prose-body: var(--on-surface);
+	--tw-prose-headings: var(--on-surface);
+	--tw-prose-links: var(--primary);
+	--tw-prose-code: var(--on-surface);
+	--tw-prose-pre-bg: var(--inverse-surface);
+	--tw-prose-pre-code: var(--inverse-on-surface);
+	--tw-prose-quotes: var(--on-surface-variant);
+	--tw-prose-counters: var(--on-surface-variant);
+	--tw-prose-bullets: var(--outline);
+	--tw-prose-hr: var(--outline-variant);
+	--tw-prose-th-borders: var(--outline-variant);
+	--tw-prose-td-borders: var(--outline-variant);
+}

@@ -1,5 +1,7 @@
+import { Send } from 'lucide-react';
 import { useState } from 'react';
 import * as m from '../paraglide/messages.js';
+import { Button } from './ui/button.js';
 
 interface CommentFormProps {
 	onSubmit: (content: string) => void;
@@ -24,21 +26,27 @@ export function CommentForm({
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="flex gap-2">
-			<input
-				type="text"
-				value={content}
-				onChange={(e) => setContent(e.target.value)}
-				placeholder={placeholder || m.comment_placeholder()}
-				className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-			/>
-			<button
-				type="submit"
-				disabled={isSubmitting || !content.trim()}
-				className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-			>
-				{m.comment_submit()}
-			</button>
+		<form onSubmit={handleSubmit}>
+			<div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/15 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+				<textarea
+					value={content}
+					onChange={(e) => setContent(e.target.value)}
+					placeholder={placeholder || m.comment_placeholder()}
+					rows={2}
+					className="w-full bg-transparent border-none focus:ring-0 text-sm resize-none outline-none text-on-surface placeholder:text-outline"
+				/>
+				<div className="flex justify-end mt-2">
+					<Button
+						type="submit"
+						variant="primary"
+						size="sm"
+						disabled={isSubmitting || !content.trim()}
+					>
+						<Send className="h-3.5 w-3.5" />
+						{m.comment_submit()}
+					</Button>
+				</div>
+			</div>
 		</form>
 	);
 }

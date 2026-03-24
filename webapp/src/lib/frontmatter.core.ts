@@ -24,7 +24,8 @@ export function parseBlueprintMarkdown(raw: string): ParsedBlueprint {
 	}
 
 	const meta: BlueprintFrontmatter = {};
-	for (const line of match[1].split('\n')) {
+	// biome-ignore lint/style/noNonNullAssertion: regex capture groups guaranteed by match
+	for (const line of match[1]!.split('\n')) {
 		const idx = line.indexOf(':');
 		if (idx === -1) continue;
 
@@ -61,5 +62,6 @@ export function parseBlueprintMarkdown(raw: string): ParsedBlueprint {
 		}
 	}
 
-	return { meta, content: match[2].trim() };
+	// biome-ignore lint/style/noNonNullAssertion: regex capture groups guaranteed by match
+	return { meta, content: match[2]!.trim() };
 }

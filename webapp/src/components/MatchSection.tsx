@@ -1,7 +1,11 @@
 import { Link } from '@tanstack/react-router';
+import { Check, RefreshCw, X } from 'lucide-react';
 import { useBlueprintMatches, useComputeMatches, useUpdateMatch } from '../hooks/useMatches.js';
 import { authClient } from '../lib/auth-client.js';
 import * as m from '../paraglide/messages.js';
+import { Badge } from './ui/badge.js';
+import { Button } from './ui/button.js';
+import { Skeleton } from './ui/skeleton.js';
 
 interface MatchSectionProps {
 	blueprintId: string;
@@ -18,89 +22,93 @@ export function MatchSection({ blueprintId }: MatchSectionProps) {
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
-				<h2 className="text-lg font-semibold">{m.matches_title()}</h2>
+				<h3 className="font-headline text-xl font-extrabold">{m.matches_title()}</h3>
 				{canManage && (
-					<button
-						type="button"
+					<Button
+						variant="secondary"
+						size="sm"
 						onClick={() => computeMutation.mutate()}
 						disabled={computeMutation.isPending}
-						className="rounded-md bg-gray-100 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-200 disabled:opacity-50"
 					>
+						<RefreshCw className={`h-4 w-4 ${computeMutation.isPending ? 'animate-spin' : ''}`} />
 						{computeMutation.isPending ? m.matches_finding() : m.matches_find()}
-					</button>
+					</Button>
 				)}
 			</div>
 
 			{isLoading ? (
-				<p className="text-sm text-gray-500">{m.loading()}</p>
+				<div className="space-y-2">
+					<Skeleton className="h-14 w-full" />
+					<Skeleton className="h-14 w-full" />
+				</div>
 			) : matches?.length ? (
 				<div className="space-y-2">
 					{matches.map((match) => (
 						<div
 							key={match.id}
-							className="flex items-center justify-between rounded-lg border bg-white p-3"
+							className="flex items-center justify-between rounded-xl bg-surface-container-lowest border border-outline-variant/15 p-4 transition-all hover:shadow-rest"
 						>
-							<div className="flex items-center gap-3">
+							<div className="flex items-center gap-3 flex-wrap">
 								<Link
 									to="/blueprints/$blueprintId"
 									params={{ blueprintId: match.matchedBlueprint.id }}
-									className="text-sm font-medium text-gray-900 no-underline hover:underline"
+									className="text-sm font-semibold text-on-surface no-underline hover:text-primary transition-colors"
 								>
 									{match.matchedBlueprint.name}
 								</Link>
 								{match.reason === 'slug' ? (
-									<span className="rounded bg-amber-50 px-1.5 py-0.5 text-xs text-amber-600">
-										{m.matches_reason_slug()}
-									</span>
+									<Badge variant="shared">{m.matches_reason_slug()}</Badge>
 								) : (
-									<span className="rounded bg-emerald-50 px-1.5 py-0.5 text-xs text-emerald-600">
+									<Badge variant="success">
 										{m.matches_reason_embedding({ score: match.score ?? 0 })}
-									</span>
+									</Badge>
 								)}
-								<span
-									className={`rounded px-1.5 py-0.5 text-xs ${
-										match.status === 'confirmed'
-											? 'bg-green-50 text-green-600'
-											: 'bg-yellow-50 text-yellow-600'
-									}`}
-								>
+								<Badge variant={match.status === 'confirmed' ? 'success' : 'default'}>
 									{match.status === 'confirmed'
 										? m.matches_status_confirmed()
 										: m.matches_status_possible()}
-								</span>
+								</Badge>
 								{match.matchedBlueprint.projectName && (
-									<span className="text-xs text-gray-400">
+									<span className="text-xs text-on-surface-variant">
 										{match.matchedBlueprint.projectName}
 									</span>
 								)}
 							</div>
 							{canManage && match.status === 'possible' && (
 								<div className="flex gap-2">
-									<button
-										type="button"
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
 										onClick={() =>
-											updateMutation.mutate({ matchId: match.id, status: 'confirmed' })
+											updateMutation.mutate({
+												matchId: match.id,
+												status: 'confirmed',
+											})
 										}
-										className="rounded bg-green-100 px-2 py-1 text-xs text-green-700 hover:bg-green-200"
 									>
-										{m.matches_confirm()}
-									</button>
-									<button
-										type="button"
+										<Check className="h-4 w-4" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-8 w-8"
 										onClick={() =>
-											updateMutation.mutate({ matchId: match.id, status: 'dismissed' })
+											updateMutation.mutate({
+												matchId: match.id,
+												status: 'dismissed',
+											})
 										}
-										className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 hover:bg-gray-200"
 									>
-										{m.matches_dismiss()}
-									</button>
+										<X className="h-4 w-4" />
+									</Button>
 								</div>
 							)}
 						</div>
 					))}
 				</div>
 			) : (
-				<p className="text-sm text-gray-500">{m.matches_empty()}</p>
+				<p className="text-sm text-on-surface-variant">{m.matches_empty()}</p>
 			)}
 		</div>
 	);

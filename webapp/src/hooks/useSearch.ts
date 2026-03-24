@@ -13,13 +13,13 @@ export function useSearch(query: string, filters: SearchFilters = {}) {
 	return useQuery({
 		queryKey: ['search', query, filters],
 		queryFn: async () => {
-			const queryParams: Record<string, string> = { q: query };
+			const extraParams: Record<string, string> = {};
 			for (const [key, value] of Object.entries(filters)) {
 				if (value !== undefined && value !== '') {
-					queryParams[key] = String(value);
+					extraParams[key] = String(value);
 				}
 			}
-			const res = await api.api.blueprints.search.$get({ query: queryParams });
+			const res = await api.api.blueprints.search.$get({ query: { q: query, ...extraParams } });
 			return unwrapResponse(res);
 		},
 		enabled: query.length > 0,

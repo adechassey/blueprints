@@ -8,6 +8,7 @@ import { authClient } from '../lib/auth-client.js';
 import * as m from '../paraglide/messages.js';
 import { CommentForm } from './CommentForm.js';
 import { CommentThread } from './CommentThread.js';
+import { Skeleton } from './ui/skeleton.js';
 
 interface CommentSectionProps {
 	blueprintId: string;
@@ -38,16 +39,19 @@ export function CommentSection({ blueprintId }: CommentSectionProps) {
 
 	return (
 		<div className="space-y-4">
-			<h2 className="text-lg font-semibold">{m.comments_title()}</h2>
+			<h3 className="font-headline text-xl font-extrabold">{m.comments_title()}</h3>
 
 			{session?.user && (
 				<CommentForm onSubmit={handleCreate} isSubmitting={createMutation.isPending} />
 			)}
 
 			{isLoading ? (
-				<p className="text-sm text-gray-500">{m.loading()}</p>
+				<div className="space-y-4">
+					<Skeleton className="h-20 w-full" />
+					<Skeleton className="h-20 w-full" />
+				</div>
 			) : comments?.length ? (
-				<div className="space-y-3">
+				<div className="space-y-4">
 					{comments.map((comment) => (
 						<CommentThread
 							key={comment.id}
@@ -59,7 +63,7 @@ export function CommentSection({ blueprintId }: CommentSectionProps) {
 					))}
 				</div>
 			) : (
-				<p className="text-sm text-gray-500">{m.comments_empty()}</p>
+				<p className="text-sm text-on-surface-variant">{m.comments_empty()}</p>
 			)}
 		</div>
 	);

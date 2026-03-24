@@ -1,6 +1,8 @@
+import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 import { type BlueprintFrontmatter, parseBlueprintMarkdown } from '../lib/frontmatter.core.js';
 import * as m from '../paraglide/messages.js';
+import { Button } from './ui/button.js';
 
 interface DropZoneProps {
 	onParsed: (meta: BlueprintFrontmatter, content: string) => void;
@@ -39,11 +41,14 @@ export function DropZone({ onParsed }: DropZoneProps) {
 					handleFile(file);
 				}
 			}}
-			className={`flex flex-col items-center gap-2 rounded-lg border-2 border-dashed p-6 text-center text-sm ${
-				isDragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 text-gray-500'
+			className={`flex flex-col items-center gap-3 rounded-xl border-2 border-dashed p-8 text-center transition-all ${
+				isDragOver
+					? 'border-primary bg-primary/5'
+					: 'border-outline-variant text-on-surface-variant'
 			}`}
 		>
-			<span>{m.dropzone_hint()}</span>
+			<Upload className="h-8 w-8 text-outline" />
+			<span className="text-sm">{m.dropzone_hint()}</span>
 			<input
 				ref={inputRef}
 				type="file"
@@ -54,13 +59,9 @@ export function DropZone({ onParsed }: DropZoneProps) {
 					if (file) handleFile(file);
 				}}
 			/>
-			<button
-				type="button"
-				onClick={() => inputRef.current?.click()}
-				className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-			>
+			<Button type="button" variant="secondary" size="sm" onClick={() => inputRef.current?.click()}>
 				{m.dropzone_browse()}
-			</button>
+			</Button>
 		</div>
 	);
 }

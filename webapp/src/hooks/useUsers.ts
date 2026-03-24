@@ -16,7 +16,7 @@ export function useUserBlueprints(id: string) {
 	return useQuery({
 		queryKey: ['user-blueprints', id],
 		queryFn: async () => {
-			const res = await api.api.users[':id'].blueprints.$get({ param: { id } });
+			const res = await api.api.users[':id'].blueprints.$get({ param: { id }, query: {} });
 			return unwrapResponse(res);
 		},
 		enabled: !!id,

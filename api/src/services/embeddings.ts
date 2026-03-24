@@ -4,11 +4,12 @@ let pipeline: FeatureExtractionPipeline | null = null;
 
 async function getPipeline(): Promise<FeatureExtractionPipeline> {
 	if (pipeline) return pipeline;
-	const { pipeline: createPipeline } = await import('@huggingface/transformers');
-	pipeline = (await createPipeline(
-		'feature-extraction',
-		'Xenova/all-MiniLM-L6-v2',
-	)) as FeatureExtractionPipeline;
+	const mod = await import('@huggingface/transformers');
+	const create = mod.pipeline as (
+		task: 'feature-extraction',
+		model: string,
+	) => Promise<FeatureExtractionPipeline>;
+	pipeline = await create('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
 	return pipeline;
 }
 
