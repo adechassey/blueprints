@@ -30,6 +30,13 @@ export const auth = betterAuth({
 			maxAge: 60 * 5,
 		},
 	},
+	advanced: {
+		cookiePrefix: 'blueprints',
+		defaultCookieAttributes: {
+			sameSite: 'none',
+			secure: true,
+		},
+	},
 	user: {
 		additionalFields: {
 			role: {
