@@ -3,12 +3,13 @@ import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { blueprints, blueprintVersions } from '../db/schema.js';
 import { requireAuth } from '../middleware/auth.js';
+import { strictRateLimit } from '../middleware/rate-limit.js';
 import { requireRole } from '../middleware/roles.js';
 import { prepareEmbeddingText } from '../services/embeddings.core.js';
 import { generateEmbedding } from '../services/embeddings.js';
 
 export const embeddingsRoute = new Hono()
-	.post('/embeddings', requireAuth, async (c) => {
+	.post('/embeddings', strictRateLimit, requireAuth, async (c) => {
 		const { text } = await c.req.json<{ text: string }>();
 		if (!text) {
 			return c.json({ error: 'text is required' }, 400);

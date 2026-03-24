@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { errorHandler } from './middleware/error-handler.js';
+import { generalRateLimit } from './middleware/rate-limit.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoute } from './routes/auth.js';
 import { blueprintRoutes } from './routes/blueprints.js';
@@ -23,6 +24,7 @@ baseApp.use(
 	}),
 );
 baseApp.onError(errorHandler);
+baseApp.use('/api/*', generalRateLimit);
 
 export const app = baseApp
 	.route('/api', healthRoute)

@@ -9,6 +9,7 @@ import {
 	updateBlueprintSchema,
 } from '../lib/validation.js';
 import { getUser, requireAuth } from '../middleware/auth.js';
+import { downloadRateLimit } from '../middleware/rate-limit.js';
 import {
 	createBlueprint,
 	deleteBlueprintById,
@@ -87,7 +88,7 @@ export const blueprintRoutes = new Hono()
 		}
 		return c.json(ver);
 	})
-	.post('/blueprints/:id/download', async (c) => {
+	.post('/blueprints/:id/download', downloadRateLimit, async (c) => {
 		const id = c.req.param('id');
 		const [updated] = await db
 			.update(blueprintsTable)

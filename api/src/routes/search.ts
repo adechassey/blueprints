@@ -2,6 +2,7 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { db } from '../db/index.js';
+import { strictRateLimit } from '../middleware/rate-limit.js';
 import { semanticSearch } from '../services/search.js';
 
 const searchSchema = z.object({
@@ -16,6 +17,7 @@ const searchSchema = z.object({
 
 export const searchRoutes = new Hono().get(
 	'/blueprints/search',
+	strictRateLimit,
 	zValidator('query', searchSchema),
 	async (c) => {
 		const { q, ...filters } = c.req.valid('query');
