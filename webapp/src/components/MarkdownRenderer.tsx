@@ -1,3 +1,6 @@
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 interface MarkdownRendererProps {
 	content: string;
 }
@@ -5,7 +8,7 @@ interface MarkdownRendererProps {
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 	return (
 		<div className="prose prose-sm max-w-none">
-			<pre className="whitespace-pre-wrap font-mono text-sm">{content}</pre>
+			<Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
 		</div>
 	);
 }

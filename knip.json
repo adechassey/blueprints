@@ -7,7 +7,7 @@
 		"webapp": {
 			"entry": ["src/routes/**/*.tsx", "src/hooks/*.ts", "src/lib/*.ts"],
 			"project": ["src/**/*.{ts,tsx}"],
-			"ignoreDependencies": ["@tanstack/router-devtools", "tailwindcss"]
+			"ignoreDependencies": ["@tanstack/router-devtools", "tailwindcss", "@tailwindcss/typography"]
 		},
 		"api": {
 			"entry": ["src/db/index.ts", "src/middleware/*.ts", "src/lib/*.ts", "src/mcp/*.ts"],
