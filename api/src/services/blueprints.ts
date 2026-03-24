@@ -31,10 +31,12 @@ async function upsertTags(db: DB, tagNames: string[]) {
 	for (const name of normalized) {
 		const slug = generateSlug(name);
 		const existing = await db.select().from(tags).where(eq(tags.name, name)).limit(1);
-		if (existing.length > 0) {
-			result.push(existing[0]);
+		const first = existing[0];
+		if (first) {
+			result.push(first);
 		} else {
 			const [created] = await db.insert(tags).values({ name, slug }).returning();
+			if (!created) throw new Error('Insert tag failed');
 			result.push(created);
 		}
 	}
@@ -74,6 +76,7 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			isPublic: input.isPublic ?? true,
 		})
 		.returning();
+	if (!blueprint) throw new Error('Insert blueprint failed');
 
 	const [version] = await db
 		.insert(blueprintVersions)
@@ -84,6 +87,7 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			authorId,
 		})
 		.returning();
+	if (!version) throw new Error('Insert blueprint version failed');
 
 	await db
 		.update(blueprints)
@@ -172,6 +176,7 @@ export async function updateBlueprint(
 				authorId,
 			})
 			.returning();
+		if (!newVersion) throw new Error('Insert blueprint version failed');
 
 		metadataUpdate.currentVersionId = newVersion.id;
 
@@ -265,7 +270,8 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	}
 	if (where) countQ = countQ.where(where);
 
-	const [{ total }] = await countQ;
+	const [countResult] = await countQ;
+	const total = countResult?.total ?? 0;
 
 	return { items, total, page, limit };
 }

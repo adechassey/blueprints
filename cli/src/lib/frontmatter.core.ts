@@ -16,8 +16,11 @@ export function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content:
 	const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
 	if (!match) return { meta: {}, content: raw.trim() };
 
+	const yamlBlock = match[1] as string;
+	const bodyBlock = match[2] as string;
+
 	const meta: FrontmatterMeta = {};
-	for (const line of match[1].split('\n')) {
+	for (const line of yamlBlock.split('\n')) {
 		const idx = line.indexOf(':');
 		if (idx === -1) continue;
 
@@ -54,5 +57,5 @@ export function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content:
 		}
 	}
 
-	return { meta, content: match[2].trim() };
+	return { meta, content: bodyBlock.trim() };
 }

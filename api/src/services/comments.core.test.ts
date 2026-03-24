@@ -22,8 +22,8 @@ describe('nestComments', () => {
 		const comments = [makeComment({ id: 'c1' }), makeComment({ id: 'c2' })];
 		const result = nestComments(comments);
 		expect(result).toHaveLength(2);
-		expect(result[0].replies).toEqual([]);
-		expect(result[1].replies).toEqual([]);
+		expect(result[0]?.replies).toEqual([]);
+		expect(result[1]?.replies).toEqual([]);
 	});
 
 	it('nests replies under their parent', () => {
@@ -34,9 +34,9 @@ describe('nestComments', () => {
 		];
 		const result = nestComments(comments);
 		expect(result).toHaveLength(1);
-		expect(result[0].replies).toHaveLength(2);
-		expect(result[0].replies[0].id).toBe('c2');
-		expect(result[0].replies[1].id).toBe('c3');
+		expect(result[0]?.replies).toHaveLength(2);
+		expect(result[0]?.replies[0]?.id).toBe('c2');
+		expect(result[0]?.replies[1]?.id).toBe('c3');
 	});
 
 	it('handles orphaned replies (parent not in list)', () => {
@@ -46,8 +46,8 @@ describe('nestComments', () => {
 		];
 		const result = nestComments(comments);
 		expect(result).toHaveLength(1);
-		expect(result[0].id).toBe('c1');
-		expect(result[0].replies).toEqual([]);
+		expect(result[0]?.id).toBe('c1');
+		expect(result[0]?.replies).toEqual([]);
 	});
 
 	it('handles multiple parents with replies', () => {
@@ -59,7 +59,7 @@ describe('nestComments', () => {
 		];
 		const result = nestComments(comments);
 		expect(result).toHaveLength(2);
-		expect(result[0].replies).toHaveLength(1);
-		expect(result[1].replies).toHaveLength(1);
+		expect(result[0]?.replies).toHaveLength(1);
+		expect(result[1]?.replies).toHaveLength(1);
 	});
 });

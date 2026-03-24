@@ -20,10 +20,10 @@ export const adminRoutes = new Hono()
 		const [projectCount] = await db.select({ count: count() }).from(projects);
 
 		return c.json({
-			users: userCount.count,
-			blueprints: blueprintCount.count,
-			comments: commentCount.count,
-			projects: projectCount.count,
+			users: userCount?.count ?? 0,
+			blueprints: blueprintCount?.count ?? 0,
+			comments: commentCount?.count ?? 0,
+			projects: projectCount?.count ?? 0,
 		});
 	})
 	.get('/admin/users', async (c) => {
