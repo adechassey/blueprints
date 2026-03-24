@@ -1,92 +1,73 @@
 # Production Deploy Plan — Vercel + Neon
 
-## Architecture Overview
+**Production URL**: `https://blueprints-webapp.vercel.app`
+## Architecture
 
 ```
-                    ┌─────────────┐
-                    │  Vercel CDN  │
-                    │  (webapp)    │
-Users ──────────────┤              │
-                    │  Serverless  │──── Neon PostgreSQL
-                    │  (api/*)     │     (pgvector)
-                    └─────────────┘
+Users ──► Vercel CDN (webapp/dist — static SPA)
+      ──► Vercel Serverless (/api/* — Hono app) ──► Neon PostgreSQL (pgvector)
 ```
-
-- **Webapp**: Static SPA build served from Vercel CDN
-- **API**: Hono app deployed as Vercel serverless functions under `/api/*`
-- **Database**: Neon PostgreSQL with pgvector extension
-- **Auth**: Google OAuth via Better Auth
-- **Search**: Transformers.js embedding model loaded in a dedicated serverless function
 
 ---
 
-## Step 1: Neon Database Setup
-
-### 1a. Create Neon project
+## Step 1: Neon Database
 
 1. Go to [console.neon.tech](https://console.neon.tech)
-2. Create a new project: `blueprints-prod`
-3. Region: choose closest to your Vercel region (e.g., `eu-central-1` for Europe)
-4. Note the connection string: `postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`
-
-### 1b. Enable pgvector
-
-```sql
--- Run in Neon SQL Editor
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-### 1c. Apply migrations
-
-```bash
-# From local machine, with DATABASE_URL pointing to Neon
-DATABASE_URL="postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require" \
-  pnpm db:migrate
-```
-
-### 1d. Seed initial data (optional)
-
-```bash
-DATABASE_URL="postgresql://..." pnpm db:seed
-```
+2. Create project `blueprints-prod`, region `eu-central-1`
+3. Note the connection string: `postgresql://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`
+4. In SQL Editor, enable pgvector:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+5. Apply schema from your local machine:
+   ```bash
+   DATABASE_URL="postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require" \
+     cd api && npx drizzle-kit push
+   ```
+6. Seed data (optional):
+   ```bash
+   DATABASE_URL="postgresql://..." pnpm db:seed
+   ```
 
 ---
 
-## Step 2: Google OAuth Setup
+## Step 2: Google OAuth
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-2. Create OAuth 2.0 Client ID (Web application)
-3. Set **Authorized JavaScript origins**:
-   - `https://your-domain.vercel.app`
-   - `https://your-custom-domain.com` (if applicable)
-4. Set **Authorized redirect URIs**:
-   - `https://your-domain.vercel.app/api/auth/callback/google`
-   - `https://your-custom-domain.com/api/auth/callback/google`
-5. Note Client ID and Client Secret
+1. Go to [Google Cloud Console > Credentials](https://console.cloud.google.com/apis/credentials)
+2. Edit (or create) your OAuth 2.0 Client ID
+3. Add **Authorized JavaScript origins**:
+   - `https://blueprints-webapp.vercel.app`
+   - `https://blueprints-xxx.vercel.app` (your Vercel default domain)
+4. Add **Authorized redirect URIs**:
+   - `https://blueprints-webapp.vercel.app/api/auth/callback/google`
+   - `https://blueprints-xxx.vercel.app/api/auth/callback/google`
+
+You can reuse the same `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from local dev — just add the production URIs.
 
 ---
 
-## Step 3: Vercel Project Setup
+## Step 3: Code Changes (before first deploy)
 
-### 3a. Import project
+### 3a. Create Vercel serverless entry point
 
-1. Go to [vercel.com/new](https://vercel.com/new)
-2. Import the Git repository
-3. Framework preset: **Other** (we'll configure manually)
-4. Root directory: `.` (monorepo root)
+The API currently uses `@hono/node-server` for local dev. Vercel needs a different adapter.
 
-### 3b. Build settings
+```bash
+pnpm --filter api add @hono/vercel
+```
 
-| Setting | Value |
-|---------|-------|
-| Build Command | `pnpm build` |
-| Output Directory | `webapp/dist` |
-| Install Command | `pnpm install` |
-| Node.js Version | `22.x` |
+Create `api/index.ts` (at the root of the `api/` package, not inside `src/`):
 
-### 3c. Vercel configuration file
+```typescript
+import { handle } from '@hono/vercel';
+import { app } from './src/app.js';
 
-Create `vercel.json` at the project root:
+export default handle(app);
+```
+
+### 3b. Create `vercel.json`
+
+Create at the monorepo root:
 
 ```json
 {
@@ -100,11 +81,7 @@ Create `vercel.json` at the project root:
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "functions": {
-    "api/src/index.ts": {
-      "memory": 256,
-      "maxDuration": 10
-    },
-    "api/src/routes/embeddings.ts": {
+    "api/index.ts": {
       "memory": 1024,
       "maxDuration": 30
     }
@@ -112,69 +89,99 @@ Create `vercel.json` at the project root:
 }
 ```
 
-> **Note**: The Hono API needs to be adapted for Vercel serverless. You may need to create an `api/index.ts` entry point that exports the Hono app's fetch handler for Vercel's serverless runtime. See Step 4.
+Notes:
+- `rewrites`: sends `/api/*` to the serverless function, everything else to the SPA
+- `functions.memory`: 1024MB needed for the Transformers.js embedding model (~90MB)
+- `functions.maxDuration`: 30s to allow cold start + model loading
 
-### 3d. Environment variables
+### 3c. Commit and push
 
-Set these in Vercel Dashboard > Settings > Environment Variables:
+```bash
+git add vercel.json api/index.ts api/package.json pnpm-lock.yaml
+git commit -m "chore: add Vercel serverless config"
+git push
+```
+
+---
+
+## Step 4: Vercel Project Setup
+
+### 4a. Import project
+
+1. Go to [vercel.com/new](https://vercel.com/new)
+2. Import `adechassey/blueprints` from GitHub
+3. Framework preset: **Other**
+4. Root directory: `.` (monorepo root)
+
+### 4b. Build settings
+
+These should be auto-detected from `vercel.json`, but verify:
+
+| Setting | Value |
+|---------|-------|
+| Build Command | `pnpm build` |
+| Output Directory | `webapp/dist` |
+| Install Command | `pnpm install` |
+| Node.js Version | `22.x` |
+
+### 4c. Environment variables
+
+Set in **Vercel Dashboard > Settings > Environment Variables**:
 
 | Variable | Value | Environments |
 |----------|-------|-------------|
 | `DATABASE_URL` | `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require` | Production, Preview |
-| `BETTER_AUTH_SECRET` | `<openssl rand -base64 32>` | Production, Preview |
-| `GOOGLE_CLIENT_ID` | `<from Google Cloud Console>` | Production, Preview |
-| `GOOGLE_CLIENT_SECRET` | `<from Google Cloud Console>` | Production, Preview |
-| `BETTER_AUTH_URL` | `https://your-domain.vercel.app` | Production |
-| `CORS_ORIGIN` | `https://your-domain.vercel.app` | Production |
-| `ADMIN_EMAILS` | `hugo.borsoni@theodo.com,...` | Production, Preview |
-| `VITE_API_URL` | `https://your-domain.vercel.app` | Production |
+| `BETTER_AUTH_SECRET` | *(generate with `openssl rand -base64 32`)* | Production, Preview |
+| `GOOGLE_CLIENT_ID` | *(from Google Cloud Console)* | Production, Preview |
+| `GOOGLE_CLIENT_SECRET` | *(from Google Cloud Console)* | Production, Preview |
+| `BETTER_AUTH_URL` | `https://blueprints-webapp.vercel.app` | Production |
+| `CORS_ORIGIN` | `https://blueprints-webapp.vercel.app` | Production |
+| `ADMIN_EMAILS` | `hugo.borsoni@theodo.com,antoine.de-chassey@theodo.com` | Production, Preview |
+| `VITE_API_URL` | `https://blueprints-webapp.vercel.app` | Production |
+| `VITE_PRODUCTION_URL` | `https://blueprints-webapp.vercel.app` | Production, Preview |
 | `LOG_LEVEL` | `info` | Production |
 
----
+**Important**: `VITE_*` variables are embedded at build time (Vite replaces them). All other variables are read at runtime by the serverless functions.
 
-## Step 4: Adapt API for Vercel Serverless
-
-Vercel serverless functions expect a specific entry point. Create a Vercel-compatible wrapper:
-
-```typescript
-// api/index.ts (Vercel entry point)
-import { handle } from 'hono/vercel';
-import { app } from './src/app.js';
-
-export default handle(app);
-```
-
-This uses `hono/vercel` adapter to bridge Hono's fetch-based handler to Vercel's serverless format.
-
-Install the adapter if not already present:
-```bash
-pnpm --filter api add @hono/vercel
-```
+If using Vercel's default domain instead of a custom domain, replace `https://blueprints-webapp.vercel.app` with your Vercel URL (e.g., `https://blueprints-adechassey.vercel.app`).
 
 ---
 
-## Step 5: Deploy
+## Step 5: Custom Domain (optional)
 
-### 5a. First deploy
+1. In Vercel Dashboard > Settings > Domains
+2. Add `blueprints.theodo.com`
+3. Add DNS records as instructed by Vercel (CNAME or A record)
+4. Make sure all env vars use the custom domain (not the `.vercel.app` URL)
+5. Update Google OAuth redirect URIs to include the custom domain
+
+---
+
+## Step 6: Deploy
+
+### First deploy
+
+Vercel auto-deploys when you push to the connected branch (usually `main`):
 
 ```bash
-# Push to main branch (or the branch connected to Vercel)
 git push origin main
 ```
 
-Vercel auto-deploys on push. Monitor the build in the Vercel dashboard.
+Or trigger a deploy from the Vercel dashboard.
 
-### 5b. Verify deployment
+### Verify
 
 | Check | URL | Expected |
 |-------|-----|----------|
-| Health | `https://your-domain.vercel.app/api/health` | `{"status":"ok"}` |
-| Webapp | `https://your-domain.vercel.app` | SPA loads |
-| OAuth | Click login | Google OAuth flow completes |
-| API | `https://your-domain.vercel.app/api/blueprints` | JSON response |
-| MCP | `POST /api/mcp` with auth | tools/list returns 7 tools |
+| Health | `https://blueprints-webapp.vercel.app/api/health` | `{"status":"ok"}` |
+| Webapp | `https://blueprints-webapp.vercel.app` | Login page loads |
+| Auth | Click "Sign in with Google" | Google OAuth completes, redirects back |
+| Blueprints | `https://blueprints-webapp.vercel.app/api/blueprints` | JSON response |
+| Search | Search for a term | Results with similarity scores |
 
-### 5c. Seed production data
+### Seed production data
+
+If you haven't seeded in Step 1:
 
 ```bash
 DATABASE_URL="<neon-connection-string>" pnpm db:seed
@@ -182,46 +189,42 @@ DATABASE_URL="<neon-connection-string>" pnpm db:seed
 
 ---
 
-## Step 6: Custom Domain (optional)
+## Troubleshooting
 
-1. In Vercel Dashboard > Settings > Domains
-2. Add your custom domain (e.g., `blueprints.theodo.com`)
-3. Update DNS records as instructed by Vercel
-4. Update environment variables:
-   - `BETTER_AUTH_URL` → `https://blueprints.theodo.com`
-   - `CORS_ORIGIN` → `https://blueprints.theodo.com`
-   - `VITE_API_URL` → `https://blueprints.theodo.com`
-5. Update Google OAuth redirect URIs
+### Build fails: "Cannot find module"
+- Check that `api/index.ts` imports from `./src/app.js` (not `./app.js`)
+- Make sure `@hono/vercel` is in `api/package.json` dependencies
 
----
+### Auth returns 403 / "Invalid callbackURL"
+- Check `BETTER_AUTH_URL` matches the actual domain
+- Check `trustedOrigins` in `api/src/lib/auth.ts` includes `process.env.CORS_ORIGIN`
+- Verify Google OAuth redirect URIs include `/api/auth/callback/google`
 
-## Step 7: Post-Deploy Monitoring
+### CORS errors
+- `CORS_ORIGIN` must match the exact origin (protocol + domain, no trailing slash)
+- Preview deployments get a different URL — set `CORS_ORIGIN` for Preview env too, or use `*` for previews
 
-### Logs
-- **Vercel**: Dashboard > Deployments > Function Logs (pino JSON output)
-- **Neon**: Dashboard > Monitoring > Query stats
+### Embeddings timeout
+- First request after cold start takes 10-30s (model download + loading)
+- Subsequent requests are fast (model cached in memory within the function instance)
+- If timeout persists, increase `maxDuration` in `vercel.json`
 
-### Key metrics to watch
-- Serverless function cold starts (especially embeddings)
-- Database connection count (Neon has connection limits)
-- Rate limit hits (429 responses)
-- Auth failures (401 patterns)
+### Database connection errors
+- Verify `DATABASE_URL` includes `?sslmode=require` for Neon
+- Check Neon dashboard for connection limits (free tier: 5 concurrent)
 
 ---
 
 ## Rollback
 
-If something goes wrong:
 1. **Vercel**: Dashboard > Deployments > click previous deployment > "Promote to Production"
-2. **Database**: Neon supports branching — create a branch before migrations for safety
+2. **Database**: Create a Neon branch before running migrations for safety. Restore by switching back to the main branch.
 
 ---
 
-## Neon Preview Branches (stretch goal)
+## Preview Deployments
 
-For PR preview environments with isolated databases:
-
-1. Enable Neon integration in Vercel
-2. Each Vercel preview deployment gets its own Neon branch
-3. Branch is auto-created from production, auto-deleted on PR close
-4. Set `DATABASE_URL` per preview via Neon-Vercel integration
+Each PR gets a preview URL from Vercel. For previews to work:
+- `DATABASE_URL` must be set for Preview environment (same DB or Neon branch)
+- `CORS_ORIGIN` for Preview: leave empty or set to `*` (or configure per-preview with Neon integration)
+- Auth won't work on preview URLs unless you add each preview URL to Google OAuth redirect URIs. Workaround: use `VITE_PRODUCTION_URL` to redirect auth through the production domain.
