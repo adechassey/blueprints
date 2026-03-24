@@ -38,9 +38,9 @@
 		"6": {
 			"name": "polish",
 			"folder": "phase-6-polish",
-			"status": "pending",
-			"validationHash": null,
-			"completedAt": null
+			"status": "validated",
+			"validationHash": "b2b3830289d496220b390df25cd0f15422800d8d0317aeb385ada6650a5dab79",
+			"completedAt": "2026-03-24T07:46:00.677Z"
 		}
 	}
 }

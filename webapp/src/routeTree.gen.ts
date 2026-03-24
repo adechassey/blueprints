@@ -13,10 +13,15 @@ import { Route as TagsRouteImport } from './routes/tags'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as UsersUserIdRouteImport } from './routes/users/$userId'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as BlueprintsNewRouteImport } from './routes/blueprints/new'
 import { Route as BlueprintsBlueprintIdRouteImport } from './routes/blueprints/$blueprintId'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AdminProjectsRouteImport } from './routes/admin/projects'
+import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
+import { Route as AdminBlueprintsRouteImport } from './routes/admin/blueprints'
 import { Route as BlueprintsBlueprintIdEditRouteImport } from './routes/blueprints/$blueprintId/edit'
 
 const TagsRoute = TagsRouteImport.update({
@@ -39,6 +44,11 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/projects/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UsersUserIdRoute = UsersUserIdRouteImport.update({
   id: '/users/$userId',
   path: '/users/$userId',
@@ -59,6 +69,26 @@ const BlueprintsBlueprintIdRoute = BlueprintsBlueprintIdRouteImport.update({
   path: '/blueprints/$blueprintId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProjectsRoute = AdminProjectsRouteImport.update({
+  id: '/admin/projects',
+  path: '/admin/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCommentsRoute = AdminCommentsRouteImport.update({
+  id: '/admin/comments',
+  path: '/admin/comments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBlueprintsRoute = AdminBlueprintsRouteImport.update({
+  id: '/admin/blueprints',
+  path: '/admin/blueprints',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BlueprintsBlueprintIdEditRoute =
   BlueprintsBlueprintIdEditRouteImport.update({
     id: '/edit',
@@ -70,10 +100,15 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
+  '/admin/blueprints': typeof AdminBlueprintsRoute
+  '/admin/comments': typeof AdminCommentsRoute
+  '/admin/projects': typeof AdminProjectsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
@@ -81,10 +116,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
+  '/admin/blueprints': typeof AdminBlueprintsRoute
+  '/admin/comments': typeof AdminCommentsRoute
+  '/admin/projects': typeof AdminProjectsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
+  '/admin': typeof AdminIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
@@ -93,10 +133,15 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
+  '/admin/blueprints': typeof AdminBlueprintsRoute
+  '/admin/comments': typeof AdminCommentsRoute
+  '/admin/projects': typeof AdminProjectsRoute
+  '/admin/users': typeof AdminUsersRoute
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
 }
@@ -106,10 +151,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/tags'
+    | '/admin/blueprints'
+    | '/admin/comments'
+    | '/admin/projects'
+    | '/admin/users'
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
     | '/users/$userId'
+    | '/admin/'
     | '/projects/'
     | '/blueprints/$blueprintId/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -117,10 +167,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/tags'
+    | '/admin/blueprints'
+    | '/admin/comments'
+    | '/admin/projects'
+    | '/admin/users'
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
     | '/users/$userId'
+    | '/admin'
     | '/projects'
     | '/blueprints/$blueprintId/edit'
   id:
@@ -128,10 +183,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/tags'
+    | '/admin/blueprints'
+    | '/admin/comments'
+    | '/admin/projects'
+    | '/admin/users'
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
     | '/users/$userId'
+    | '/admin/'
     | '/projects/'
     | '/blueprints/$blueprintId/edit'
   fileRoutesById: FileRoutesById
@@ -140,10 +200,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   TagsRoute: typeof TagsRoute
+  AdminBlueprintsRoute: typeof AdminBlueprintsRoute
+  AdminCommentsRoute: typeof AdminCommentsRoute
+  AdminProjectsRoute: typeof AdminProjectsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   BlueprintsBlueprintIdRoute: typeof BlueprintsBlueprintIdRouteWithChildren
   BlueprintsNewRoute: typeof BlueprintsNewRoute
   ProjectsSlugRoute: typeof ProjectsSlugRoute
   UsersUserIdRoute: typeof UsersUserIdRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
 }
 
@@ -177,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/users/$userId': {
       id: '/users/$userId'
       path: '/users/$userId'
@@ -203,6 +275,34 @@ declare module '@tanstack/react-router' {
       path: '/blueprints/$blueprintId'
       fullPath: '/blueprints/$blueprintId'
       preLoaderRoute: typeof BlueprintsBlueprintIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/projects': {
+      id: '/admin/projects'
+      path: '/admin/projects'
+      fullPath: '/admin/projects'
+      preLoaderRoute: typeof AdminProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/comments': {
+      id: '/admin/comments'
+      path: '/admin/comments'
+      fullPath: '/admin/comments'
+      preLoaderRoute: typeof AdminCommentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/blueprints': {
+      id: '/admin/blueprints'
+      path: '/admin/blueprints'
+      fullPath: '/admin/blueprints'
+      preLoaderRoute: typeof AdminBlueprintsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blueprints/$blueprintId/edit': {
@@ -232,10 +332,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   TagsRoute: TagsRoute,
+  AdminBlueprintsRoute: AdminBlueprintsRoute,
+  AdminCommentsRoute: AdminCommentsRoute,
+  AdminProjectsRoute: AdminProjectsRoute,
+  AdminUsersRoute: AdminUsersRoute,
   BlueprintsBlueprintIdRoute: BlueprintsBlueprintIdRouteWithChildren,
   BlueprintsNewRoute: BlueprintsNewRoute,
   ProjectsSlugRoute: ProjectsSlugRoute,
   UsersUserIdRoute: UsersUserIdRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
 }
 export const routeTree = rootRouteImport

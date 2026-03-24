@@ -1,12 +1,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, Link, Outlet } from '@tanstack/react-router';
 import { AuthButton } from '../components/AuthButton.js';
+import { authClient } from '../lib/auth-client.js';
 import * as m from '../paraglide/messages.js';
 
 const queryClient = new QueryClient();
 
-export const Route = createRootRoute({
-	component: () => (
+function RootLayout() {
+	const { data: session } = authClient.useSession();
+	const isAdmin = session?.user?.role === 'admin';
+
+	return (
 		<QueryClientProvider client={queryClient}>
 			<div className="min-h-screen bg-gray-50 text-gray-900">
 				<header className="border-b border-gray-200 bg-white">
@@ -34,6 +38,14 @@ export const Route = createRootRoute({
 								>
 									{m.nav_tags()}
 								</Link>
+								{isAdmin && (
+									<Link
+										to="/admin"
+										className="text-gray-500 no-underline hover:text-gray-900 [&.active]:font-medium [&.active]:text-gray-900"
+									>
+										{m.nav_admin()}
+									</Link>
+								)}
 							</nav>
 						</div>
 						<div className="flex items-center gap-4">
@@ -52,5 +64,9 @@ export const Route = createRootRoute({
 				</main>
 			</div>
 		</QueryClientProvider>
-	),
+	);
+}
+
+export const Route = createRootRoute({
+	component: RootLayout,
 });

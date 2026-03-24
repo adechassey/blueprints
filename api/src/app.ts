@@ -1,6 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { cors } from 'hono/cors';
 import { errorHandler } from './middleware/error-handler.js';
+import { adminRoutes } from './routes/admin.js';
 import { authRoute } from './routes/auth.js';
 import { blueprintRoutes } from './routes/blueprints.js';
 import { commentRoutes } from './routes/comments.js';
@@ -33,3 +34,4 @@ app.route('/api', embeddingsRoute);
 app.route('/api', commentRoutes);
 app.route('/api', userRoutes);
 app.route('/api', mcpRoute);
+app.route('/api', adminRoutes);

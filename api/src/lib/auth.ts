@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '../db/index.js';
+import { isDefaultAdmin } from './admin.core.js';
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, { provider: 'pg' }),
@@ -25,6 +26,18 @@ export const auth = betterAuth({
 				type: 'string',
 				defaultValue: 'user',
 				input: false,
+			},
+		},
+	},
+	databaseHooks: {
+		user: {
+			create: {
+				before: async (user) => {
+					if (user.email && isDefaultAdmin(user.email)) {
+						return { data: { ...user, role: 'admin' } };
+					}
+					return { data: user };
+				},
 			},
 		},
 	},

@@ -69,5 +69,22 @@
 	"profile_blueprints": "Published Blueprints",
 	"profile_no_blueprints": "No blueprints published yet",
 	"comment_show_replies": "Show {count} replies",
-	"comment_hide_replies": "Hide {count} replies"
+	"comment_hide_replies": "Hide {count} replies",
+	"nav_admin": "Admin",
+	"admin_dashboard": "Admin Dashboard",
+	"admin_stat_users": "Users",
+	"admin_stat_blueprints": "Blueprints",
+	"admin_stat_comments": "Comments",
+	"admin_stat_projects": "Projects",
+	"admin_manage_users": "Manage Users",
+	"admin_manage_blueprints": "Manage Blueprints",
+	"admin_manage_comments": "Manage Comments",
+	"admin_manage_projects": "Manage Projects",
+	"admin_confirm_role_change": "Are you sure you want to change this user's role?",
+	"admin_cannot_change_own_role": "You cannot change your own role",
+	"admin_confirm_delete_blueprint": "Are you sure you want to delete \"{name}\"?",
+	"admin_confirm_delete_comment": "Are you sure you want to delete this comment?",
+	"admin_confirm_delete_project": "Are you sure you want to delete project \"{name}\"?",
+	"admin_search_users": "Search users by name or email...",
+	"admin_user_blueprints": "{count} blueprints"
 }
