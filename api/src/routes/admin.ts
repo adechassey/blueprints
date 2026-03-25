@@ -35,7 +35,7 @@ export const adminRoutes = new Hono()
 				image: users.image,
 				role: users.role,
 				createdAt: users.createdAt,
-				blueprintCount: sql<number>`(SELECT count(*) FROM blueprints WHERE blueprints.author_id = ${users.id})`,
+				blueprintCount: sql<number>`(SELECT count(*) FROM blueprints WHERE blueprints.author_id = "users"."id")`.mapWith(Number),
 			})
 			.from(users)
 			.orderBy(users.name);
