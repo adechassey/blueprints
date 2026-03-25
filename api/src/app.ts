@@ -10,6 +10,7 @@ import { embeddingsRoute } from './routes/embeddings.js';
 import { healthRoute } from './routes/health.js';
 import { matchRoutes } from './routes/matches.js';
 import { mcpRoute } from './routes/mcp.js';
+import { previewAuthRoutes } from './routes/preview-auth.js';
 import { projectRoutes } from './routes/projects.js';
 import { tagRoutes } from './routes/tags.js';
 import { userRoutes } from './routes/users.js';
@@ -37,6 +38,9 @@ export const app = baseApp
 	.route('/api', matchRoutes)
 	.route('/api', mcpRoute)
 	.route('/api', adminRoutes);
+
+// Preview auth routes (session transfer between production and preview deployments)
+app.route('/api', previewAuthRoutes);
 
 // Auth routes registered after .route() chains — Better Auth handles its own routing
 // Using all() to match any method, and the path must be exact to avoid trie conflicts

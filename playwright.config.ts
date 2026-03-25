@@ -9,7 +9,7 @@ export default defineConfig({
 		headless: true,
 	},
 	webServer: {
-		command: 'pnpm dev',
+		command: 'pnpm --filter webapp dev',
 		port: 5173,
 		reuseExistingServer: true,
 		timeout: 30000,
