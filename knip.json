@@ -10,7 +10,12 @@
 			"ignoreDependencies": ["@tanstack/router-devtools", "tailwindcss", "@tailwindcss/typography"]
 		},
 		"api": {
-			"entry": ["src/db/index.ts", "src/middleware/*.ts", "src/lib/*.ts", "src/mcp/*.ts"],
+			"entry": [
+				"src/db/index.ts",
+				"src/middleware/*.ts",
+				"src/lib/*.ts",
+				"src/mcp/*.ts"
+			],
 			"project": ["src/**/*.ts"],
 			"ignoreDependencies": ["pgvector"]
 		},
