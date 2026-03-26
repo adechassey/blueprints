@@ -36,9 +36,13 @@ curl -fsSL https://github.com/adechassey/blueprints/releases/latest/download/the
 sudo mv theodo-blueprints /usr/local/bin/
 ```
 
-### Windows
+### Quick install (Windows)
 
-Download `theodo-blueprints-win-x64.zip` from the [releases page](https://github.com/adechassey/blueprints/releases), extract it, and add the directory to your `PATH`.
+```powershell
+irm https://raw.githubusercontent.com/adechassey/blueprints/main/install.ps1 | iex
+```
+
+This installs to `%LOCALAPPDATA%\theodo-blueprints` and adds it to your `PATH`. To update, run the same command again.
 
 ## CLI Usage
 
