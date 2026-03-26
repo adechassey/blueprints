@@ -1,6 +1,7 @@
 import { and, count, desc, eq } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
+	blueprintProjects,
 	blueprints,
 	blueprintTags,
 	blueprintVersions,
@@ -46,16 +47,11 @@ async function upsertTags(db: DB, tagNames: string[]) {
 export async function createBlueprint(db: DB, input: CreateBlueprintInput, authorId: string) {
 	let slug = generateSlug(input.name);
 
-	// Check for slug collision within the same project
+	// Check for global slug collision
 	const existingSlug = await db
 		.select({ id: blueprints.id })
 		.from(blueprints)
-		.where(
-			and(
-				eq(blueprints.slug, slug),
-				input.projectId ? eq(blueprints.projectId, input.projectId) : undefined,
-			),
-		)
+		.where(eq(blueprints.slug, slug))
 		.limit(1);
 
 	if (existingSlug.length > 0) {
@@ -71,7 +67,6 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			usage: input.usage,
 			stack: input.stack,
 			layer: input.layer,
-			projectId: input.projectId,
 			authorId,
 			isPublic: input.isPublic ?? true,
 		})
@@ -93,6 +88,15 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		.update(blueprints)
 		.set({ currentVersionId: version.id })
 		.where(eq(blueprints.id, blueprint.id));
+
+	// Link to project if provided
+	if (input.projectId) {
+		await db.insert(blueprintProjects).values({
+			blueprintId: blueprint.id,
+			projectId: input.projectId,
+			addedBy: authorId,
+		});
+	}
 
 	// Generate embedding asynchronously — don't block create
 	try {
@@ -153,7 +157,6 @@ export async function updateBlueprint(
 	if (input.usage !== undefined) metadataUpdate.usage = input.usage;
 	if (input.stack !== undefined) metadataUpdate.stack = input.stack;
 	if (input.layer !== undefined) metadataUpdate.layer = input.layer;
-	if (input.projectId !== undefined) metadataUpdate.projectId = input.projectId;
 	if (input.isPublic !== undefined) metadataUpdate.isPublic = input.isPublic;
 
 	if (needsNewVersion && input.content) {
@@ -219,13 +222,23 @@ export async function updateBlueprint(
 }
 
 export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
-	const { page, limit, stack, layer, tag, projectId, authorId } = input;
+	const { page, limit, stack, layer, tag, projectId, project, authorId } = input;
 	const offset = (page - 1) * limit;
+
+	// Resolve project slug to UUID if needed
+	let resolvedProjectId = projectId;
+	if (!resolvedProjectId && project) {
+		const [p] = await db
+			.select({ id: projects.id })
+			.from(projects)
+			.where(eq(projects.slug, project))
+			.limit(1);
+		resolvedProjectId = p?.id;
+	}
 
 	const conditions = [];
 	if (stack) conditions.push(eq(blueprints.stack, stack));
 	if (layer) conditions.push(eq(blueprints.layer, layer));
-	if (projectId) conditions.push(eq(blueprints.projectId, projectId));
 	if (authorId) conditions.push(eq(blueprints.authorId, authorId));
 
 	let query = db
@@ -244,13 +257,20 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 			authorId: blueprints.authorId,
 			authorName: users.name,
 			authorImage: users.image,
-			projectId: blueprints.projectId,
-			projectName: projects.name,
 		})
 		.from(blueprints)
 		.leftJoin(users, eq(blueprints.authorId, users.id))
-		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
+
+	if (resolvedProjectId) {
+		query = query.innerJoin(
+			blueprintProjects,
+			and(
+				eq(blueprints.id, blueprintProjects.blueprintId),
+				eq(blueprintProjects.projectId, resolvedProjectId),
+			),
+		);
+	}
 
 	if (tag) {
 		query = query
@@ -266,6 +286,15 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	const countQuery = db.select({ total: count() }).from(blueprints).$dynamic();
 
 	let countQ = countQuery;
+	if (resolvedProjectId) {
+		countQ = countQ.innerJoin(
+			blueprintProjects,
+			and(
+				eq(blueprints.id, blueprintProjects.blueprintId),
+				eq(blueprintProjects.projectId, resolvedProjectId),
+			),
+		);
+	}
 	if (tag) {
 		countQ = countQ
 			.innerJoin(blueprintTags, eq(blueprints.id, blueprintTags.blueprintId))
@@ -279,8 +308,11 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	return { items, total, page, limit };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getBlueprintById(db: DB, id: string) {
-	const [blueprint] = await db.select().from(blueprints).where(eq(blueprints.id, id)).limit(1);
+	const condition = UUID_RE.test(id) ? eq(blueprints.id, id) : eq(blueprints.slug, id);
+	const [blueprint] = await db.select().from(blueprints).where(condition).limit(1);
 	if (!blueprint) return null;
 
 	const [author] = await db.select().from(users).where(eq(users.id, blueprint.authorId)).limit(1);
@@ -301,22 +333,18 @@ export async function getBlueprintById(db: DB, id: string) {
 		.innerJoin(tags, eq(blueprintTags.tagId, tags.id))
 		.where(eq(blueprintTags.blueprintId, id));
 
-	let project = null;
-	if (blueprint.projectId) {
-		const [p] = await db
-			.select()
-			.from(projects)
-			.where(eq(projects.id, blueprint.projectId))
-			.limit(1);
-		project = p ?? null;
-	}
+	const blueprintProjectRows = await db
+		.select({ id: projects.id, name: projects.name, slug: projects.slug })
+		.from(blueprintProjects)
+		.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
+		.where(eq(blueprintProjects.blueprintId, id));
 
 	return {
 		...blueprint,
 		author: author ?? null,
 		currentVersion,
 		tags: blueprintTagRows,
-		project,
+		projects: blueprintProjectRows,
 	};
 }
 

@@ -6,11 +6,10 @@ import { createApiClient, unwrapResponse } from '../lib/api.js';
 export function registerPullCommand(program: Command) {
 	program
 		.command('pull <slug>')
-		.description('Pull a blueprint from the registry')
+		.description('Pull a blueprint from the registry by slug')
 		.option('-o, --output <path>', 'Save to file instead of stdout')
 		.option('--version <n>', 'Pull specific version (default: latest)')
-		.option('--project <name>', 'Project scope')
-		.action(async (slug: string, opts: { output?: string; version?: string; project?: string }) => {
+		.action(async (slug: string, opts: { output?: string; version?: string }) => {
 			try {
 				const client = createApiClient();
 				const res = await client.api.blueprints[':id'].$get({ param: { id: slug } });
