@@ -1,20 +1,18 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Home page', () => {
-	test('loads and shows the app title', async ({ page }) => {
+	test('redirects unauthenticated users to login', async ({ page }) => {
 		await page.goto('/');
-		await expect(page.locator('text=Blueprints')).toBeVisible();
+		await expect(page).toHaveURL(/\/login/);
 	});
 
-	test('shows navigation links', async ({ page }) => {
-		await page.goto('/');
-		await expect(page.locator('nav >> text=All')).toBeVisible();
-		await expect(page.locator('nav >> text=Projects')).toBeVisible();
-		await expect(page.locator('nav >> text=Tags')).toBeVisible();
+	test('login page shows app branding', async ({ page }) => {
+		await page.goto('/login');
+		await expect(page.getByText('Blueprints').first()).toBeVisible();
 	});
 
-	test('shows search bar', async ({ page }) => {
-		await page.goto('/');
-		await expect(page.locator('input[placeholder*="Search"]')).toBeVisible();
+	test('login page shows sign in button', async ({ page }) => {
+		await page.goto('/login');
+		await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
 	});
 });

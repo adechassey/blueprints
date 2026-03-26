@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+const isCI = !!process.env.CI;
+
 export default defineConfig({
 	testDir: './e2e',
 	timeout: 30000,
@@ -9,7 +11,7 @@ export default defineConfig({
 		headless: true,
 	},
 	webServer: {
-		command: 'pnpm --filter webapp dev',
+		command: isCI ? 'pnpm --filter webapp preview --port 5173' : 'pnpm --filter webapp dev',
 		port: 5173,
 		reuseExistingServer: true,
 		timeout: 30000,

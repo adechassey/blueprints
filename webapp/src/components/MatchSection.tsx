@@ -68,11 +68,6 @@ export function MatchSection({ blueprintId }: MatchSectionProps) {
 										? m.matches_status_confirmed()
 										: m.matches_status_possible()}
 								</Badge>
-								{match.matchedBlueprint.projectName && (
-									<span className="text-xs text-on-surface-variant">
-										{match.matchedBlueprint.projectName}
-									</span>
-								)}
 							</div>
 							{canManage && match.status === 'possible' && (
 								<div className="flex gap-2">

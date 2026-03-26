@@ -9,7 +9,7 @@ export function registerListCommand(program: Command) {
 		.option('--stack <stack>', 'Filter by stack')
 		.option('--layer <layer>', 'Filter by layer')
 		.option('--tag <tag>', 'Filter by tag')
-		.option('--project <project>', 'Filter by project')
+		.option('--project <slug>', 'Filter by project slug')
 		.option('--author <author>', 'Filter by author ID')
 		.action(
 			async (opts: {
@@ -25,7 +25,7 @@ export function registerListCommand(program: Command) {
 					if (opts.stack) queryParams.stack = opts.stack;
 					if (opts.layer) queryParams.layer = opts.layer;
 					if (opts.tag) queryParams.tag = opts.tag;
-					if (opts.project) queryParams.projectId = opts.project;
+					if (opts.project) queryParams.project = opts.project;
 					if (opts.author) queryParams.authorId = opts.author;
 
 					const res = await client.api.blueprints.$get({ query: queryParams });

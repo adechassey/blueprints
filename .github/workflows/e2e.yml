@@ -24,10 +24,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Build webapp
-        run: pnpm --filter webapp build
+      - name: Build all packages
+        run: pnpm build
 
       - name: Run E2E tests
         run: npx playwright test
-        env:
-          VITE_API_URL: http://localhost:3001
