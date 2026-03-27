@@ -15,5 +15,5 @@ export function getConfigPath(): string {
 }
 
 export function getDefaultServerUrl(): string {
-	return 'https://blueprints.example.com';
+	return 'https://blueprints-api.vercel.app';
 }

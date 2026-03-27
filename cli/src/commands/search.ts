@@ -9,7 +9,7 @@ export function registerSearchCommand(program: Command) {
 		.option('--stack <stack>', 'Filter by stack')
 		.option('--layer <layer>', 'Filter by layer')
 		.option('--tag <tag>', 'Filter by tag')
-		.option('--project <project>', 'Filter by project')
+		.option('--project <slug>', 'Filter by project slug')
 		.option('--author <author>', 'Filter by author ID')
 		.action(
 			async (
@@ -28,7 +28,7 @@ export function registerSearchCommand(program: Command) {
 					if (opts.stack) filters.stack = opts.stack;
 					if (opts.layer) filters.layer = opts.layer;
 					if (opts.tag) filters.tag = opts.tag;
-					if (opts.project) filters.projectId = opts.project;
+					if (opts.project) filters.project = opts.project;
 
 					const res = await client.api.blueprints.search.$get({
 						query: { q: query, ...filters },

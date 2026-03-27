@@ -1,4 +1,6 @@
 export {
+	type AddBlueprintToProjectInput,
+	addBlueprintToProjectSchema,
 	type CreateBlueprintInput,
 	type CreateProjectInput,
 	createBlueprintSchema,

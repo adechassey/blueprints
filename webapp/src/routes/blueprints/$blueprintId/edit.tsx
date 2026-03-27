@@ -52,7 +52,7 @@ function EditBlueprintPage() {
 						layer: blueprint.layer,
 						tags: blueprint.tags?.map((t: { name: string }) => t.name),
 						content: blueprint.currentVersion?.content ?? '',
-						projectId: blueprint.projectId ?? undefined,
+						projectId: blueprint.projects?.[0]?.id ?? undefined,
 					}}
 					onSubmit={handleSubmit}
 					isSubmitting={updateMutation.isPending}
