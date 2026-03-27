@@ -10,6 +10,7 @@ import {
 	updateProjectSchema,
 } from '../lib/validation.js';
 import { getUser, requireAuth } from '../middleware/auth.js';
+import { generateBlueprintIndex } from '../services/blueprint-index.core.js';
 
 export const projectRoutes = new Hono()
 	.get('/projects', async (c) => {
@@ -275,4 +276,30 @@ export const projectRoutes = new Hono()
 			);
 
 		return c.json({ message: 'Blueprint removed from project' });
+	})
+	.get('/projects/:slug/index', async (c) => {
+		const slug = c.req.param('slug');
+
+		const [project] = await db.select().from(projects).where(eq(projects.slug, slug)).limit(1);
+		if (!project) {
+			return c.json({ error: 'Project not found' }, 404);
+		}
+
+		const projectBlueprints = await db
+			.select({
+				slug: blueprints.slug,
+				name: blueprints.name,
+				stack: blueprints.stack,
+				layer: blueprints.layer,
+				description: blueprints.description,
+				usage: blueprints.usage,
+			})
+			.from(blueprints)
+			.innerJoin(blueprintProjects, eq(blueprints.id, blueprintProjects.blueprintId))
+			.where(eq(blueprintProjects.projectId, project.id))
+			.orderBy(blueprints.stack, blueprints.layer, blueprints.name);
+
+		const markdown = generateBlueprintIndex(project.name, projectBlueprints);
+
+		return c.json({ markdown, project: project.name, count: projectBlueprints.length });
 	});
