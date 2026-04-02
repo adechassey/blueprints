@@ -5,12 +5,9 @@
 			"src": "index.ts",
 			"use": "@vercel/node",
 			"config": {
-				"excludeFiles": "{node_modules/@huggingface/**,node_modules/onnxruntime-*/**}"
+				"excludeFiles": "{node_modules/@huggingface/**,node_modules/onnxruntime-*/**,node_modules/.pnpm/@huggingface+transformers*/**,node_modules/.pnpm/onnxruntime*/**}"
 			}
 		}
 	],
-	"routes": [{ "src": "/(.*)", "dest": "index.ts" }],
-	"env": {
-		"ENABLE_EXPERIMENTAL_COREPACK": "1"
-	}
+	"routes": [{ "src": "/(.*)", "dest": "index.ts" }]
 }
