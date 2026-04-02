@@ -1,13 +1,16 @@
 {
-	"buildCommand": "drizzle-kit migrate",
+	"buildCommand": "node bundle.mjs && drizzle-kit migrate",
 	"builds": [
 		{
-			"src": "index.ts",
+			"src": "dist/index.mjs",
 			"use": "@vercel/node",
 			"config": {
-				"excludeFiles": "{node_modules/@huggingface/**,node_modules/onnxruntime-*/**,node_modules/.pnpm/@huggingface+transformers*/**,node_modules/.pnpm/onnxruntime*/**}"
+				"includeFiles": [
+					"node_modules/.pnpm/onnxruntime-node*/node_modules/onnxruntime-node/**"
+				],
+				"excludeFiles": "{node_modules/.pnpm/onnxruntime-node*/**/*cuda*,node_modules/.pnpm/onnxruntime-node*/**/*tensorrt*}"
 			}
 		}
 	],
-	"routes": [{ "src": "/(.*)", "dest": "index.ts" }]
+	"routes": [{ "src": "/(.*)", "dest": "dist/index.mjs" }]
 }
