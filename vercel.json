@@ -4,5 +4,10 @@
 	"outputDirectory": "webapp/dist",
 	"installCommand": "pnpm install",
 	"framework": null,
-	"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+	"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+	"build": {
+		"env": {
+			"ENABLE_EXPERIMENTAL_COREPACK": "1"
+		}
+	}
 }
