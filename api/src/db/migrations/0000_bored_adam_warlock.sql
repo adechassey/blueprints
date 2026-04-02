@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+--> statement-breakpoint
 CREATE TYPE "public"."blueprint_stack" AS ENUM('server', 'webapp', 'shared', 'fullstack');--> statement-breakpoint
 CREATE TYPE "public"."match_status" AS ENUM('possible', 'confirmed', 'dismissed');--> statement-breakpoint
 CREATE TYPE "public"."user_role" AS ENUM('admin', 'maintainer', 'user');--> statement-breakpoint
