@@ -1,6 +1,6 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 
-const funcDir = '.vercel/output/functions/api/[[...path]].func';
+const funcDir = '.vercel/output/functions/index.func';
 
 mkdirSync(funcDir, { recursive: true });
 copyFileSync('dist/index.mjs', `${funcDir}/index.mjs`);
@@ -12,6 +12,7 @@ writeFileSync(
 			runtime: 'nodejs22.x',
 			handler: 'index.mjs',
 			launcherType: 'Nodejs',
+			supportsResponseStreaming: true,
 		},
 		null,
 		'\t',
@@ -20,7 +21,14 @@ writeFileSync(
 
 writeFileSync(
 	'.vercel/output/config.json',
-	JSON.stringify({ version: 3 }, null, '\t'),
+	JSON.stringify(
+		{
+			version: 3,
+			routes: [{ src: '/.*', dest: '/' }],
+		},
+		null,
+		'\t',
+	),
 );
 
 console.log('Vercel Build Output API structure created');
