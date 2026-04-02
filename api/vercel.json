@@ -5,10 +5,7 @@
 			"src": "dist/index.mjs",
 			"use": "@vercel/node",
 			"config": {
-				"includeFiles": [
-					"node_modules/.pnpm/onnxruntime-node*/node_modules/onnxruntime-node/**"
-				],
-				"excludeFiles": "{node_modules/.pnpm/onnxruntime-node*/**/*cuda*,node_modules/.pnpm/onnxruntime-node*/**/*tensorrt*}"
+				"excludeFiles": "{node_modules/.pnpm/onnxruntime-node*/**/*cuda*,node_modules/.pnpm/onnxruntime-node*/**/*tensorrt*,node_modules/onnxruntime-node/**/*cuda*,node_modules/onnxruntime-node/**/*tensorrt*}"
 			}
 		}
 	],

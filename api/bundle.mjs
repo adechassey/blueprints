@@ -7,7 +7,7 @@ await build({
 	target: 'node22',
 	format: 'esm',
 	outfile: 'dist/index.mjs',
-	external: ['onnxruntime-node'],
+	external: ['@huggingface/transformers'],
 	minify: true,
 	banner: { js: 'import{createRequire}from"module";const require=createRequire(import.meta.url);' },
 });
