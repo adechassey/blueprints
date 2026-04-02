@@ -6,4 +6,5 @@ dist
 coverage
 
 .env
+api/api/
 .claude/projects/

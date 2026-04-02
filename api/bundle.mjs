@@ -6,10 +6,10 @@ await build({
 	platform: 'node',
 	target: 'node22',
 	format: 'esm',
-	outfile: 'dist/index.mjs',
+	outfile: 'api/[[...path]].mjs',
 	external: ['@huggingface/transformers'],
 	minify: true,
 	banner: { js: 'import{createRequire}from"module";const require=createRequire(import.meta.url);' },
 });
 
-console.log('API bundled to dist/index.mjs');
+console.log('API bundled to api/[[...path]].mjs');
