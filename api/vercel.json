@@ -1,13 +1,13 @@
 {
-	"buildCommand": "pnpm --filter @blueprints/shared build && rm -rf node_modules/@blueprints/shared && cp -rL ../packages/shared node_modules/@blueprints/shared && drizzle-kit migrate",
+	"buildCommand": "pnpm --filter @blueprints/shared build && node bundle.mjs && drizzle-kit migrate",
 	"builds": [
 		{
-			"src": "index.ts",
+			"src": "dist/index.mjs",
 			"use": "@vercel/node",
 			"config": {
 				"excludeFiles": "{node_modules/.pnpm/onnxruntime-node*/**/*cuda*,node_modules/.pnpm/onnxruntime-node*/**/*tensorrt*,node_modules/onnxruntime-node/**/*cuda*,node_modules/onnxruntime-node/**/*tensorrt*}"
 			}
 		}
 	],
-	"routes": [{ "src": "/(.*)", "dest": "index.ts" }]
+	"routes": [{ "src": "/(.*)", "dest": "dist/index.mjs" }]
 }
