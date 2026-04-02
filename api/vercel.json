@@ -1,13 +1,4 @@
 {
-	"buildCommand": "pnpm --filter @blueprints/shared build && node bundle.mjs && pnpm --filter api run db:migrate",
-	"builds": [
-		{
-			"src": "dist/index.mjs",
-			"use": "@vercel/node",
-			"config": {
-				"excludeFiles": "{node_modules/.pnpm/onnxruntime-node*/**/*cuda*,node_modules/.pnpm/onnxruntime-node*/**/*tensorrt*,node_modules/onnxruntime-node/**/*cuda*,node_modules/onnxruntime-node/**/*tensorrt*}"
-			}
-		}
-	],
-	"routes": [{ "src": "/(.*)", "dest": "dist/index.mjs" }]
+	"buildCommand": "pnpm --filter @blueprints/shared build && pnpm --filter api run db:migrate",
+	"routes": [{ "src": "/(.*)", "dest": "index.ts" }]
 }

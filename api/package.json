@@ -16,7 +16,7 @@
 		"db:seed": "tsx --env-file=../.env scripts/seed.ts"
 	},
 	"exports": {
-		".": "./src/index.ts",
+		".": "./index.ts",
 		"./app": "./src/app.ts"
 	},
 	"dependencies": {
