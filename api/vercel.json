@@ -1,4 +1,4 @@
 {
-	"buildCommand": "pnpm --filter @blueprints/shared build && drizzle-kit migrate",
+	"buildCommand": "pnpm --filter @blueprints/shared build && pnpm --filter api run db:migrate",
 	"routes": [{ "src": "/(.*)", "dest": "index.ts" }]
 }
