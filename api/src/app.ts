@@ -55,4 +55,5 @@ app.route('/api', previewAuthRoutes);
 // Using all() to match any method, and the path must be exact to avoid trie conflicts
 app.all('/api/auth/*', (c) => auth.handler(c.req.raw));
 
+export default app;
 export type AppType = typeof app;

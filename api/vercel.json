@@ -1,13 +1,3 @@
 {
-	"buildCommand": "drizzle-kit migrate",
-	"builds": [
-		{
-			"src": "index.ts",
-			"use": "@vercel/node",
-			"config": {
-				"excludeFiles": "{node_modules/@huggingface/**,node_modules/onnxruntime-*/**}"
-			}
-		}
-	],
-	"routes": [{ "src": "/(.*)", "dest": "index.ts" }]
+	"buildCommand": "pnpm --filter @blueprints/shared build && pnpm --filter api run db:migrate"
 }
