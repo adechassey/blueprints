@@ -15,7 +15,11 @@ export const auth = betterAuth({
 		},
 	}),
 	basePath: '/api/auth',
-	trustedOrigins: [process.env.CORS_ORIGIN || 'http://localhost:5173', 'http://localhost:5174'],
+	trustedOrigins: [
+		process.env.CORS_ORIGIN || 'http://localhost:5173',
+		'http://localhost:5174',
+		'https://blueprints-webapp-*-adechasseys-projects.vercel.app',
+	],
 	socialProviders: {
 		google: {
 			// biome-ignore lint/style/noNonNullAssertion: env vars required at startup
