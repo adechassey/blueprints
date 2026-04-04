@@ -11,6 +11,8 @@ import {
 	vector,
 } from 'drizzle-orm/pg-core';
 
+export const projectMemberRole = pgEnum('project_member_role', ['owner', 'member']);
+
 // Enums
 export const userRole = pgEnum('user_role', ['admin', 'maintainer', 'user']);
 export const blueprintStack = pgEnum('blueprint_stack', [
@@ -95,31 +97,26 @@ export const projects = pgTable('projects', {
 });
 
 // Blueprints
-export const blueprints = pgTable(
-	'blueprints',
-	{
-		id: uuid('id').primaryKey().defaultRandom(),
-		name: text('name').notNull(),
-		slug: text('slug').notNull(),
-		description: text('description'),
-		usage: text('usage'),
-		currentVersionId: uuid('current_version_id'),
-		projectId: uuid('project_id').references(() => projects.id),
-		authorId: text('author_id')
-			.notNull()
-			.references(() => users.id),
-		stack: blueprintStack('stack').notNull(),
-		layer: text('layer').notNull(),
-		isPublic: boolean('is_public').notNull().default(true),
-		downloadCount: integer('download_count').notNull().default(0),
-		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-		updatedAt: timestamp('updated_at', { withTimezone: true })
-			.notNull()
-			.defaultNow()
-			.$onUpdate(() => new Date()),
-	},
-	(t) => [unique('blueprints_project_slug').on(t.projectId, t.slug)],
-);
+export const blueprints = pgTable('blueprints', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	name: text('name').notNull(),
+	slug: text('slug').notNull().unique(),
+	description: text('description'),
+	usage: text('usage'),
+	currentVersionId: uuid('current_version_id'),
+	authorId: text('author_id')
+		.notNull()
+		.references(() => users.id),
+	stack: blueprintStack('stack').notNull(),
+	layer: text('layer').notNull(),
+	isPublic: boolean('is_public').notNull().default(true),
+	downloadCount: integer('download_count').notNull().default(0),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
+		.notNull()
+		.defaultNow()
+		.$onUpdate(() => new Date()),
+});
 
 // Blueprint versions
 export const blueprintVersions = pgTable('blueprint_versions', {
@@ -136,6 +133,39 @@ export const blueprintVersions = pgTable('blueprint_versions', {
 	embedding: vector('embedding', { dimensions: 384 }),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Project members
+export const projectMembers = pgTable(
+	'project_members',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		projectId: uuid('project_id')
+			.notNull()
+			.references(() => projects.id, { onDelete: 'cascade' }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		role: projectMemberRole('role').notNull().default('member'),
+		joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [unique('project_members_unique').on(t.projectId, t.userId)],
+);
+
+// Blueprint-Project join table (many-to-many)
+export const blueprintProjects = pgTable(
+	'blueprint_projects',
+	{
+		blueprintId: uuid('blueprint_id')
+			.notNull()
+			.references(() => blueprints.id, { onDelete: 'cascade' }),
+		projectId: uuid('project_id')
+			.notNull()
+			.references(() => projects.id, { onDelete: 'cascade' }),
+		addedBy: text('added_by').references(() => users.id),
+		addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow(),
+	},
+	(t) => [primaryKey({ columns: [t.blueprintId, t.projectId] })],
+);
 
 // Tags
 export const tags = pgTable('tags', {

@@ -1,6 +1,7 @@
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
+	blueprintProjects,
 	blueprints,
 	blueprintTags,
 	blueprintVersions,
@@ -17,6 +18,7 @@ interface SearchFilters {
 	layer?: string;
 	tag?: string;
 	projectId?: string;
+	project?: string;
 	limit?: number;
 	offset?: number;
 }
@@ -25,13 +27,24 @@ interface ResolvedFilters {
 	stack?: string;
 	layer?: string;
 	tag?: string;
-	projectId?: string;
+	resolvedProjectId?: string;
 	limit: number;
 	offset: number;
 }
 
 export async function semanticSearch(db: DB, query: string, filters: SearchFilters = {}) {
-	const { stack, layer, tag, projectId, limit = 20, offset = 0 } = filters;
+	const { stack, layer, tag, projectId, project, limit = 20, offset = 0 } = filters;
+
+	// Resolve project slug to UUID if needed
+	let resolvedProjectId = projectId;
+	if (!resolvedProjectId && project) {
+		const [p] = await db
+			.select({ id: projects.id })
+			.from(projects)
+			.where(eq(projects.slug, project))
+			.limit(1);
+		resolvedProjectId = p?.id;
+	}
 
 	let queryEmbedding: number[] | null = null;
 	try {
@@ -40,10 +53,12 @@ export async function semanticSearch(db: DB, query: string, filters: SearchFilte
 		logger.error({ err }, 'Failed to generate query embedding, falling back to text search');
 	}
 
+	const resolved: ResolvedFilters = { stack, layer, tag, resolvedProjectId, limit, offset };
+
 	if (queryEmbedding) {
-		return vectorSearch(db, queryEmbedding, query, { stack, layer, tag, projectId, limit, offset });
+		return vectorSearch(db, queryEmbedding, query, resolved);
 	}
-	return textSearch(db, query, { stack, layer, tag, projectId, limit, offset });
+	return textSearch(db, query, resolved);
 }
 
 async function vectorSearch(
@@ -52,14 +67,13 @@ async function vectorSearch(
 	query: string,
 	filters: ResolvedFilters,
 ) {
-	const { stack, layer, tag, projectId, limit, offset } = filters;
+	const { stack, layer, tag, resolvedProjectId, limit, offset } = filters;
 	const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
 	const conditions = [sql`${blueprintVersions.embedding} IS NOT NULL`];
 	if (stack)
 		conditions.push(eq(blueprints.stack, stack as 'server' | 'webapp' | 'shared' | 'fullstack'));
 	if (layer) conditions.push(eq(blueprints.layer, layer));
-	if (projectId) conditions.push(eq(blueprints.projectId, projectId));
 
 	let baseQuery = db
 		.select({
@@ -76,15 +90,22 @@ async function vectorSearch(
 			authorId: blueprints.authorId,
 			authorName: users.name,
 			authorImage: users.image,
-			projectId: blueprints.projectId,
-			projectName: projects.name,
 			distance: sql<number>`${blueprintVersions.embedding} <=> ${embeddingStr}::vector`,
 		})
 		.from(blueprints)
 		.innerJoin(blueprintVersions, eq(blueprints.currentVersionId, blueprintVersions.id))
 		.leftJoin(users, eq(blueprints.authorId, users.id))
-		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
+
+	if (resolvedProjectId) {
+		baseQuery = baseQuery.innerJoin(
+			blueprintProjects,
+			and(
+				eq(blueprints.id, blueprintProjects.blueprintId),
+				eq(blueprintProjects.projectId, resolvedProjectId),
+			),
+		);
+	}
 
 	if (tag) {
 		baseQuery = baseQuery
@@ -109,14 +130,13 @@ async function vectorSearch(
 }
 
 async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
-	const { stack, layer, tag, projectId, limit, offset } = filters;
+	const { stack, layer, tag, resolvedProjectId, limit, offset } = filters;
 	const pattern = `%${query}%`;
 
 	const conditions = [or(ilike(blueprints.name, pattern), ilike(blueprints.description, pattern))];
 	if (stack)
 		conditions.push(eq(blueprints.stack, stack as 'server' | 'webapp' | 'shared' | 'fullstack'));
 	if (layer) conditions.push(eq(blueprints.layer, layer));
-	if (projectId) conditions.push(eq(blueprints.projectId, projectId));
 
 	let baseQuery = db
 		.select({
@@ -133,13 +153,20 @@ async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
 			authorId: blueprints.authorId,
 			authorName: users.name,
 			authorImage: users.image,
-			projectId: blueprints.projectId,
-			projectName: projects.name,
 		})
 		.from(blueprints)
 		.leftJoin(users, eq(blueprints.authorId, users.id))
-		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
+
+	if (resolvedProjectId) {
+		baseQuery = baseQuery.innerJoin(
+			blueprintProjects,
+			and(
+				eq(blueprints.id, blueprintProjects.blueprintId),
+				eq(blueprintProjects.projectId, resolvedProjectId),
+			),
+		);
+	}
 
 	if (tag) {
 		baseQuery = baseQuery

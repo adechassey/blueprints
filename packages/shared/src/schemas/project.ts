@@ -18,3 +18,9 @@ export const updateProjectSchema = z.object({
 });
 
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+
+export const addBlueprintToProjectSchema = z.object({
+	blueprintId: z.string().uuid(),
+});
+
+export type AddBlueprintToProjectInput = z.infer<typeof addBlueprintToProjectSchema>;

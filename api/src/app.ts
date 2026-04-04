@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { auth } from './lib/auth.js';
+import { isProjectPreviewUrl } from './lib/vercel-preview.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { generalRateLimit } from './middleware/rate-limit.js';
 import { adminRoutes } from './routes/admin.js';
@@ -20,7 +21,15 @@ const baseApp = new Hono();
 baseApp.use(
 	'*',
 	cors({
-		origin: process.env.CORS_ORIGIN || ['http://localhost:5173', 'http://localhost:5174'],
+		origin: (origin) => {
+			const allowed = process.env.CORS_ORIGIN
+				? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+				: ['http://localhost:5173', 'http://localhost:5174'];
+
+			if (allowed.includes(origin)) return origin;
+			if (isProjectPreviewUrl(origin)) return origin;
+			return allowed[0] ?? '';
+		},
 		credentials: true,
 	}),
 );
@@ -46,6 +55,5 @@ app.route('/api', previewAuthRoutes);
 // Using all() to match any method, and the path must be exact to avoid trie conflicts
 app.all('/api/auth/*', (c) => auth.handler(c.req.raw));
 
-export type AppType = typeof app;
-
 export default app;
+export type AppType = typeof app;

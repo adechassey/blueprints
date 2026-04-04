@@ -17,6 +17,6 @@ describe('getConfigPath', () => {
 
 describe('getDefaultServerUrl', () => {
 	it('returns expected URL', () => {
-		expect(getDefaultServerUrl()).toBe('https://blueprints.example.com');
+		expect(getDefaultServerUrl()).toBe('https://blueprints-api.vercel.app');
 	});
 });
