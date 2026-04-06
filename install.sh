@@ -33,6 +33,11 @@ case "$ARCH" in
     ;;
 esac
 
+# The CLI is a Node.js bundle, so macOS x64 can use the arm64 build
+if [ "$OS" = "darwin" ] && [ "$ARCH" = "x64" ]; then
+  ARCH="arm64"
+fi
+
 TARGET="${OS}-${ARCH}"
 ASSET_NAME="theodo-blueprints-${TARGET}.tar.gz"
 
