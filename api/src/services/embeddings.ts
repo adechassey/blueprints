@@ -5,6 +5,8 @@ let pipeline: FeatureExtractionPipeline | null = null;
 async function getPipeline(): Promise<FeatureExtractionPipeline> {
 	if (pipeline) return pipeline;
 	const mod = await import('@huggingface/transformers');
+	// Use /tmp for model cache on Vercel (filesystem is read-only at /var/task)
+	mod.env.cacheDir = '/tmp/transformers-cache';
 	const create = mod.pipeline as (
 		task: 'feature-extraction',
 		model: string,
