@@ -35,7 +35,10 @@ export const adminRoutes = new Hono()
 				image: users.image,
 				role: users.role,
 				createdAt: users.createdAt,
-				blueprintCount: sql<number>`(SELECT count(*) FROM blueprints WHERE blueprints.author_id = "users"."id")`.mapWith(Number),
+				blueprintCount:
+					sql<number>`(SELECT count(*) FROM blueprints WHERE blueprints.author_id = "users"."id")`.mapWith(
+						Number,
+					),
 			})
 			.from(users)
 			.orderBy(users.name);
@@ -100,8 +103,7 @@ export const adminRoutes = new Hono()
 			.where(eq(projects.id, id))
 			.limit(1);
 		if (!existing) return c.json({ error: 'Project not found' }, 404);
-		// Unlink blueprints from project first
-		await db.update(blueprints).set({ projectId: null }).where(eq(blueprints.projectId, id));
+		// blueprint_projects and project_members cascade via FK onDelete: 'cascade'
 		await db.delete(projects).where(eq(projects.id, id));
 		return c.json({ success: true });
 	});

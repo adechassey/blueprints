@@ -1,24 +1,19 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Navigation', () => {
-	test('navigates to projects page', async ({ page }) => {
+	test('unauthenticated visit to / redirects to login', async ({ page }) => {
 		await page.goto('/');
-		await page.click('nav >> text=Projects');
-		await expect(page).toHaveURL(/\/projects/);
+		await expect(page).toHaveURL(/\/login/);
 	});
 
-	test('navigates to tags page', async ({ page }) => {
-		await page.goto('/');
-		await page.click('nav >> text=Tags');
-		await expect(page).toHaveURL(/\/tags/);
+	test('login page renders successfully', async ({ page }) => {
+		const response = await page.goto('/login');
+		expect(response?.status()).toBe(200);
 	});
 
-	test('navigates to login page', async ({ page }) => {
+	test('direct access to /login shows sign in UI', async ({ page }) => {
 		await page.goto('/login');
-		await expect(page.locator('text=Sign in')).toBeVisible();
+		await expect(page.getByText('Blueprints').first()).toBeVisible();
+		await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
 	});
-
-	// TODO: Auth-dependent navigation tests
-	// test('navigates to new blueprint page (requires auth)', ...)
-	// test('navigates to admin page (requires admin role)', ...)
 });

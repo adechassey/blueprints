@@ -8,6 +8,7 @@ export interface FrontmatterMeta {
 	description?: string;
 	usage?: string;
 	stack?: string;
+	project?: string;
 	layer?: string;
 	tags?: string[];
 }
@@ -41,8 +42,10 @@ export function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content:
 				meta.usage = rawValue;
 				break;
 			case 'stack':
-			case 'project':
 				meta.stack = rawValue;
+				break;
+			case 'project':
+				meta.project = rawValue;
 				break;
 			case 'layer':
 				meta.layer = rawValue;

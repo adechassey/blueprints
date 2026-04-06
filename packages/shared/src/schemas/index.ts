@@ -9,6 +9,8 @@ export {
 } from './blueprint.js';
 
 export {
+	type AddBlueprintToProjectInput,
+	addBlueprintToProjectSchema,
 	type CreateProjectInput,
 	createProjectSchema,
 	type UpdateProjectInput,

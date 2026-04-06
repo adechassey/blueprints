@@ -1,0 +1,3 @@
+{
+	"buildCommand": "pnpm --filter @blueprints/shared build && pnpm --filter api run db:migrate"
+}

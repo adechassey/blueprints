@@ -20,7 +20,6 @@ export const updateBlueprintSchema = z.object({
 	usage: z.string().optional(),
 	stack: z.enum(['server', 'webapp', 'shared', 'fullstack']).optional(),
 	layer: z.string().min(1).optional(),
-	projectId: z.string().uuid().nullable().optional(),
 	tags: z.array(z.string()).optional(),
 	content: z.string().min(1).optional(),
 	changelog: z.string().optional(),
@@ -36,6 +35,7 @@ export const listBlueprintsSchema = z.object({
 	layer: z.string().optional(),
 	tag: z.string().optional(),
 	projectId: z.string().uuid().optional(),
+	project: z.string().optional(),
 	authorId: z.string().uuid().optional(),
 });
 

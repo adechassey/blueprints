@@ -30,14 +30,27 @@ tags: [nestjs, typescript]
 		expect(content).toBe('Just content');
 	});
 
-	it('handles project as alias for stack', () => {
+	it('parses project field separately from stack', () => {
 		const raw = `---
-project: webapp
+project: my-team
+stack: webapp
 ---
 
 Content`;
 		const { meta } = parseFrontmatter(raw);
+		expect(meta.project).toBe('my-team');
 		expect(meta.stack).toBe('webapp');
+	});
+
+	it('parses project field without stack', () => {
+		const raw = `---
+project: backend-team
+---
+
+Content`;
+		const { meta } = parseFrontmatter(raw);
+		expect(meta.project).toBe('backend-team');
+		expect(meta.stack).toBeUndefined();
 	});
 
 	it('handles lines without colons', () => {

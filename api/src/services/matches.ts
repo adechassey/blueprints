@@ -1,11 +1,10 @@
 import { and, eq, ne, or, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
-import { blueprintMatches, blueprints, blueprintVersions, projects, users } from '../db/schema.js';
+import { blueprintMatches, blueprints, blueprintVersions, users } from '../db/schema.js';
 import { logger } from '../lib/logger.js';
 import {
 	canonicalPair,
 	deduplicateMatches,
-	isSameSlug,
 	MATCH_REASON,
 	similarityToPercent,
 } from './matches.core.js';
@@ -15,7 +14,6 @@ export async function computeMatchesForBlueprint(db: DB, blueprintId: string) {
 		.select({
 			id: blueprints.id,
 			slug: blueprints.slug,
-			projectId: blueprints.projectId,
 			currentVersionId: blueprints.currentVersionId,
 		})
 		.from(blueprints)
@@ -31,24 +29,7 @@ export async function computeMatchesForBlueprint(db: DB, blueprintId: string) {
 		score: number | null;
 	}[] = [];
 
-	// 1. Slug matches — same slug, different project
-	const slugCandidates = await db
-		.select({ id: blueprints.id, slug: blueprints.slug, projectId: blueprints.projectId })
-		.from(blueprints)
-		.where(and(eq(blueprints.slug, bp.slug), ne(blueprints.id, bp.id)));
-
-	for (const c of slugCandidates) {
-		if (isSameSlug(bp, c)) {
-			candidates.push({
-				blueprintId: bp.id,
-				matchedBlueprintId: c.id,
-				reason: MATCH_REASON.SLUG,
-				score: null,
-			});
-		}
-	}
-
-	// 2. Embedding matches — cosine similarity > 60%
+	// Embedding matches — cosine similarity > 60%
 	if (bp.currentVersionId) {
 		const [version] = await db
 			.select({ embedding: blueprintVersions.embedding })
@@ -86,7 +67,7 @@ export async function computeMatchesForBlueprint(db: DB, blueprintId: string) {
 		}
 	}
 
-	// 3. Deduplicate and insert
+	// Deduplicate and insert
 	const deduped = deduplicateMatches(candidates);
 	let newMatches = 0;
 
@@ -157,11 +138,9 @@ export async function getMatchesForBlueprint(db: DB, blueprintId: string) {
 				stack: blueprints.stack,
 				layer: blueprints.layer,
 				authorName: users.name,
-				projectName: projects.name,
 			})
 			.from(blueprints)
 			.leftJoin(users, eq(blueprints.authorId, users.id))
-			.leftJoin(projects, eq(blueprints.projectId, projects.id))
 			.where(eq(blueprints.id, otherId))
 			.limit(1);
 

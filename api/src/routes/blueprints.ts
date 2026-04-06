@@ -1,9 +1,9 @@
 import { zValidator } from '@hono/zod-validator';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { db } from '../db/index.js';
-import { blueprints as blueprintsTable } from '../db/schema.js';
+import { blueprints as blueprintsTable, projectMembers, projects } from '../db/schema.js';
 import {
 	createBlueprintSchema,
 	listBlueprintsSchema,
@@ -28,6 +28,7 @@ const searchSchema = z.object({
 	layer: z.string().optional(),
 	tag: z.string().optional(),
 	projectId: z.string().uuid().optional(),
+	project: z.string().optional(),
 	limit: z.coerce.number().int().min(1).max(100).default(20),
 	offset: z.coerce.number().int().min(0).default(0),
 });
@@ -54,6 +55,29 @@ export const blueprintRoutes = new Hono()
 	.post('/blueprints', requireAuth, zValidator('json', createBlueprintSchema), async (c) => {
 		const input = c.req.valid('json');
 		const user = getUser(c);
+
+		if (input.projectId && user.role !== 'admin') {
+			// Resolve projectId (may be UUID or slug — we accept UUID here)
+			const [project] = await db
+				.select({ id: projects.id })
+				.from(projects)
+				.where(eq(projects.id, input.projectId))
+				.limit(1);
+			if (!project) {
+				return c.json({ error: 'Project not found' }, 404);
+			}
+			const [membership] = await db
+				.select({ id: projectMembers.id })
+				.from(projectMembers)
+				.where(
+					and(eq(projectMembers.projectId, input.projectId), eq(projectMembers.userId, user.id)),
+				)
+				.limit(1);
+			if (!membership) {
+				return c.json({ error: 'You must be a member of this project to add blueprints' }, 403);
+			}
+		}
+
 		const blueprint = await createBlueprint(db, input, user.id);
 		return c.json(blueprint, 201);
 	})
