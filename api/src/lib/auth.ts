@@ -1,4 +1,5 @@
 import { betterAuth } from 'better-auth';
+import { bearer } from 'better-auth/plugins';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { db } from '../db/index.js';
 import * as schema from '../db/schema.js';
@@ -50,6 +51,7 @@ export const auth = betterAuth({
 			},
 		},
 	},
+	plugins: [bearer()],
 	databaseHooks: {
 		user: {
 			create: {

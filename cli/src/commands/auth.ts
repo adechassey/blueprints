@@ -18,11 +18,18 @@ export function registerAuthCommands(program: Command) {
 			}
 
 			const config = getConfig();
-			console.log(chalk.blue(`Open this URL to sign in:`));
-			console.log(`  ${config.server}/login`);
+			const webappUrl = config.server.replace('-api', '-webapp').replace(':3001', ':5173');
+			const tokenUrl = `${webappUrl}/cli-token`;
+
+			console.log(chalk.blue('Opening browser to authenticate...'));
+			console.log(`  ${tokenUrl}`);
 			console.log();
-			console.log('After signing in, copy your token and run:');
-			console.log(chalk.gray(`  theodo-blueprints auth login --token <your-token>`));
+
+			const { exec } = await import('node:child_process');
+			const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+			exec(`${cmd} ${tokenUrl}`);
+
+			console.log('After signing in, copy the command from the page and paste it here.');
 		});
 
 	auth
