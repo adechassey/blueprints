@@ -19,12 +19,8 @@ To update, run the same command again.
 Download the latest release for your platform from the [releases page](https://github.com/adechassey/blueprints/releases), extract it, and move the binary to a directory in your `PATH`:
 
 ```sh
-# macOS (Apple Silicon)
+# macOS (Apple Silicon and Intel — the bundle is a platform-agnostic Node.js script)
 curl -fsSL https://github.com/adechassey/blueprints/releases/latest/download/theodo-blueprints-darwin-arm64.tar.gz | tar xz
-sudo mv theodo-blueprints /usr/local/bin/
-
-# macOS (Intel)
-curl -fsSL https://github.com/adechassey/blueprints/releases/latest/download/theodo-blueprints-darwin-x64.tar.gz | tar xz
 sudo mv theodo-blueprints /usr/local/bin/
 
 # Linux (x64)
