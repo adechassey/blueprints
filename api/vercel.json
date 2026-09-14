@@ -1,7 +1,7 @@
 {
 	"buildCommand": "pnpm --filter @blueprints/shared build",
 	"functions": {
-		"api/[[...path]].mjs": {
+		"/": {
 			"excludeFiles": "node_modules/**/onnxruntime-node/bin/napi-v3/{darwin,win32,linux/arm64}/**"
 		}
 	}
