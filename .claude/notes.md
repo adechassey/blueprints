@@ -10,7 +10,11 @@
 ## API / Vercel
 - `api/bundle.mjs` marks `@huggingface/transformers` as external → Vercel file-tracing ships the whole tree into the lambda, including `onnxruntime-node`'s 208 MB of native binaries for all 6 platforms. This pushed the function to 430 MB uncompressed (> 250 MB legacy limit).
 - Fix applied (2025): `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` env var on the Vercel api project (large functions beta). `VERCEL_ANALYZE_BUILD_OUTPUT=1` gives a detailed bundle report.
-- transformers.js v3 statically imports `onnxruntime-node` with NO WASM fallback in Node — you can't drop the package, only unused platform binaries (see `excludeFiles` discussion in api/vercel.json if cold starts become an issue).
+- transformers.js v3 statically imports `onnxruntime-node` with NO WASM fallback in Node — you can't drop the package, only unused native binaries.
+- Final fix (sizes from `VERCEL_ANALYZE_BUILD_OUTPUT=1` build report): function went 430 MB → 68 MB.
+  - `excludeFiles` in `api/vercel.json` prunes onnxruntime-node's non-linux + CUDA/TensorRT binaries. GOTCHAS: (1) with Vercel's native Hono support the functions key must be the ENTRYPOINT FILE that literally imports `hono` (`src/app.ts`), not the route (`/` is rejected) and not `index.ts` (doesn't import hono, never matches); (2) nft matches ignore globs with picomatch WITHOUT `dot: true`, so `.pnpm` must appear literally in the pattern; (3) validate globs locally against real traced paths before pushing — silent no-ops are the failure mode.
+  - onnxruntime-node's postinstall auto-extracts CUDA/TensorRT EP libs on linux x64 (~273 MB, invisible on macOS dev machines). `ONNXRUNTIME_NODE_INSTALL_CUDA=skip` project env var skips it, but only takes effect on a fresh install — the Vercel build cache restores extracted node_modules and pnpm skips postinstall when up-to-date.
+  - Vercel CLI `redeploy` re-runs the build but didn't honor `VERCEL_SUPPORT_LARGE_FUNCTIONS` (failed at 250 MB); git-triggered deploys behaved differently. Don't rely on the flag alone — get under 250 MB.
 
 ## Vercel deploy (API)
 - `api/src/app.ts` MUST keep a default export (`export { app as default }`): Vercel's native Hono support resolves the entry through package exports and requires a default function export. Removing it = every invocation fails with `Invalid export found in module ... The default export must be a function or server` and FUNCTION_INVOCATION_FAILED 500s.
