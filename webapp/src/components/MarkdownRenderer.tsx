@@ -7,22 +7,39 @@ import remarkGfm from 'remark-gfm';
  * Lazy-loaded Prism (light build) with only the languages blueprints
  * actually use. Keeps react-syntax-highlighter and its languages out
  * of the main bundle.
+ *
+ * IMPORTANT: import every module via its explicit `dist/esm/` subpath.
+ * The package main entry resolves to the CJS build — mixing it with
+ * the ESM language modules breaks registerLanguage (the interop layer
+ * wraps grammar functions into namespace objects, and refractor's
+ * register expects plain functions).
  */
 const LazyCodeBlock = lazy(async () => {
-	const [{ PrismLight }, { default: oneDark }, tsx, ts, js, bash, json, yaml, python, css, md] =
-		await Promise.all([
-			import('react-syntax-highlighter'),
-			import('react-syntax-highlighter/dist/esm/styles/prism'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/tsx'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/typescript'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/javascript'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/bash'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/json'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/yaml'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/python'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/css'),
-			import('react-syntax-highlighter/dist/esm/languages/prism/markdown'),
-		]);
+	const [
+		{ default: PrismLight },
+		{ default: oneDark },
+		{ default: tsx },
+		{ default: ts },
+		{ default: js },
+		{ default: bash },
+		{ default: json },
+		{ default: yaml },
+		{ default: python },
+		{ default: css },
+		{ default: md },
+	] = await Promise.all([
+		import('react-syntax-highlighter/dist/esm/prism-light.js'),
+		import('react-syntax-highlighter/dist/esm/styles/prism/one-dark.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/tsx.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/typescript.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/javascript.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/bash.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/json.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/yaml.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/python.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/css.js'),
+		import('react-syntax-highlighter/dist/esm/languages/prism/markdown.js'),
+	]);
 
 	PrismLight.registerLanguage('tsx', tsx);
 	PrismLight.registerLanguage('jsx', tsx);
