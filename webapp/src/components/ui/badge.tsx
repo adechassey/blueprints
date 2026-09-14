@@ -2,20 +2,21 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils.js';
 
 const badgeVariants = cva(
-	'inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider',
+	'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium tracking-wide',
 	{
 		variants: {
 			variant: {
 				default: 'bg-surface-container-high text-on-surface-variant',
-				primary: 'bg-primary-container/10 text-primary',
+				primary: 'bg-primary/10 text-primary',
 				secondary: 'bg-secondary-container text-on-secondary-container',
-				tertiary: 'bg-tertiary-container text-on-tertiary-container',
-				success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+				tertiary:
+					'bg-tertiary-container/40 text-on-tertiary-container dark:bg-tertiary-container dark:text-tertiary',
+				success: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
 				error: 'bg-error/10 text-error',
-				webapp: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-				server: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-				shared: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-				fullstack: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+				webapp: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+				server: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+				shared: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+				fullstack: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
 			},
 		},
 		defaultVariants: {

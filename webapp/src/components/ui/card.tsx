@@ -4,13 +4,14 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 	return (
 		<div
 			className={cn(
-				'bg-surface-container-lowest rounded-xl shadow-rest transition-all duration-300',
+				'bg-surface-container-lowest rounded-xl border border-outline-variant/70 shadow-rest transition-all duration-200',
 				className,
 			)}
 			{...props}
 		/>
 	);
 }
+
 
 export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
 	return <div className={cn('p-6', className)} {...props} />;
