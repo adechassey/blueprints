@@ -8,3 +8,4 @@ coverage
 .env
 api/api/
 .claude/projects/
+.env*
