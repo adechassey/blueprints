@@ -4,5 +4,9 @@ packages:
   - cli
   - packages/*
 
-ignoredBuiltDependencies:
-  - esbuild
+allowBuilds:
+  esbuild: true
+  onnxruntime-node: true
+  protobufjs: true
+  sharp: true
+  lefthook: false
