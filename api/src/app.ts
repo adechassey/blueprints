@@ -55,4 +55,7 @@ app.route('/api', previewAuthRoutes);
 // Using all() to match any method, and the path must be exact to avoid trie conflicts
 app.all('/api/auth/*', (c) => auth.handler(c.req.raw));
 
+// Vercel native Hono support requires a default export (the app handler).
+// The named export is used by api/index.ts and the webapp's typed RPC client.
+export { app as default };
 export type AppType = typeof app;
