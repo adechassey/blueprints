@@ -10,7 +10,8 @@
       "entry": [
         "src/routes/**/*.tsx",
         "src/hooks/*.ts",
-        "src/lib/*.ts"
+        "src/lib/*.ts",
+        "src/types/*.d.ts"
       ],
       "project": [
         "src/**/*.{ts,tsx}"

@@ -3,6 +3,7 @@ import { FolderOpen, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '../../components/ui/button.js';
 import { Dialog, DialogFooter, DialogTitle } from '../../components/ui/dialog.js';
+import { EmptyState } from '../../components/ui/empty.js';
 import { Input } from '../../components/ui/input.js';
 import { Skeleton } from '../../components/ui/skeleton.js';
 import { Textarea } from '../../components/ui/textarea.js';
@@ -63,7 +64,19 @@ function ProjectsPage() {
 					))}
 				</div>
 			) : (
-				<p className="text-sm text-on-surface-variant">{m.empty_state()}</p>
+				<EmptyState
+					icon={FolderOpen}
+					title={m.projects_title()}
+					description={m.onboarding_empty_description()}
+					action={
+						session?.user && (
+							<Button variant="primary" onClick={() => setDialogOpen(true)}>
+								<Plus className="h-4 w-4" />
+								{m.project_create_title()}
+							</Button>
+						)
+					}
+				/>
 			)}
 
 			<CreateProjectDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Tag } from 'lucide-react';
+import { Tag, Tags as TagsIcon } from 'lucide-react';
 import { Badge } from '../components/ui/badge.js';
+import { EmptyState } from '../components/ui/empty.js';
 import { Skeleton } from '../components/ui/skeleton.js';
 import { useTags } from '../hooks/useTags.js';
 import * as m from '../paraglide/messages.js';
@@ -40,7 +41,7 @@ function TagsPage() {
 					))}
 				</div>
 			) : (
-				<p className="text-sm text-on-surface-variant">{m.empty_state()}</p>
+				<EmptyState icon={TagsIcon} title={m.tags_title()} />
 			)}
 		</div>
 	);

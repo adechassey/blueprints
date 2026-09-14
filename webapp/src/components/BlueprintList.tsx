@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router';
 import { Blocks, Download } from 'lucide-react';
-import * as m from '../paraglide/messages.js';
 import { Badge } from './ui/badge.js';
 
 interface Blueprint {
@@ -76,19 +75,12 @@ function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 	);
 }
 
-function blueprintCountLabel(count: number): string {
-	return count === 1 ? m.blueprint_count_one({ count }) : m.blueprint_count_other({ count });
-}
-
 export function BlueprintList({ blueprints }: { blueprints: Blueprint[] }) {
 	return (
-		<div className="space-y-5">
-			<p className="text-sm text-on-surface-variant">{blueprintCountLabel(blueprints.length)}</p>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-				{blueprints.map((b) => (
-					<BlueprintCard key={b.id} blueprint={b} />
-				))}
-			</div>
+		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+			{blueprints.map((b) => (
+				<BlueprintCard key={b.id} blueprint={b} />
+			))}
 		</div>
 	);
 }

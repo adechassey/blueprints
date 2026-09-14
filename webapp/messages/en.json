@@ -107,5 +107,6 @@
   "onboarding_empty_cta": "Publish your first blueprint",
   "onboarding_empty_cli_hint": "Or from the terminal: blueprint push",
   "search_empty_clear": "Clear search and filters",
-  "search_hint": "Press / to search anywhere"
+  "search_hint": "Press / to search anywhere",
+  "filter_showing_of": "Showing {showing} of {count} blueprints"
 }

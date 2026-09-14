@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import * as m from '../paraglide/messages.js';
+import { Select } from './ui/select.js';
 
 interface FilterBarProps {
 	stack?: string;
@@ -14,50 +15,49 @@ const STACKS = ['server', 'webapp', 'shared', 'fullstack'];
 
 export function FilterBar({ stack, layer, tag, onFilterChange, total, showing }: FilterBarProps) {
 	return (
-		<section className="flex flex-wrap items-center gap-6 py-6 border-y border-outline-variant/10">
-			<div className="flex items-center gap-2">
-				<span className="text-xs font-bold uppercase tracking-widest text-outline">Filter by</span>
+		<section className="flex flex-wrap items-center gap-3">
+			<div className="relative">
+				<Select
+					value={stack || ''}
+					onChange={(e) => onFilterChange('stack', e.target.value || undefined)}
+					className="appearance-none pr-9 font-medium bg-surface-container-lowest"
+					aria-label={m.filter_all_stacks()}
+				>
+					<option value="">{m.filter_all_stacks()}</option>
+					{STACKS.map((s) => (
+						<option key={s} value={s}>
+							{s}
+						</option>
+					))}
+				</Select>
+				<ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
 			</div>
-			<div className="flex gap-3 overflow-x-auto pb-2 md:pb-0">
-				<div className="relative">
-					<select
-						value={stack || ''}
-						onChange={(e) => onFilterChange('stack', e.target.value || undefined)}
-						className="appearance-none flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-full text-sm font-semibold hover:bg-surface-container-highest transition-colors pr-8 border-none outline-none cursor-pointer text-on-surface"
-					>
-						<option value="">{m.filter_all_stacks()}</option>
-						{STACKS.map((s) => (
-							<option key={s} value={s}>
-								{s}
-							</option>
-						))}
-					</select>
-					<ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant pointer-events-none" />
-				</div>
 
-				<div className="relative">
-					<input
-						type="text"
-						placeholder={m.filter_layer_placeholder()}
-						value={layer || ''}
-						onChange={(e) => onFilterChange('layer', e.target.value || undefined)}
-						className="px-4 py-2 bg-surface-container-high rounded-full text-sm font-semibold hover:bg-surface-container-highest transition-colors border-none outline-none w-36 text-on-surface placeholder:text-outline"
-					/>
-				</div>
+			<input
+				type="text"
+				placeholder={m.filter_layer_placeholder()}
+				value={layer || ''}
+				onChange={(e) => onFilterChange('layer', e.target.value || undefined)}
+				className="w-40 rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 text-sm font-medium text-on-surface placeholder:text-outline outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+				aria-label={m.filter_layer_placeholder()}
+			/>
 
-				<div className="relative">
-					<input
-						type="text"
-						placeholder={m.filter_tag_placeholder()}
-						value={tag || ''}
-						onChange={(e) => onFilterChange('tag', e.target.value || undefined)}
-						className="px-4 py-2 bg-surface-container-high rounded-full text-sm font-semibold hover:bg-surface-container-highest transition-colors border-none outline-none w-36 text-on-surface placeholder:text-outline"
-					/>
-				</div>
-			</div>
+			<input
+				type="text"
+				placeholder={m.filter_tag_placeholder()}
+				value={tag || ''}
+				onChange={(e) => onFilterChange('tag', e.target.value || undefined)}
+				className="w-40 rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 text-sm font-medium text-on-surface placeholder:text-outline outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+				aria-label={m.filter_tag_placeholder()}
+			/>
+
 			{total != null && (
-				<div className="ml-auto text-sm text-outline font-medium">
-					{showing != null ? `Showing ${showing} of ${total} blueprints` : `${total} blueprints`}
+				<div className="ml-auto text-sm text-on-surface-variant">
+					{showing != null
+						? m.filter_showing_of({ showing, count: total })
+						: total === 1
+							? m.blueprint_count_one({ count: total })
+							: m.blueprint_count_other({ count: total })}
 				</div>
 			)}
 		</section>
