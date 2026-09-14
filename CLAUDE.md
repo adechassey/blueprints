@@ -7,7 +7,7 @@ A blueprint registry and discovery platform where developers can publish, browse
 ## Tech Stack
 
 - **Runtime**: Node.js 22+
-- **Package Manager**: pnpm 10.x
+- **Package Manager**: pnpm 11.x
 - **Monorepo**: pnpm workspaces + Turbo
 - **Frontend**: Vite + React 19 + TanStack Router (SPA)
 - **Backend**: Hono (Vercel serverless functions)
