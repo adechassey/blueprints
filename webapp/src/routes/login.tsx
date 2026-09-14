@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Blocks } from 'lucide-react';
 import { useEffect } from 'react';
 import { GoogleIcon } from '../components/GoogleIcon.js';
 import { Button } from '../components/ui/button.js';
@@ -53,11 +54,21 @@ function LoginPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-surface px-4">
-			<Card className="max-w-md w-full">
-				<CardContent className="flex flex-col items-center gap-6 py-12">
-					<span className="text-3xl font-black text-primary tracking-tighter font-headline">
-						Blueprints
+		<div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-surface px-4">
+			<div className="bg-grid pointer-events-none absolute inset-0" aria-hidden="true" />
+			<div
+				className="pointer-events-none absolute top-0 left-1/2 h-96 w-[48rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-3xl"
+				aria-hidden="true"
+			/>
+			<Card className="relative max-w-md w-full shadow-hover">
+				<CardContent className="flex flex-col items-center gap-8 py-12">
+					<span className="flex items-center gap-3">
+						<span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-container text-on-primary-container shadow-xs">
+							<Blocks className="h-5 w-5" />
+						</span>
+						<span className="text-2xl font-extrabold text-on-surface tracking-tight font-headline">
+							{m.app_title()}
+						</span>
 					</span>
 					<div className="text-center space-y-2">
 						<h1 className="text-2xl font-bold font-headline">{m.auth_login_title()}</h1>
@@ -67,6 +78,13 @@ function LoginPage() {
 						<GoogleIcon />
 						{m.auth_sign_in_google()}
 					</Button>
+					<p className="text-center text-xs text-outline">
+						Press{' '}
+						<kbd className="rounded border border-outline-variant bg-surface-container-high px-1.5 py-0.5 font-mono">
+							⌘K
+						</kbd>{' '}
+						anywhere to search blueprints
+					</p>
 				</CardContent>
 			</Card>
 		</div>

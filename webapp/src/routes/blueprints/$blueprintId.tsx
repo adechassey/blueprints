@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Copy, Info, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { CommentSection } from '../../components/CommentSection.js';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer.js';
 import { MatchSection } from '../../components/MatchSection.js';
@@ -74,6 +75,9 @@ function BlueprintDetailPage() {
 	const handleCopy = async () => {
 		if (blueprint.currentVersion?.content) {
 			await navigator.clipboard.writeText(blueprint.currentVersion.content);
+			toast.success(m.blueprint_detail_copy(), {
+				description: blueprint.name,
+			});
 			api.api.blueprints[':id'].download
 				.$post({ param: { id: blueprintId } })
 				.catch((err: Error) => {

@@ -1,8 +1,11 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { Blocks, Plus, SearchX } from 'lucide-react';
 import { BlueprintList } from '../components/BlueprintList.js';
 import { FilterBar } from '../components/FilterBar.js';
 import { Pagination } from '../components/Pagination.js';
 import { SearchBar } from '../components/SearchBar.js';
+import { Button } from '../components/ui/button.js';
+import { EmptyState } from '../components/ui/empty.js';
 import { Skeleton } from '../components/ui/skeleton.js';
 import { useBlueprints } from '../hooks/useBlueprints.js';
 import { useSearch } from '../hooks/useSearch.js';
@@ -37,6 +40,7 @@ function IndexPage() {
 	const isSearchMode = !!q;
 	const data = isSearchMode ? searchQuery.data : browseQuery.data;
 	const isLoading = isSearchMode ? searchQuery.isLoading : browseQuery.isLoading;
+	const hasFilters = !!(stack || layer || tag);
 
 	const handleSearch = (query: string) => {
 		navigate({
@@ -67,16 +71,19 @@ function IndexPage() {
 		});
 	};
 
+	const clearAll = () => navigate({ to: '/', search: {} });
+
 	const paginationData = !isSearchMode ? browseQuery.data : undefined;
 
 	return (
 		<div className="space-y-8">
-			<header>
-				<div className="max-w-4xl">
-					<h1 className="text-5xl font-extrabold tracking-tight font-headline text-on-surface mb-8">
+			<header className="space-y-6">
+				<div>
+					<h1 className="text-4xl font-extrabold tracking-tight font-headline text-on-surface">
 						{isSearchMode ? (
 							<>
-								Search results for <span className="text-primary italic">&ldquo;{q}&rdquo;</span>
+								{m.search_results_title({ query: q ?? '' })}{' '}
+								<span className="text-primary italic">&ldquo;{q}&rdquo;</span>
 							</>
 						) : (
 							m.page_all_title()
@@ -86,17 +93,19 @@ function IndexPage() {
 				<SearchBar initialQuery={q || ''} onSearch={handleSearch} isLoading={isLoading} />
 			</header>
 
-			<FilterBar
-				stack={stack}
-				layer={layer}
-				tag={tag}
-				onFilterChange={handleFilterChange}
-				total={data?.items?.length}
-			/>
+			{!isSearchMode && (
+				<FilterBar
+					stack={stack}
+					layer={layer}
+					tag={tag}
+					onFilterChange={handleFilterChange}
+					total={data?.items?.length}
+				/>
+			)}
 
 			{isLoading ? (
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-					{Array.from({ length: 8 }).map((_, i) => (
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+					{Array.from({ length: 9 }).map((_, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items have no stable id
 						<Skeleton key={i} className="h-48" />
 					))}
@@ -113,10 +122,33 @@ function IndexPage() {
 						/>
 					)}
 				</>
-			) : isSearchMode ? (
-				<p className="text-sm text-on-surface-variant">{m.search_no_results({ query: q })}</p>
+			) : isSearchMode || hasFilters ? (
+				<EmptyState
+					icon={SearchX}
+					title={m.search_no_results({ query: q ?? '' })}
+					action={
+						<Button variant="secondary" size="sm" onClick={clearAll}>
+							{m.search_empty_clear()}
+						</Button>
+					}
+				/>
 			) : (
-				<p className="text-sm text-on-surface-variant">{m.empty_state()}</p>
+				<EmptyState
+					icon={Blocks}
+					title={m.onboarding_empty_title()}
+					description={m.onboarding_empty_description()}
+					action={
+						<div className="flex flex-col items-center gap-3">
+							<Link to="/blueprints/new" className="no-underline">
+								<Button variant="primary">
+									<Plus className="h-4 w-4" />
+									{m.onboarding_empty_cta()}
+								</Button>
+							</Link>
+							<p className="text-xs text-outline font-mono">{m.onboarding_empty_cli_hint()}</p>
+						</div>
+					}
+				/>
 			)}
 		</div>
 	);
