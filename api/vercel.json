@@ -1,8 +1,8 @@
 {
 	"buildCommand": "pnpm --filter @blueprints/shared build",
 	"functions": {
-		"index.ts": {
-			"excludeFiles": "node_modules/**/onnxruntime-node/bin/napi-v3/{darwin,win32,linux/arm64}/**"
+		"src/app.ts": {
+			"excludeFiles": "node_modules/.pnpm/onnxruntime-node@*/node_modules/onnxruntime-node/bin/napi-v3/{darwin/**,win32/**,linux/arm64/**,linux/x64/libonnxruntime_providers_{cuda,tensorrt}*}"
 		}
 	}
 }
