@@ -9,3 +9,4 @@ coverage
 api/api/
 .claude/projects/
 .env*
+test-results
