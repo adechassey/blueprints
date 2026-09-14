@@ -16,3 +16,8 @@
 - `api/src/app.ts` MUST keep a default export (`export { app as default }`): Vercel's native Hono support resolves the entry through package exports and requires a default function export. Removing it = every invocation fails with `Invalid export found in module ... The default export must be a function or server` and FUNCTION_INVOCATION_FAILED 500s.
 - Debug prod crashes with `vercel logs <deployment-url>` (CLI logged in as adechassey) — the actual error only shows there, never in the browser console.
 - `vercel projects ls` shows the two projects: blueprints-api (rootDirectory=api, api/vercel.json) and blueprints-webapp (root vercel.json, SPA).
+
+## react-syntax-highlighter + Vite
+- ALWAYS destructure `{ default: grammar }` from the dynamic language imports — the import() returns a namespace object, and refractor's register throws `Cannot convert object to primitive value` (null-prototype object string-concat) when given one.
+- Import via explicit `dist/esm/...` subpaths WITH `.js` extension (`prism-light.js`, `styles/prism/one-dark.js`, `languages/prism/tsx.js`): the package main resolves to CJS and mixing it with ESM subpaths creates broken interop wrappers. The @types package only covers extensionless paths — add local `declare module` for the `.js` subpaths (webapp/src/types/react-syntax-highlighter.d.ts).
+- Debugging prod-only rendering bugs: build + `vite preview` + Playwright with a mocked `**/api/auth/get-session` route (fake `{ user, session }` payload) bypasses Better Auth without the API.
