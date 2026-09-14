@@ -6,3 +6,13 @@
 - react-syntax-highlighter: always use `PrismLight` + explicit `registerLanguage` inside a `lazy()` factory — the default `Prism` import pulls every language (~400 kB).
 - Paraglide: messages with params throw TS errors if called without them (`m.search_results_title({ query })`).
 - knip runs in pre-commit: new exported-but-unused symbols will block commits. Fix or don't export.
+
+## API / Vercel
+- `api/bundle.mjs` marks `@huggingface/transformers` as external → Vercel file-tracing ships the whole tree into the lambda, including `onnxruntime-node`'s 208 MB of native binaries for all 6 platforms. This pushed the function to 430 MB uncompressed (> 250 MB legacy limit).
+- Fix applied (2025): `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` env var on the Vercel api project (large functions beta). `VERCEL_ANALYZE_BUILD_OUTPUT=1` gives a detailed bundle report.
+- transformers.js v3 statically imports `onnxruntime-node` with NO WASM fallback in Node — you can't drop the package, only unused platform binaries (see `excludeFiles` discussion in api/vercel.json if cold starts become an issue).
+
+## Vercel deploy (API)
+- `api/src/app.ts` MUST keep a default export (`export { app as default }`): Vercel's native Hono support resolves the entry through package exports and requires a default function export. Removing it = every invocation fails with `Invalid export found in module ... The default export must be a function or server` and FUNCTION_INVOCATION_FAILED 500s.
+- Debug prod crashes with `vercel logs <deployment-url>` (CLI logged in as adechassey) — the actual error only shows there, never in the browser console.
+- `vercel projects ls` shows the two projects: blueprints-api (rootDirectory=api, api/vercel.json) and blueprints-webapp (root vercel.json, SPA).
