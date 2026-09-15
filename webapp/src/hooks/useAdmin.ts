@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { api, unwrapResponse } from '../lib/api.js';
+import * as m from '../paraglide/messages.js';
 
 export function useAdminStats() {
 	return useQuery({
@@ -41,9 +43,13 @@ export function useChangeRole() {
 			});
 			return unwrapResponse(res);
 		},
-		onSuccess: () => {
+		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ['admin-users'] });
 			queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+			toast.success(m.toast_role_changed({ role: variables.role }));
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }
@@ -58,6 +64,10 @@ export function useAdminDeleteComment() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
 			queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+			toast.success(m.toast_comment_deleted());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }
@@ -72,6 +82,10 @@ export function useAdminDeleteProject() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['projects'] });
 			queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+			toast.success(m.toast_project_deleted());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }

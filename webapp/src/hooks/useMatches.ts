@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { api, unwrapResponse } from '../lib/api.js';
+import * as m from '../paraglide/messages.js';
 
 export function useBlueprintMatches(blueprintId: string) {
 	return useQuery({
@@ -25,6 +27,10 @@ export function useComputeMatches(blueprintId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['blueprint-matches', blueprintId] });
+			toast.success(m.toast_match_status());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }

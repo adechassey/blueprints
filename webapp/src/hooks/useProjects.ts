@@ -1,6 +1,8 @@
 import type { CreateProjectInput } from '@blueprints/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { api, unwrapResponse } from '../lib/api.js';
+import * as m from '../paraglide/messages.js';
 
 export function useProjects() {
 	return useQuery({
@@ -32,6 +34,10 @@ export function useCreateProject() {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['projects'] });
+			toast.success(m.toast_project_created());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }

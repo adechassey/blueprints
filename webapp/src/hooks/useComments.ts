@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { api, unwrapResponse } from '../lib/api.js';
+import * as m from '../paraglide/messages.js';
 
 export function useComments(blueprintId: string) {
 	return useQuery({
@@ -26,6 +28,10 @@ export function useCreateComment(blueprintId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['comments', blueprintId] });
+			toast.success(m.toast_comment_added());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }
@@ -42,6 +48,10 @@ export function useUpdateComment(blueprintId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['comments', blueprintId] });
+			toast.success(m.toast_comment_updated());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }
@@ -55,6 +65,10 @@ export function useDeleteComment(blueprintId: string) {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['comments', blueprintId] });
+			toast.success(m.toast_comment_deleted());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
 		},
 	});
 }

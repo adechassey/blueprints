@@ -125,5 +125,21 @@
 	"onboarding_step_view": "Open a blueprint",
 	"onboarding_step_publish": "Publish your first blueprint",
 	"onboarding_checklist_dismiss": "Hide checklist",
-	"onboarding_empty_search_label": "Or try a semantic search:"
+	"onboarding_empty_search_label": "Or try a semantic search:",
+	"toast_role_changed": "Role updated to \"{role}\"",
+	"toast_blueprint_published": "Blueprint published",
+	"toast_blueprint_updated": "Blueprint updated",
+	"toast_blueprint_deleted": "Blueprint deleted",
+	"toast_comment_added": "Comment posted",
+	"toast_comment_updated": "Comment updated",
+	"toast_comment_deleted": "Comment deleted",
+	"toast_project_created": "Project created",
+	"toast_project_deleted": "Project deleted",
+	"toast_match_status": "Match status updated",
+	"toast_error": "Something went wrong",
+	"admin_role": "Role",
+	"admin_user": "User",
+	"admin_joined": "Joined",
+	"admin_blueprints_col": "Blueprints",
+	"admin_no_users": "No users found"
 }
