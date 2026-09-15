@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TagsRouteImport } from './routes/tags'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DeviceRouteImport } from './routes/device'
 import { Route as CliTokenRouteImport } from './routes/cli-token'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
@@ -33,6 +34,11 @@ const TagsRoute = TagsRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeviceRoute = DeviceRouteImport.update({
+  id: '/device',
+  path: '/device',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CliTokenRoute = CliTokenRouteImport.update({
@@ -105,6 +111,7 @@ const BlueprintsBlueprintIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cli-token': typeof CliTokenRoute
+  '/device': typeof DeviceRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
   '/admin/blueprints': typeof AdminBlueprintsRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cli-token': typeof CliTokenRoute
+  '/device': typeof DeviceRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
   '/admin/blueprints': typeof AdminBlueprintsRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cli-token': typeof CliTokenRoute
+  '/device': typeof DeviceRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
   '/admin/blueprints': typeof AdminBlueprintsRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cli-token'
+    | '/device'
     | '/login'
     | '/tags'
     | '/admin/blueprints'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cli-token'
+    | '/device'
     | '/login'
     | '/tags'
     | '/admin/blueprints'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cli-token'
+    | '/device'
     | '/login'
     | '/tags'
     | '/admin/blueprints'
@@ -211,6 +223,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CliTokenRoute: typeof CliTokenRoute
+  DeviceRoute: typeof DeviceRoute
   LoginRoute: typeof LoginRoute
   TagsRoute: typeof TagsRoute
   AdminBlueprintsRoute: typeof AdminBlueprintsRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/device': {
+      id: '/device'
+      path: '/device'
+      fullPath: '/device'
+      preLoaderRoute: typeof DeviceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cli-token': {
@@ -351,6 +371,7 @@ const BlueprintsBlueprintIdRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CliTokenRoute: CliTokenRoute,
+  DeviceRoute: DeviceRoute,
   LoginRoute: LoginRoute,
   TagsRoute: TagsRoute,
   AdminBlueprintsRoute: AdminBlueprintsRoute,

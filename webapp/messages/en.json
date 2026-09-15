@@ -108,5 +108,14 @@
 	"onboarding_empty_cli_hint": "Or from the terminal: blueprint push",
 	"search_empty_clear": "Clear search and filters",
 	"search_hint": "Press / to search anywhere",
-	"filter_showing_of": "Showing {showing} of {count} blueprints"
+	"filter_showing_of": "Showing {showing} of {count} blueprints",
+	"device_title": "Authorize CLI / MCP access",
+	"device_description": "Enter the code displayed in your terminal to connect this device to your account.",
+	"device_code_label": "Device code",
+	"device_code_placeholder": "XXXX-XXXX",
+	"device_approve": "Authorize device",
+	"device_approving": "Authorizing...",
+	"device_approved": "Device authorized! You can close this page and go back to your terminal.",
+	"device_error": "Invalid or expired code. Check the code in your terminal and try again.",
+	"device_login_required": "Sign in with Google to authorize this device."
 }
