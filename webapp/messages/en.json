@@ -117,5 +117,13 @@
 	"device_approving": "Authorizing...",
 	"device_approved": "Device authorized! You can close this page and go back to your terminal.",
 	"device_error": "Invalid or expired code. Check the code in your terminal and try again.",
-	"device_login_required": "Sign in with Google to authorize this device."
+	"device_login_required": "Sign in with Google to authorize this device.",
+	"onboarding_welcome_title": "Welcome to Theodo Blueprints!",
+	"onboarding_welcome_description": "Discover proven code patterns shared by the team. Search in natural language, then pull them straight into your codebase.",
+	"onboarding_checklist_title": "Get started",
+	"onboarding_step_signin": "Sign in with Google",
+	"onboarding_step_view": "Open a blueprint",
+	"onboarding_step_publish": "Publish your first blueprint",
+	"onboarding_checklist_dismiss": "Hide checklist",
+	"onboarding_empty_search_label": "Or try a semantic search:"
 }

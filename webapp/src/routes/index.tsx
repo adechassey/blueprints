@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Blocks, Plus, SearchX } from 'lucide-react';
 import { BlueprintList } from '../components/BlueprintList.js';
 import { FilterBar } from '../components/FilterBar.js';
+import { OnboardingChecklist, WelcomeBanner } from '../components/Onboarding.js';
 import { Pagination } from '../components/Pagination.js';
 import { SearchBar } from '../components/SearchBar.js';
 import { Button } from '../components/ui/button.js';
@@ -94,6 +95,13 @@ function IndexPage() {
 			</header>
 
 			{!isSearchMode && (
+				<>
+					<WelcomeBanner />
+					<OnboardingChecklist />
+				</>
+			)}
+
+			{!isSearchMode && (
 				<FilterBar
 					stack={stack}
 					layer={layer}
@@ -146,6 +154,16 @@ function IndexPage() {
 								</Button>
 							</Link>
 							<p className="text-xs text-outline font-mono">{m.onboarding_empty_cli_hint()}</p>
+							<p className="text-xs text-on-surface-variant">
+								{m.onboarding_empty_search_label()}{' '}
+								<Link
+									to="/"
+									search={{ q: 'NestJS CRUD controller with validation' }}
+									className="text-primary hover:underline"
+								>
+									NestJS CRUD controller
+								</Link>
+							</p>
 						</div>
 					}
 				/>

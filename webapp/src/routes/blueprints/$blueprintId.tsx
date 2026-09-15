@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Copy, Info, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../components/CommentSection.js';
 import { MarkdownRenderer } from '../../components/MarkdownRenderer.js';
 import { MatchSection } from '../../components/MatchSection.js';
+import { markBlueprintViewed } from '../../components/Onboarding.js';
 import { Badge } from '../../components/ui/badge.js';
 import { Button } from '../../components/ui/button.js';
 import { Card, CardContent } from '../../components/ui/card.js';
@@ -29,6 +30,12 @@ export const Route = createFileRoute('/blueprints/$blueprintId')({
 	component: BlueprintDetailPage,
 });
 
+function useMarkBlueprintViewed() {
+	useEffect(() => {
+		markBlueprintViewed();
+	}, []);
+}
+
 const stackVariant: Record<string, 'webapp' | 'server' | 'shared' | 'fullstack'> = {
 	webapp: 'webapp',
 	server: 'server',
@@ -37,6 +44,7 @@ const stackVariant: Record<string, 'webapp' | 'server' | 'shared' | 'fullstack'>
 };
 
 function BlueprintDetailPage() {
+	useMarkBlueprintViewed();
 	const { blueprintId } = Route.useParams();
 	const { data: blueprint, isLoading } = useBlueprint(blueprintId);
 	const { data: versions } = useBlueprintVersions(blueprintId);
