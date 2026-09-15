@@ -5,9 +5,10 @@ interface DialogProps {
 	open: boolean;
 	onClose: () => void;
 	children: React.ReactNode;
+	className?: string;
 }
 
-export function Dialog({ open, onClose, children }: DialogProps) {
+export function Dialog({ open, onClose, children, className }: DialogProps) {
 	const overlayRef = useRef<HTMLDivElement>(null);
 
 	const handleKeyDown = useCallback(
@@ -40,7 +41,12 @@ export function Dialog({ open, onClose, children }: DialogProps) {
 				if (e.target === overlayRef.current) onClose();
 			}}
 		>
-			<div className="bg-surface-container-lowest rounded-2xl shadow-hover p-6 max-w-md w-full mx-4 space-y-4">
+			<div
+				className={cn(
+					'bg-surface-container-lowest rounded-2xl shadow-hover p-6 max-w-md w-full mx-4 space-y-4',
+					className,
+				)}
+			>
 				{children}
 			</div>
 		</div>

@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react';
+import { useTags } from '../hooks/useTags.js';
 import * as m from '../paraglide/messages.js';
 import { Select } from './ui/select.js';
 
@@ -14,6 +15,8 @@ interface FilterBarProps {
 const STACKS = ['server', 'webapp', 'shared', 'fullstack'];
 
 export function FilterBar({ stack, layer, tag, onFilterChange, total, showing }: FilterBarProps) {
+	const { data: tags } = useTags();
+
 	return (
 		<section className="flex flex-wrap items-center gap-3">
 			<div className="relative">
@@ -44,12 +47,18 @@ export function FilterBar({ stack, layer, tag, onFilterChange, total, showing }:
 
 			<input
 				type="text"
+				list="filter-tags-datalist"
 				placeholder={m.filter_tag_placeholder()}
 				value={tag || ''}
 				onChange={(e) => onFilterChange('tag', e.target.value || undefined)}
 				className="w-40 rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 text-sm font-medium text-on-surface placeholder:text-outline outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
 				aria-label={m.filter_tag_placeholder()}
 			/>
+			<datalist id="filter-tags-datalist">
+				{(tags?.length ? tags : []).map((t) => (
+					<option key={t.id} value={t.name} />
+				))}
+			</datalist>
 
 			{total != null && (
 				<div className="ml-auto text-sm text-on-surface-variant">

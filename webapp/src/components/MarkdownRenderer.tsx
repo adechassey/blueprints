@@ -125,6 +125,12 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 			<Markdown
 				remarkPlugins={[remarkGfm]}
 				components={{
+					// Fenced code blocks are rendered by <CodeBlock /> (returned by the
+					// code override below); strip the prose <pre> styling to avoid a
+					// double padded container.
+					pre({ children }) {
+						return <div className="not-prose">{children}</div>;
+					},
 					code({ className, children, ...props }) {
 						const match = /language-(\w+)/.exec(className || '');
 						const code = String(children).replace(/\n$/, '');

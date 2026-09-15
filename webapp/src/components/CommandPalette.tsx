@@ -56,7 +56,7 @@ export function CommandPalette() {
 	};
 
 	return (
-		<Dialog open={open} onClose={() => setOpen(false)}>
+		<Dialog open={open} onClose={() => setOpen(false)} className="max-w-xl space-y-0 p-0">
 			<Command className="w-full max-w-xl" loop>
 				<CommandInput placeholder={m.search_placeholder()} autoFocus />
 				<CommandList>
