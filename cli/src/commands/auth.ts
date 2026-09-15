@@ -67,6 +67,16 @@ export function registerAuthCommands(program: Command) {
 					const body = (await pollRes.json()) as { access_token: string };
 					saveToken(body.access_token);
 					console.log(chalk.green('\nAuthorized successfully. Credentials saved.'));
+					console.log(chalk.blue('\nNext steps:'));
+					console.log(
+						`  ${chalk.cyan('theodo-blueprints search "authentication middleware"')}  ${chalk.dim('# semantic search')}`,
+					);
+					console.log(
+						`  ${chalk.cyan('theodo-blueprints list')}                             ${chalk.dim('# browse everything')}`,
+					);
+					console.log(
+						`  ${chalk.cyan('theodo-blueprints push my-pattern.md')}                ${chalk.dim('# share a pattern')}`,
+					);
 					return;
 				}
 
