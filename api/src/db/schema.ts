@@ -232,3 +232,14 @@ export const blueprintMatches = pgTable(
 	},
 	(t) => [unique('blueprint_matches_pair').on(t.blueprintId, t.matchedBlueprintId)],
 );
+
+// Device authorization flow (CLI login)
+export const deviceAuthRequests = pgTable('device_auth_requests', {
+	deviceCode: text('device_code').primaryKey(),
+	userCode: text('user_code').notNull().unique(),
+	status: text('status').notNull().default('pending'),
+	token: text('token'),
+	userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+	expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});

@@ -15,6 +15,13 @@
       "when": 1774514727379,
       "tag": "0001_third_reavers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789479385500,
+      "tag": "0002_furry_lockheed",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@ import { generalRateLimit } from './middleware/rate-limit.js';
 import { adminRoutes } from './routes/admin.js';
 import { blueprintRoutes } from './routes/blueprints.js';
 import { commentRoutes } from './routes/comments.js';
+import { deviceRoutes } from './routes/device.js';
 import { embeddingsRoute } from './routes/embeddings.js';
 import { healthRoute } from './routes/health.js';
 import { matchRoutes } from './routes/matches.js';
@@ -46,7 +47,10 @@ export const app = baseApp
 	.route('/api', userRoutes)
 	.route('/api', matchRoutes)
 	.route('/api', mcpRoute)
-	.route('/api', adminRoutes);
+	.route('/api', adminRoutes)
+	// Must be registered before the Better Auth catch-all below so the device
+	// flow endpoints under /api/auth/device/* are handled by us, not Better Auth.
+	.route('/api', deviceRoutes);
 
 // Preview auth routes (session transfer between production and preview deployments)
 app.route('/api', previewAuthRoutes);
