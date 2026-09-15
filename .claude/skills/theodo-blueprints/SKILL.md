@@ -13,7 +13,7 @@ Add to your `.mcp.json`:
   "mcpServers": {
     "theodo-blueprints": {
       "type": "http",
-      "url": "https://blueprints.example.com/api/mcp"
+      "url": "https://blueprints-api.vercel.app/api/mcp"
     }
   }
 }

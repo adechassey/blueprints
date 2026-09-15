@@ -64,6 +64,25 @@ theodo-blueprints projects join <slug>
 theodo-blueprints projects members <slug>
 ```
 
+## Publishing the CLI to npm (future)
+
+The CLI is not published to npm yet. When it's time:
+
+1. Bump the version in `cli/package.json`.
+2. Build the TypeScript output:
+
+   ```sh
+   pnpm --filter @theodo-blueprints/cli build
+   ```
+
+3. Publish from the `cli/` directory (the `bin` field already points to `./dist/index.js`):
+
+   ```sh
+   cd cli && npm publish --access public
+   ```
+
+4. Users then install globally: `npm install -g @theodo-blueprints/cli`.
+
 ## Development
 
 ```sh

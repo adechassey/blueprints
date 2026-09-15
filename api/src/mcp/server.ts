@@ -198,5 +198,6 @@ export function getToolDefinitions() {
 	return mcpTools.map((t) => ({
 		name: t.name,
 		description: t.description,
+		inputSchema: z.toJSONSchema(t.inputSchema),
 	}));
 }
