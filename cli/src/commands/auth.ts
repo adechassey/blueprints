@@ -26,7 +26,12 @@ export function registerAuthCommands(program: Command) {
 			console.log();
 
 			const { exec } = await import('node:child_process');
-			const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+			const cmd =
+				process.platform === 'darwin'
+					? 'open'
+					: process.platform === 'win32'
+						? 'start'
+						: 'xdg-open';
 			exec(`${cmd} ${tokenUrl}`);
 
 			console.log('After signing in, copy the command from the page and paste it here.');

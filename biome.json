@@ -73,7 +73,10 @@
 			"!**/*.gen.ts",
 			"!**/api/src/db/migrations",
 			"!**/webapp/src/paraglide",
-			"!**/coverage"
+			"!**/coverage",
+			"!**/.vercel",
+			"!**/test-results",
+			"!**/project.inlang/.meta.json"
 		]
 	}
 }
