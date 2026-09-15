@@ -9,18 +9,15 @@
     </pattern>
   </defs>
 
-  <!-- Blueprint paper -->
   <rect width="512" height="512" rx="116" fill="url(#bg)"/>
   <rect width="512" height="512" rx="116" fill="url(#grid)"/>
 
-  <!-- Isometric cube: top / left / right faces -->
   <g>
     <path d="M256 128 392 196 256 264 120 196Z" fill="#ffffff"/>
     <path d="M120 196 256 264 256 408 120 340Z" fill="#ffffff" opacity=".62"/>
     <path d="M392 196 392 340 256 408 256 264Z" fill="#ffffff" opacity=".38"/>
   </g>
 
-  <!-- Blueprint annotation: dashed callout on the top face -->
   <path d="M156 196 256 146 356 196" fill="none" stroke="#4f46e5" stroke-opacity=".35"
         stroke-width="10" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 26"/>
 </svg>

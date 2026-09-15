@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, Link, Navigate, Outlet, useLocation } from '@tanstack/react-router';
-import { Blocks, Menu, Moon, Plus, Search, Sun, X } from 'lucide-react';
+import { Menu, Moon, Plus, Search, Sun, X } from 'lucide-react';
 import { useState } from 'react';
 import { AuthButton } from '../components/AuthButton.js';
 import { CommandPalette } from '../components/CommandPalette.js';
@@ -58,9 +58,7 @@ function RootLayout() {
 								to="/"
 								className="flex items-center gap-2 text-lg font-extrabold text-on-surface tracking-tight font-headline no-underline"
 							>
-								<span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-container text-on-primary-container shadow-xs">
-									<Blocks className="h-4 w-4" />
-								</span>
+								<img src="/logo.svg" alt="" className="h-8 w-8 rounded-lg shadow-xs" />
 								{m.app_title()}
 							</Link>
 							<nav className="hidden md:flex gap-1 items-center">

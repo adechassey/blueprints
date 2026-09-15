@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { Blocks } from 'lucide-react';
 import { useEffect } from 'react';
 import { GoogleIcon } from '../components/GoogleIcon.js';
 import { Button } from '../components/ui/button.js';
@@ -63,9 +62,7 @@ function LoginPage() {
 			<Card className="relative max-w-md w-full shadow-hover">
 				<CardContent className="flex flex-col items-center gap-8 py-12">
 					<span className="flex items-center gap-3">
-						<span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-container text-on-primary-container shadow-xs">
-							<Blocks className="h-5 w-5" />
-						</span>
+						<img src="/logo.svg" alt="" className="h-11 w-11 rounded-xl shadow-xs" />
 						<span className="text-2xl font-extrabold text-on-surface tracking-tight font-headline">
 							{m.app_title()}
 						</span>
