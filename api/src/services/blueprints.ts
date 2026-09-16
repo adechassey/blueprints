@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, notExists, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
 	blueprintProjects,
@@ -16,9 +16,11 @@ import type {
 	UpdateBlueprintInput,
 } from '../lib/validation.js';
 import {
-	appendSlugSuffix,
 	generateSlug,
 	normalizeTagName,
+	pickSlug,
+	pickSlugCandidate,
+	SlugConflictError,
 	shouldCreateNewVersion,
 } from './blueprints.core.js';
 import { prepareEmbeddingText } from './embeddings.core.js';
@@ -44,19 +46,90 @@ async function upsertTags(db: DB, tagNames: string[]) {
 	return result;
 }
 
-export async function createBlueprint(db: DB, input: CreateBlueprintInput, authorId: string) {
-	let slug = input.slug ?? generateSlug(input.name);
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-	// Check for global slug collision
-	const existingSlug = await db
+/**
+ * A slug namespace: the id of a project, or null for the project-less pool.
+ * Slugs are unique within a namespace, never across them.
+ */
+type SlugNamespace = string | null;
+
+/** Resolves a project given as a UUID or a slug to its id (null when unknown). */
+async function resolveProjectId(db: DB, project: string): Promise<string | null> {
+	const condition = UUID_RE.test(project) ? eq(projects.id, project) : eq(projects.slug, project);
+	const [p] = await db.select({ id: projects.id }).from(projects).where(condition).limit(1);
+	return p?.id ?? null;
+}
+
+async function projectRowsOf(db: DB, blueprintId: string) {
+	return db
+		.select({ id: projects.id, name: projects.name, slug: projects.slug })
+		.from(blueprintProjects)
+		.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
+		.where(eq(blueprintProjects.blueprintId, blueprintId));
+}
+
+/** The namespaces a blueprint's slug lives in: each of its projects, or the global pool. */
+async function namespacesOf(db: DB, blueprintId: string): Promise<SlugNamespace[]> {
+	const rows = await projectRowsOf(db, blueprintId);
+	return rows.length === 0 ? [null] : rows.map((r) => r.id);
+}
+
+/** Human label for conflict messages: the project slug, or null for the global pool. */
+async function namespaceLabel(db: DB, namespace: SlugNamespace): Promise<string | null> {
+	if (namespace === null) return null;
+	const [p] = await db
+		.select({ slug: projects.slug })
+		.from(projects)
+		.where(eq(projects.id, namespace))
+		.limit(1);
+	return p?.slug ?? namespace;
+}
+
+function selectIdsBySlugInNamespace(db: DB, slug: string, namespace: SlugNamespace) {
+	if (namespace === null) {
+		const linked = db
+			.select({ one: sql`1` })
+			.from(blueprintProjects)
+			.where(eq(blueprintProjects.blueprintId, blueprints.id));
+		return db
+			.select({ id: blueprints.id })
+			.from(blueprints)
+			.where(and(eq(blueprints.slug, slug), notExists(linked)));
+	}
+	return db
 		.select({ id: blueprints.id })
 		.from(blueprints)
-		.where(eq(blueprints.slug, slug))
-		.limit(1);
+		.innerJoin(
+			blueprintProjects,
+			and(
+				eq(blueprintProjects.blueprintId, blueprints.id),
+				eq(blueprintProjects.projectId, namespace),
+			),
+		)
+		.where(eq(blueprints.slug, slug));
+}
 
-	if (existingSlug.length > 0) {
-		slug = appendSlugSuffix(slug);
-	}
+/** True when a blueprint other than `excludeId` already uses `slug` in the namespace. */
+export async function isSlugTaken(
+	db: DB,
+	slug: string,
+	namespace: SlugNamespace,
+	excludeId?: string,
+): Promise<boolean> {
+	const rows = await selectIdsBySlugInNamespace(db, slug, namespace);
+	return rows.some((r) => r.id !== excludeId);
+}
+
+export async function createBlueprint(db: DB, input: CreateBlueprintInput, authorId: string) {
+	const namespace: SlugNamespace = input.projectId ?? null;
+	const requested = input.slug ?? generateSlug(input.name);
+	const slug = pickSlug({
+		requested,
+		explicit: input.slug !== undefined,
+		taken: await isSlugTaken(db, requested, namespace),
+		projectLabel: await namespaceLabel(db, namespace),
+	});
 
 	const [blueprint] = await db
 		.insert(blueprints)
@@ -159,6 +232,14 @@ export async function updateBlueprint(
 		metadataUpdate.slug = input.slug;
 	} else if (input.name !== undefined && input.name !== existing.name) {
 		metadataUpdate.slug = generateSlug(input.name);
+	}
+	if (metadataUpdate.slug !== undefined && metadataUpdate.slug !== existing.slug) {
+		const nextSlug = metadataUpdate.slug as string;
+		for (const namespace of await namespacesOf(db, id)) {
+			if (await isSlugTaken(db, nextSlug, namespace, id)) {
+				throw new SlugConflictError(nextSlug, await namespaceLabel(db, namespace));
+			}
+		}
 	}
 	if (input.description !== undefined) metadataUpdate.description = input.description;
 	if (input.usage !== undefined) metadataUpdate.usage = input.usage;
@@ -316,11 +397,49 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	return { items, total, page, limit };
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/**
+ * Finds a blueprint by UUID, or by slug. A slug is only unique within a
+ * namespace, so a slug lookup is scoped by `project` (slug or UUID); without
+ * it, the lookup succeeds only when a single blueprint carries the slug and
+ * throws an AmbiguousSlugError (409) otherwise.
+ */
+async function findBlueprint(db: DB, id: string, project?: string) {
+	if (UUID_RE.test(id)) {
+		const [bp] = await db.select().from(blueprints).where(eq(blueprints.id, id)).limit(1);
+		return bp ?? null;
+	}
 
-export async function getBlueprintById(db: DB, id: string) {
-	const condition = UUID_RE.test(id) ? eq(blueprints.id, id) : eq(blueprints.slug, id);
-	const [blueprint] = await db.select().from(blueprints).where(condition).limit(1);
+	if (project !== undefined) {
+		const projectId = await resolveProjectId(db, project);
+		if (!projectId) return null;
+		const [row] = await db
+			.select({ blueprint: blueprints })
+			.from(blueprints)
+			.innerJoin(
+				blueprintProjects,
+				and(
+					eq(blueprintProjects.blueprintId, blueprints.id),
+					eq(blueprintProjects.projectId, projectId),
+				),
+			)
+			.where(eq(blueprints.slug, id))
+			.limit(1);
+		return row?.blueprint ?? null;
+	}
+
+	const rows = await db.select().from(blueprints).where(eq(blueprints.slug, id));
+	const candidates = await Promise.all(
+		rows.map(async (bp) => ({
+			id: bp.id,
+			projectSlugs: (await projectRowsOf(db, bp.id)).map((p) => p.slug),
+		})),
+	);
+	const picked = pickSlugCandidate(id, candidates);
+	return rows.find((bp) => bp.id === picked?.id) ?? null;
+}
+
+export async function getBlueprintById(db: DB, id: string, project?: string) {
+	const blueprint = await findBlueprint(db, id, project);
 	if (!blueprint) return null;
 
 	const [author] = await db.select().from(users).where(eq(users.id, blueprint.authorId)).limit(1);
@@ -341,11 +460,7 @@ export async function getBlueprintById(db: DB, id: string) {
 		.innerJoin(tags, eq(blueprintTags.tagId, tags.id))
 		.where(eq(blueprintTags.blueprintId, blueprint.id));
 
-	const blueprintProjectRows = await db
-		.select({ id: projects.id, name: projects.name, slug: projects.slug })
-		.from(blueprintProjects)
-		.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
-		.where(eq(blueprintProjects.blueprintId, blueprint.id));
+	const blueprintProjectRows = await projectRowsOf(db, blueprint.id);
 
 	return {
 		...blueprint,

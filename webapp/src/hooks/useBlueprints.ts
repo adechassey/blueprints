@@ -34,7 +34,8 @@ export function useBlueprint(id: string) {
 	return useQuery({
 		queryKey: ['blueprint', id],
 		queryFn: async () => {
-			const res = await api.api.blueprints[':id'].$get({ param: { id } });
+			// Slugs are scoped by project; the webapp fetches by UUID, so no scope is needed
+			const res = await api.api.blueprints[':id'].$get({ param: { id }, query: {} });
 			return unwrapResponse(res);
 		},
 		enabled: !!id,
@@ -75,6 +76,7 @@ export function useUpdateBlueprint(id: string) {
 		mutationFn: async (data: UpdateBlueprintInput) => {
 			const res = await api.api.blueprints[':id'].$put({
 				param: { id },
+				query: {},
 				json: data,
 			});
 			return unwrapResponse(res);
@@ -94,7 +96,7 @@ export function useDeleteBlueprint() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: async (id: string) => {
-			const res = await api.api.blueprints[':id'].$delete({ param: { id } });
+			const res = await api.api.blueprints[':id'].$delete({ param: { id }, query: {} });
 			return unwrapResponse(res);
 		},
 		onSuccess: () => {

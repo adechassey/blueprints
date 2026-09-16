@@ -31,3 +31,65 @@ export function shouldCreateNewVersion(
 	if (existingContent === null) return true;
 	return existingContent !== newContent;
 }
+
+/**
+ * Blueprint slugs are unique within a namespace, never globally: the project a
+ * blueprint belongs to, or the project-less ("global") pool. Two projects may
+ * each hold their own `form-field`.
+ */
+export class SlugConflictError extends Error {
+	readonly status = 409;
+
+	constructor(slug: string, projectLabel: string | null) {
+		const where = projectLabel === null ? 'the global namespace' : `project ${projectLabel}`;
+		super(`Slug "${slug}" already exists in ${where}`);
+		this.name = 'SlugConflictError';
+	}
+}
+
+export interface SlugCandidate {
+	id: string;
+	projectSlugs: string[];
+}
+
+/** Thrown when a slug lookup without a project scope matches several namespaces. */
+export class AmbiguousSlugError extends Error {
+	readonly status = 409;
+	readonly candidates: SlugCandidate[];
+
+	constructor(slug: string, candidates: SlugCandidate[]) {
+		const where = candidates
+			.map((c) => (c.projectSlugs.length === 0 ? 'global' : c.projectSlugs.join('+')))
+			.join(', ');
+		super(`Slug "${slug}" exists in several namespaces (${where}): pass project= to disambiguate`);
+		this.name = 'AmbiguousSlugError';
+		this.candidates = candidates;
+	}
+}
+
+/**
+ * Picks the slug to store. An explicit slug (the sync's pattern-id) is an
+ * identity and must not be altered, so a collision is a conflict. A slug
+ * generated from the name gets a suffix instead, so publishing from the UI
+ * never fails on a name clash.
+ */
+export function pickSlug(input: {
+	requested: string;
+	explicit: boolean;
+	taken: boolean;
+	projectLabel: string | null;
+}): string {
+	if (!input.taken) return input.requested;
+	if (input.explicit) throw new SlugConflictError(input.requested, input.projectLabel);
+	return appendSlugSuffix(input.requested);
+}
+
+/** Resolves an unscoped slug lookup: no match, the single match, or ambiguous. */
+export function pickSlugCandidate<T extends SlugCandidate>(
+	slug: string,
+	candidates: T[],
+): T | null {
+	if (candidates.length === 0) return null;
+	if (candidates.length === 1) return candidates[0] as T;
+	throw new AmbiguousSlugError(slug, candidates);
+}

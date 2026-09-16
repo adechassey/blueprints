@@ -62,3 +62,10 @@
 - TanStack Router: a route file with BOTH a component and a directory of child routes swallows the children (component has no <Outlet/>). Pattern: `$id.tsx` = bare route (no component) + `$id/index.tsx` = the actual page.
 - Rate limits broke E2E (100 req/min shared by 'unknown' IP when no x-forwarded-for) — now configurable via RATE_LIMIT_GENERAL/STRICT/DOWNLOAD.
 - GitHub Actions: a PR whose merge into base is CONFLICTING (`mergeStateStatus: DIRTY`) does NOT trigger pull_request workflows at all — no run, no check, nothing. Resolve conflicts and the workflows appear on the next push.
+
+## Project-scoped slugs (2026-09)
+- `blueprints.slug` is NOT unique globally anymore (migration 0004 drops `blueprints_slug_unique`, keeps a plain index). Uniqueness is per namespace — each project a blueprint is linked to via `blueprint_projects`, or the project-less pool — and enforced in `services/blueprints.ts` (`isSlugTaken`), not in the DB: a cross-table unique isn't expressible with the many-to-many link.
+- `GET/PUT/DELETE /api/blueprints/:slug` take `?project=<slug|uuid>`; unscoped, a slug held by several namespaces throws `AmbiguousSlugError` (409). The webapp always fetches by UUID, so it is untouched; the CLI (`sync`, `info`, `pull`) passes `--project`.
+- **Gotcha**: adding `zValidator('query', …)` on a route makes `query` a required arg on the typed `hc` client, even when every field is optional — pass `query: {}` (webapp `useBlueprints.ts`, CLI).
+- `theodo-blueprints projects create <slug>` exists because `POST /api/projects` had no CLI (sync into a fresh namespace was impossible without curl).
+- API-level E2E without a browser: Playwright's `request` fixture + `Authorization: Bearer <session token>` from `createTestUser` (Better Auth `bearer()` plugin) — see `e2e/slug-scoping.spec.ts`.

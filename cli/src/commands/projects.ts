@@ -33,6 +33,28 @@ export function registerProjectsCommand(program: Command) {
 		});
 
 	projectsCmd
+		.command('create <slug>')
+		.description('Create a project namespace (you become its owner)')
+		.option('--name <name>', 'Display name (defaults to the slug)')
+		.option('--description <text>', 'Short description')
+		.action(async (slug: string, opts: { name?: string; description?: string }) => {
+			try {
+				const client = createApiClient();
+				const res = await client.api.projects.$post({
+					json: { name: opts.name ?? slug, slug, description: opts.description },
+				});
+				const project = await unwrapResponse(res);
+				console.log(
+					chalk.green(`✓ Created project ${project.name} ${chalk.cyan(`(${project.slug})`)}`),
+				);
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : 'Unknown error';
+				console.error(chalk.red(`Error: ${msg}`));
+				process.exit(1);
+			}
+		});
+
+	projectsCmd
 		.command('join <slug>')
 		.description('Join a project (self-service)')
 		.action(async (slug: string) => {

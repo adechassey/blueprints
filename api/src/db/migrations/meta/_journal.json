@@ -29,6 +29,13 @@
       "when": 1789564504201,
       "tag": "0003_panoramic_jack_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789570585055,
+      "tag": "0004_project_scoped_slugs",
+      "breakpoints": true
     }
   ]
 }

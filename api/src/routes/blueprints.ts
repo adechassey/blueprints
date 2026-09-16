@@ -33,6 +33,12 @@ const searchSchema = z.object({
 	offset: z.coerce.number().int().min(0).default(0),
 });
 
+/**
+ * Slugs are unique per project, so a slug in `:id` is resolved within
+ * `?project=` (slug or UUID). Without it, an ambiguous slug answers 409.
+ */
+const scopeSchema = z.object({ project: z.string().optional() });
+
 export const blueprintRoutes = new Hono()
 	.get('/blueprints/search', strictRateLimit, zValidator('query', searchSchema), async (c) => {
 		const { q, ...filters } = c.req.valid('query');
@@ -44,9 +50,10 @@ export const blueprintRoutes = new Hono()
 		const result = await listBlueprints(db, filters);
 		return c.json(result);
 	})
-	.get('/blueprints/:id', async (c) => {
+	.get('/blueprints/:id', zValidator('query', scopeSchema), async (c) => {
 		const id = c.req.param('id');
-		const blueprint = await getBlueprintById(db, id);
+		const { project } = c.req.valid('query');
+		const blueprint = await getBlueprintById(db, id, project);
 		if (!blueprint) {
 			return c.json({ error: 'Blueprint not found' }, 404);
 		}
@@ -81,12 +88,35 @@ export const blueprintRoutes = new Hono()
 		const blueprint = await createBlueprint(db, input, user.id);
 		return c.json(blueprint, 201);
 	})
-	.put('/blueprints/:id', requireAuth, zValidator('json', updateBlueprintSchema), async (c) => {
+	.put(
+		'/blueprints/:id',
+		requireAuth,
+		zValidator('query', scopeSchema),
+		zValidator('json', updateBlueprintSchema),
+		async (c) => {
+			const id = c.req.param('id');
+			const { project } = c.req.valid('query');
+			const input = c.req.valid('json');
+			const user = getUser(c);
+
+			const existing = await getBlueprintById(db, id, project);
+			if (!existing) {
+				return c.json({ error: 'Blueprint not found' }, 404);
+			}
+			if (existing.authorId !== user.id && user.role !== 'admin') {
+				return c.json({ error: 'Forbidden' }, 403);
+			}
+
+			const updated = await updateBlueprint(db, existing.id, input, user.id);
+			return c.json(updated);
+		},
+	)
+	.delete('/blueprints/:id', requireAuth, zValidator('query', scopeSchema), async (c) => {
 		const id = c.req.param('id');
-		const input = c.req.valid('json');
+		const { project } = c.req.valid('query');
 		const user = getUser(c);
 
-		const existing = await getBlueprintById(db, id);
+		const existing = await getBlueprintById(db, id, project);
 		if (!existing) {
 			return c.json({ error: 'Blueprint not found' }, 404);
 		}
@@ -94,22 +124,7 @@ export const blueprintRoutes = new Hono()
 			return c.json({ error: 'Forbidden' }, 403);
 		}
 
-		const updated = await updateBlueprint(db, id, input, user.id);
-		return c.json(updated);
-	})
-	.delete('/blueprints/:id', requireAuth, async (c) => {
-		const id = c.req.param('id');
-		const user = getUser(c);
-
-		const existing = await getBlueprintById(db, id);
-		if (!existing) {
-			return c.json({ error: 'Blueprint not found' }, 404);
-		}
-		if (existing.authorId !== user.id && user.role !== 'admin') {
-			return c.json({ error: 'Forbidden' }, 403);
-		}
-
-		await deleteBlueprintById(db, id);
+		await deleteBlueprintById(db, existing.id);
 		return c.json({ success: true });
 	})
 	.get('/blueprints/:id/versions', async (c) => {

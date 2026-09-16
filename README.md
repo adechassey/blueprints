@@ -60,8 +60,8 @@ theodo-blueprints search "authentication middleware"
 # List all blueprints
 theodo-blueprints list
 
-# Pull a blueprint
-theodo-blueprints pull <slug> -o output.md
+# Pull a blueprint (slugs are unique per project: --project scopes the lookup)
+theodo-blueprints pull <slug> --project my-project -o output.md
 
 # Push a blueprint
 theodo-blueprints push blueprint.md --project my-project
@@ -71,6 +71,7 @@ theodo-blueprints sync --repo owner/repo --project my-project
 
 # Manage projects
 theodo-blueprints projects list
+theodo-blueprints projects create <slug> --name "My Project"
 theodo-blueprints projects join <slug>
 theodo-blueprints projects members <slug>
 
@@ -106,6 +107,7 @@ theodo-blueprints sync --repo owner/repo [--project my-project] [--stack server]
 ```
 
 - Each `@Blueprint` becomes a registry blueprint whose slug is the pattern-id, so re-running `sync` updates in place (never duplicates).
+- Slugs are unique **per project**, not globally: pass `--project` so the lookup is scoped to your namespace and your `form-field` never collides with another project's. An unscoped sync skips (and reports) any pattern-id that already belongs to a project instead of overwriting it.
 - The layer is inferred from the declared globs (`*.controller.ts` → `controller`, `/hooks/` → `hook`, `.tsx` → `component`, …); `--layer` overrides the fallback.
 - The exemplar excerpt is embedded in the content, and `source` records `--repo:path:line` for traceability.
 

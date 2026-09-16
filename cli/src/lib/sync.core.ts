@@ -144,3 +144,17 @@ export function buildBlueprintContent(row: BlueprintIndexRow, excerpt?: string):
 
 	return `${sections.join('\n')}\n`;
 }
+
+/**
+ * Slugs of the projects that own an existing blueprint and are not the sync's
+ * target: a non-empty result means the blueprint belongs to someone else and
+ * must not be overwritten. A blueprint without a project (global pool) is
+ * never foreign, nor is one already in the target project.
+ */
+export function foreignProjects(
+	owners: Array<{ id: string; slug: string }>,
+	targetProjectId: string | undefined,
+): string[] {
+	if (targetProjectId !== undefined && owners.some((p) => p.id === targetProjectId)) return [];
+	return owners.map((p) => p.slug);
+}
