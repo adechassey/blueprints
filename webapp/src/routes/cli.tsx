@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Check, Copy, Terminal } from 'lucide-react';
+import { Check, Copy, ExternalLink, Terminal } from 'lucide-react';
 import { useState } from 'react';
+import { Badge } from '../components/ui/badge.js';
 import { Button } from '../components/ui/button.js';
 import { Card, CardContent } from '../components/ui/card.js';
 import * as m from '../paraglide/messages.js';
@@ -9,72 +10,9 @@ export const Route = createFileRoute('/cli')({
 	component: CliPage,
 });
 
-function CodeBlock({ code }: { code: string }) {
-	const [copied, setCopied] = useState(false);
-
-	const handleCopy = async () => {
-		await navigator.clipboard.writeText(code);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
-	};
-
-	return (
-		<div className="group relative">
-			<pre className="overflow-x-auto rounded-lg bg-surface-variant p-4 pr-12 text-sm">
-				<code>{code}</code>
-			</pre>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Copy"
-				onClick={handleCopy}
-				className="absolute right-2 top-2 opacity-60 transition-opacity group-hover:opacity-100"
-			>
-				{copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-			</Button>
-		</div>
-	);
-}
-
-function Section({
-	title,
-	description,
-	children,
-}: {
-	title: string;
-	description: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<section className="space-y-3">
-			<h2 className="font-semibold text-xl">{title}</h2>
-			<p className="text-on-surface-variant text-sm">{description}</p>
-			{children}
-		</section>
-	);
-}
-
+const REPO_URL = 'https://github.com/adechassey/blueprints';
 const INSTALL_MACOS = `curl -fsSL https://raw.githubusercontent.com/adechassey/blueprints/main/install.sh | sh`;
 const INSTALL_WINDOWS = `irm https://raw.githubusercontent.com/adechassey/blueprints/main/install.ps1 | iex`;
-const USAGE = `# Search blueprints with natural language
-theodo-blueprints search "authentication middleware"
-
-# List blueprints (optional filters)
-theodo-blueprints list --stack nestjs --tag hooks
-
-# Pull a blueprint into a file
-theodo-blueprints pull <slug> -o output.md
-
-# Push a blueprint
-theodo-blueprints push blueprint.md --project my-project
-
-# Sync a whole @Blueprint catalog from its TSV index (see below)
-theodo-blueprints sync --repo owner/repo --project my-project
-
-# Manage projects
-theodo-blueprints projects list
-theodo-blueprints projects join <slug>`;
-
 const SYNC = `# 1. Generate the TSV index with the blueprint skill (docs/blueprints.tsv)
 bash .claude/skills/blueprint/index.sh
 
@@ -86,52 +24,206 @@ theodo-blueprints sync --repo owner/repo --project my-project
 
 # Optional: --stack <stack> (default: server), --layer <layer> fallback`;
 
+const COMMANDS = [
+	{
+		name: 'search',
+		description: m.cli_cmd_search,
+		code: 'theodo-blueprints search "authentication middleware"',
+	},
+	{
+		name: 'list',
+		description: m.cli_cmd_list,
+		code: 'theodo-blueprints list --stack nestjs --tag hooks',
+	},
+	{
+		name: 'pull',
+		description: m.cli_cmd_pull,
+		code: 'theodo-blueprints pull <slug> -o output.md',
+	},
+	{
+		name: 'push',
+		description: m.cli_cmd_push,
+		code: 'theodo-blueprints push blueprint.md --project my-project',
+	},
+	{
+		name: 'sync',
+		description: m.cli_cmd_sync,
+		code: 'theodo-blueprints sync --repo owner/repo --project my-project',
+	},
+	{
+		name: 'projects',
+		description: m.cli_cmd_projects,
+		code: 'theodo-blueprints projects list\ntheodo-blueprints projects join <slug>',
+	},
+];
+
+function CopyButton({ code }: { code: string }) {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		await navigator.clipboard.writeText(code);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	};
+
+	return (
+		<Button
+			variant="ghost"
+			size="sm"
+			onClick={handleCopy}
+			aria-live="polite"
+			className="h-7 shrink-0 gap-1.5 px-2 text-on-surface-variant text-xs"
+		>
+			{copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+			{copied ? m.cli_copied() : m.cli_copy()}
+		</Button>
+	);
+}
+
+/** Splits a snippet into lines with stable keys (content + occurrence, not index). */
+function keyedLines(code: string): { key: string; line: string }[] {
+	const seen = new Map<string, number>();
+	return code.split('\n').map((line) => {
+		const occurrence = (seen.get(line) ?? 0) + 1;
+		seen.set(line, occurrence);
+		return { key: `${line}#${occurrence}`, line };
+	});
+}
+
+/** Renders shell lines: comments muted, commands prefixed with a non-selectable prompt. */
+function CodeLines({ code }: { code: string }) {
+	return keyedLines(code).map(({ key, line }) => {
+		if (line.trim() === '') {
+			return (
+				<span key={key} className="block">
+					{' '}
+				</span>
+			);
+		}
+		if (line.startsWith('#')) {
+			return (
+				<span key={key} className="block text-on-surface-variant/80">
+					{line}
+				</span>
+			);
+		}
+		return (
+			<span key={key} className="block">
+				<span aria-hidden="true" className="select-none text-primary/70">
+					${' '}
+				</span>
+				{line}
+			</span>
+		);
+	});
+}
+
+function CodeBlock({ code, header }: { code: string; header: React.ReactNode }) {
+	return (
+		<div className="overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-low">
+			<div className="flex items-center justify-between gap-3 border-b border-outline-variant/50 bg-surface-container/60 py-1.5 pr-1.5 pl-4">
+				<div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+					{header}
+				</div>
+				<CopyButton code={code} />
+			</div>
+			<pre className="overflow-x-auto p-4 text-sm leading-relaxed">
+				<code>
+					<CodeLines code={code} />
+				</code>
+			</pre>
+		</div>
+	);
+}
+
+function BlockLabel({ children }: { children: React.ReactNode }) {
+	return (
+		<span className="font-medium text-on-surface-variant uppercase tracking-wide">{children}</span>
+	);
+}
+
+function Section({
+	step,
+	title,
+	description,
+	badge,
+	children,
+}: {
+	step?: number;
+	title: string;
+	description: string;
+	badge?: React.ReactNode;
+	children: React.ReactNode;
+}) {
+	return (
+		<section className="space-y-4">
+			<div className="space-y-1.5">
+				<div className="flex items-center gap-3">
+					{step !== undefined && (
+						<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary text-sm">
+							{step}
+						</span>
+					)}
+					<h2 className="font-semibold text-xl">{title}</h2>
+					{badge}
+				</div>
+				<p className={`text-on-surface-variant text-sm ${step !== undefined ? 'sm:pl-10' : ''}`}>
+					{description}
+				</p>
+			</div>
+			{children}
+		</section>
+	);
+}
+
 function CliPage() {
 	return (
-		<div className="mx-auto max-w-3xl space-y-10">
+		<div className="mx-auto max-w-3xl space-y-12">
 			<header className="space-y-3">
-				<div className="flex items-center gap-3">
+				<div className="flex flex-wrap items-center gap-3">
 					<span className="rounded-lg bg-surface-container-low p-2">
 						<Terminal className="h-6 w-6 text-primary" />
 					</span>
 					<h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface">
 						{m.cli_title()}
 					</h1>
+					<Badge variant="primary">{m.cli_requirement()}</Badge>
 				</div>
 				<p className="text-on-surface-variant">{m.cli_intro()}</p>
-				<p className="text-outline text-xs">{m.cli_requirement()}</p>
+				<a
+					href={`${REPO_URL}/releases`}
+					target="_blank"
+					rel="noreferrer"
+					className="inline-flex items-center gap-1 text-primary text-sm"
+				>
+					{m.cli_releases_link()}
+					<ExternalLink className="h-3.5 w-3.5" />
+				</a>
 			</header>
 
-			<Section title={m.cli_install_title()} description={m.cli_install_description()}>
+			<Section step={1} title={m.cli_install_title()} description={m.cli_install_description()}>
 				<div className="space-y-3">
-					<div>
-						<p className="mb-1.5 text-xs font-medium text-on-surface-variant uppercase">
-							macOS / Linux
-						</p>
-						<CodeBlock code={INSTALL_MACOS} />
-					</div>
-					<div>
-						<p className="mb-1.5 text-xs font-medium text-on-surface-variant uppercase">
-							Windows (PowerShell)
-						</p>
-						<CodeBlock code={INSTALL_WINDOWS} />
-					</div>
+					<CodeBlock code={INSTALL_MACOS} header={<BlockLabel>macOS / Linux</BlockLabel>} />
+					<CodeBlock
+						code={INSTALL_WINDOWS}
+						header={<BlockLabel>Windows (PowerShell)</BlockLabel>}
+					/>
 				</div>
 			</Section>
 
-			<Section title={m.cli_auth_title()} description={m.cli_auth_description()}>
-				<CodeBlock code="theodo-blueprints auth login" />
+			<Section step={2} title={m.cli_auth_title()} description={m.cli_auth_description()}>
+				<CodeBlock code="theodo-blueprints auth login" header={<BlockLabel>Terminal</BlockLabel>} />
 				<Card>
-					<CardContent className="flex items-center justify-between gap-4 py-4">
+					<CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
 						<p className="text-on-surface-variant text-sm">
-							Prefer a token? Generate one from your account and log in with{' '}
-							<code className="rounded bg-surface-variant px-1.5 py-0.5 font-mono text-xs">
+							{m.cli_auth_token_hint()}{' '}
+							<code className="whitespace-nowrap rounded bg-surface-variant px-1.5 py-0.5 font-mono text-xs">
 								auth login --token
 							</code>
 							.
 						</p>
-						<Link to="/cli-token" className="no-underline">
-							<Button variant="secondary" size="sm">
+						<Link to="/cli-token" className="shrink-0 no-underline">
+							<Button variant="secondary" size="sm" className="w-full sm:w-auto">
 								{m.cli_auth_cta()}
 							</Button>
 						</Link>
@@ -139,12 +231,35 @@ function CliPage() {
 				</Card>
 			</Section>
 
-			<Section title={m.cli_usage_title()} description={m.cli_usage_description()}>
-				<CodeBlock code={USAGE} />
+			<Section step={3} title={m.cli_usage_title()} description={m.cli_usage_description()}>
+				<div className="space-y-3">
+					{COMMANDS.map((command) => (
+						<CodeBlock
+							key={command.name}
+							code={command.code}
+							header={
+								<>
+									<span className="font-mono font-semibold text-on-surface">{command.name}</span>
+									<span className="text-on-surface-variant">{command.description()}</span>
+								</>
+							}
+						/>
+					))}
+				</div>
+				<p className="text-on-surface-variant text-xs">
+					{m.cli_usage_help()}{' '}
+					<code className="rounded bg-surface-variant px-1.5 py-0.5 font-mono">
+						theodo-blueprints &lt;command&gt; --help
+					</code>
+				</p>
 			</Section>
 
-			<Section title={m.cli_sync_title()} description={m.cli_sync_description()}>
-				<CodeBlock code={SYNC} />
+			<Section
+				title={m.cli_sync_title()}
+				description={m.cli_sync_description()}
+				badge={<Badge>{m.cli_sync_badge()}</Badge>}
+			>
+				<CodeBlock code={SYNC} header={<BlockLabel>Terminal</BlockLabel>} />
 			</Section>
 		</div>
 	);
