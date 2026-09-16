@@ -52,3 +52,11 @@
 ## Screenshotting pages behind Google SSO
 
 - Reuse the e2e helpers (`createTestUser` + `authenticate` in `e2e/helpers`, from the e2e suite) in a throwaway `e2e/zz-*.spec.ts`: Playwright's `webServer` boots webapp + API against the docker e2e DB (port 5433), and the forged session cookie skips Google OAuth. `page.addInitScript((t) => localStorage.setItem('theme', t), 'dark')` before `goto` renders dark mode. Delete the spec afterwards.
+## E2E suite (e2e/)
+- Auth without OAuth: insert user + session rows via SQL (better-auth stores raw `generateId(32)` tokens), then forge the cookie `blueprints.session_token = token + '.' + base64(hmac-sh256(token, BETTER_AUTH_SECRET))` (signed cookies!) and `context.addCookies` before goto. Works on localhost despite `secure: true`.
+- Playwright default runs SPEC FILES in parallel across workers even with `fullyParallel: false` (that only affects tests within a file). Shared DB + cleanup = flaky cross-file interference → set `workers: 1`.
+- `reuseExistingServer: true` masks config drift: a stale manually-started API on the same port serves the tests with the WRONG env. `pkill -f "tsx src/index.ts"` before debugging.
+- Read pino JSON logs to get the REAL pg error (hono error handler logs `err.cause` — the toast/API response only shows drizzle's "Failed query" wrapper).
+- TanStack Router: a route file with BOTH a component and a directory of child routes swallows the children (component has no <Outlet/>). Pattern: `$id.tsx` = bare route (no component) + `$id/index.tsx` = the actual page.
+- Rate limits broke E2E (100 req/min shared by 'unknown' IP when no x-forwarded-for) — now configurable via RATE_LIMIT_GENERAL/STRICT/DOWNLOAD.
+- GitHub Actions: a PR whose merge into base is CONFLICTING (`mergeStateStatus: DIRTY`) does NOT trigger pull_request workflows at all — no run, no check, nothing. Resolve conflicts and the workflows appear on the next push.

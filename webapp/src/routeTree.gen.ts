@@ -25,6 +25,7 @@ import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminProjectsRouteImport } from './routes/admin/projects'
 import { Route as AdminCommentsRouteImport } from './routes/admin/comments'
 import { Route as AdminBlueprintsRouteImport } from './routes/admin/blueprints'
+import { Route as BlueprintsBlueprintIdIndexRouteImport } from './routes/blueprints/$blueprintId/index'
 import { Route as BlueprintsBlueprintIdEditRouteImport } from './routes/blueprints/$blueprintId/edit'
 
 const TagsRoute = TagsRouteImport.update({
@@ -107,6 +108,12 @@ const AdminBlueprintsRoute = AdminBlueprintsRouteImport.update({
   path: '/admin/blueprints',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlueprintsBlueprintIdIndexRoute =
+  BlueprintsBlueprintIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => BlueprintsBlueprintIdRoute,
+  } as any)
 const BlueprintsBlueprintIdEditRoute =
   BlueprintsBlueprintIdEditRouteImport.update({
     id: '/edit',
@@ -132,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
+  '/blueprints/$blueprintId/': typeof BlueprintsBlueprintIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -144,13 +152,13 @@ export interface FileRoutesByTo {
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/projects': typeof AdminProjectsRoute
   '/admin/users': typeof AdminUsersRoute
-  '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/admin': typeof AdminIndexRoute
   '/projects': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
+  '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/projects/': typeof ProjectsIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
+  '/blueprints/$blueprintId/': typeof BlueprintsBlueprintIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/projects/'
     | '/blueprints/$blueprintId/edit'
+    | '/blueprints/$blueprintId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -204,13 +214,13 @@ export interface FileRouteTypes {
     | '/admin/comments'
     | '/admin/projects'
     | '/admin/users'
-    | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
     | '/users/$userId'
     | '/admin'
     | '/projects'
     | '/blueprints/$blueprintId/edit'
+    | '/blueprints/$blueprintId'
   id:
     | '__root__'
     | '/'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/projects/'
     | '/blueprints/$blueprintId/edit'
+    | '/blueprints/$blueprintId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -365,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlueprintsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blueprints/$blueprintId/': {
+      id: '/blueprints/$blueprintId/'
+      path: '/'
+      fullPath: '/blueprints/$blueprintId/'
+      preLoaderRoute: typeof BlueprintsBlueprintIdIndexRouteImport
+      parentRoute: typeof BlueprintsBlueprintIdRoute
+    }
     '/blueprints/$blueprintId/edit': {
       id: '/blueprints/$blueprintId/edit'
       path: '/edit'
@@ -377,10 +395,12 @@ declare module '@tanstack/react-router' {
 
 interface BlueprintsBlueprintIdRouteChildren {
   BlueprintsBlueprintIdEditRoute: typeof BlueprintsBlueprintIdEditRoute
+  BlueprintsBlueprintIdIndexRoute: typeof BlueprintsBlueprintIdIndexRoute
 }
 
 const BlueprintsBlueprintIdRouteChildren: BlueprintsBlueprintIdRouteChildren = {
   BlueprintsBlueprintIdEditRoute: BlueprintsBlueprintIdEditRoute,
+  BlueprintsBlueprintIdIndexRoute: BlueprintsBlueprintIdIndexRoute,
 }
 
 const BlueprintsBlueprintIdRouteWithChildren =
