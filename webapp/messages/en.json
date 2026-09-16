@@ -6,6 +6,7 @@
 	"nav_shared": "Shared",
 	"nav_projects": "Projects",
 	"nav_tags": "Tags",
+	"nav_cli": "CLI",
 	"nav_new_blueprint": "New Blueprint",
 	"page_all_title": "All Blueprints",
 	"page_stack_title": "{stack} Blueprints",
@@ -141,5 +142,15 @@
 	"admin_user": "User",
 	"admin_joined": "Joined",
 	"admin_blueprints_col": "Blueprints",
-	"admin_no_users": "No users found"
+	"admin_no_users": "No users found",
+	"cli_title": "CLI",
+	"cli_intro": "Publish and pull blueprints straight from your terminal with the theodo-blueprints CLI.",
+	"cli_requirement": "Requires Node.js 22+",
+	"cli_install_title": "Install",
+	"cli_install_description": "Run the quick install script for your platform. To update, run the same command again.",
+	"cli_auth_title": "Authenticate",
+	"cli_auth_description": "Log in with the device flow, or generate a token from your account and pass it directly.",
+	"cli_auth_cta": "Generate a CLI token",
+	"cli_usage_title": "Usage",
+	"cli_usage_description": "Common commands to search, pull, and publish blueprints."
 }
