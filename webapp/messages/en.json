@@ -152,5 +152,7 @@
 	"cli_auth_description": "Log in with the device flow, or generate a token from your account and pass it directly.",
 	"cli_auth_cta": "Generate a CLI token",
 	"cli_usage_title": "Usage",
-	"cli_usage_description": "Common commands to search, pull, and publish blueprints."
+	"cli_usage_description": "Common commands to search, pull, and publish blueprints.",
+	"cli_sync_title": "Sync from the blueprint skill",
+	"cli_sync_description": "If your repo uses the blueprint skill (@Blueprint annotations), publish its whole catalog in one command. Each @Blueprint becomes a registry blueprint whose slug is its pattern id, so re-running sync updates in place and never duplicates."
 }

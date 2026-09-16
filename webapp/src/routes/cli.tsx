@@ -68,9 +68,23 @@ theodo-blueprints pull <slug> -o output.md
 # Push a blueprint
 theodo-blueprints push blueprint.md --project my-project
 
+# Sync a whole @Blueprint catalog from its TSV index (see below)
+theodo-blueprints sync --repo owner/repo --project my-project
+
 # Manage projects
 theodo-blueprints projects list
 theodo-blueprints projects join <slug>`;
+
+const SYNC = `# 1. Generate the TSV index with the blueprint skill (docs/blueprints.tsv)
+bash .claude/skills/blueprint/index.sh
+
+# 2. Preview what would be published
+theodo-blueprints sync --repo owner/repo --project my-project --dry-run
+
+# 3. Publish the catalog (re-run any time: blueprints update in place)
+theodo-blueprints sync --repo owner/repo --project my-project
+
+# Optional: --stack <stack> (default: server), --layer <layer> fallback`;
 
 function CliPage() {
 	return (
@@ -127,6 +141,10 @@ function CliPage() {
 
 			<Section title={m.cli_usage_title()} description={m.cli_usage_description()}>
 				<CodeBlock code={USAGE} />
+			</Section>
+
+			<Section title={m.cli_sync_title()} description={m.cli_sync_description()}>
+				<CodeBlock code={SYNC} />
 			</Section>
 		</div>
 	);
