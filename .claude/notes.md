@@ -41,7 +41,9 @@
 
 - `install.sh` / `install.ps1` only ever install the **latest GitHub release**. To ship new CLI commands: `git tag cli-vX.Y.Z origin/main && git push origin cli-vX.Y.Z` → the `CLI Release` workflow (~2 min) builds the tarballs → re-run the install command. Tag from `origin/main`, not a feature branch.
 - To test unreleased CLI code locally: `pnpm --filter cli bundle` then `sudo cp cli/dist/theodo-blueprints.cjs /usr/local/bin/theodo-blueprints`.
-- **Gotcha**: `theodo-blueprints --version` is hardcoded to `0.0.0` (cli/package.json + commander), so it can't tell installs apart — check `--help` for the command you expect instead.
+- `--version` comes from the release tag: the `CLI Release` workflow exports `CLI_VERSION=${GITHUB_REF_NAME#cli-v}` and `cli/bundle.mjs` inlines it with an esbuild `define` on `process.env.CLI_VERSION`. Local bundles report `dev` (set `CLI_VERSION=x.y.z node bundle.mjs` to fake one). `cli/package.json` version stays `0.0.0` and is not used.
+- Update flow (cli ≥ 0.3.0): `theodo-blueprints update` runs the platform installer; every other command starts a GitHub latest-release lookup in a `preAction` hook and prints a notice in `postAction` when newer. Cached 24h in `~/.theodo-blueprints/update-check.json`; skipped for `dev` builds, in CI, without a TTY, or with `THEODO_BLUEPRINTS_NO_UPDATE_CHECK=1`. Pure logic in `cli/src/lib/update.core.ts`.
+- **Gotcha**: the CLI bundle is CommonJS (`format: 'cjs'` in bundle.mjs), so no top-level `await` in `cli/src/index.ts` — `program.parseAsync().catch(...)` instead.
 
 ## Git worktrees & pre-commit
 
