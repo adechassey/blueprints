@@ -81,14 +81,7 @@ function IndexPage() {
 			<header className="space-y-6">
 				<div>
 					<h1 className="text-4xl font-extrabold tracking-tight font-headline text-on-surface">
-						{isSearchMode ? (
-							<>
-								{m.search_results_title()}{' '}
-								<span className="text-primary italic">&ldquo;{q}&rdquo;</span>
-							</>
-						) : (
-							m.page_all_title()
-						)}
+						{isSearchMode ? m.search_results_title({ query: q ?? '' }) : m.page_all_title()}
 					</h1>
 				</div>
 				<SearchBar initialQuery={q || ''} onSearch={handleSearch} isLoading={isLoading} />

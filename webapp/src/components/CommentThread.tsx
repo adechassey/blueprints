@@ -77,6 +77,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 									size="icon"
 									className="h-7 w-7"
 									onClick={() => setShowReplyForm(!showReplyForm)}
+									aria-label={m.comment_reply()}
 								>
 									<MessageSquare className="h-3.5 w-3.5" />
 								</Button>
@@ -87,6 +88,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 									size="icon"
 									className="h-7 w-7"
 									onClick={() => setIsEditing(!isEditing)}
+									aria-label={m.comment_edit()}
 								>
 									<Pencil className="h-3.5 w-3.5" />
 								</Button>
@@ -97,6 +99,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 									size="icon"
 									className="h-7 w-7 text-error hover:text-error"
 									onClick={() => onDelete(comment.id)}
+									aria-label={m.comment_delete()}
 								>
 									<Trash2 className="h-3.5 w-3.5" />
 								</Button>
@@ -165,6 +168,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 													size="icon"
 													className="h-6 w-6"
 													onClick={() => onEdit(reply.id, reply.content)}
+													aria-label={m.comment_edit()}
 												>
 													<Pencil className="h-3 w-3" />
 												</Button>
@@ -176,6 +180,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 													size="icon"
 													className="h-6 w-6 text-error hover:text-error"
 													onClick={() => onDelete(reply.id)}
+													aria-label={m.comment_delete()}
 												>
 													<Trash2 className="h-3 w-3" />
 												</Button>
