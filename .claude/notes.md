@@ -46,6 +46,7 @@
 ## Git worktrees & pre-commit
 
 - A fresh `git worktree` fails lefthook's pre-commit until you run, inside it: `pnpm install --offline --frozen-lockfile`, `pnpm --filter @blueprints/shared build`, and `cd webapp && pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/paraglide`. Symptoms otherwise: api tests fail on `Failed to resolve entry for package "@blueprints/shared"` and knip lists every `paraglide/messages.js` import as unresolved.
+- **Gotcha**: `webapp/tsconfig.json` is a solution file (`files: []` + references), so a bare `tsc --noEmit` type-checks *nothing*. `check-types` runs `tsc -b` (same as the build, `noEmit` is set in both project files) — do not switch it back.
 - After adding keys to `webapp/messages/en.json`, re-run the paraglide compile before `tsc` — `check-types` does not compile messages (only `build` does).
 
 ## Screenshotting pages behind Google SSO
