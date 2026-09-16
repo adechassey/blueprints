@@ -21,6 +21,10 @@ export type CreateBlueprintInput = z.infer<typeof createBlueprintSchema>;
 
 export const updateBlueprintSchema = z.object({
 	name: z.string().min(1).max(200).optional(),
+	slug: z
+		.string()
+		.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug must be kebab-case')
+		.optional(),
 	source: z.string().max(500).optional(),
 	description: z.string().optional(),
 	usage: z.string().optional(),

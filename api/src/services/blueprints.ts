@@ -152,6 +152,12 @@ export async function updateBlueprint(
 	const metadataUpdate: Record<string, unknown> = {};
 	if (input.name !== undefined) {
 		metadataUpdate.name = input.name;
+	}
+	// Explicit slug wins (used by sync to pin the pattern-id as identity);
+	// otherwise regenerate the slug only when the name actually changes.
+	if (input.slug !== undefined) {
+		metadataUpdate.slug = input.slug;
+	} else if (input.name !== undefined && input.name !== existing.name) {
 		metadataUpdate.slug = generateSlug(input.name);
 	}
 	if (input.description !== undefined) metadataUpdate.description = input.description;
@@ -333,13 +339,13 @@ export async function getBlueprintById(db: DB, id: string) {
 		.select({ name: tags.name, slug: tags.slug })
 		.from(blueprintTags)
 		.innerJoin(tags, eq(blueprintTags.tagId, tags.id))
-		.where(eq(blueprintTags.blueprintId, id));
+		.where(eq(blueprintTags.blueprintId, blueprint.id));
 
 	const blueprintProjectRows = await db
 		.select({ id: projects.id, name: projects.name, slug: projects.slug })
 		.from(blueprintProjects)
 		.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
-		.where(eq(blueprintProjects.blueprintId, id));
+		.where(eq(blueprintProjects.blueprintId, blueprint.id));
 
 	return {
 		...blueprint,
