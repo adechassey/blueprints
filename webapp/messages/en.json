@@ -150,7 +150,7 @@
 	"cli_copy": "Copy",
 	"cli_copied": "Copied",
 	"cli_install_title": "Install",
-	"cli_install_description": "Run the quick install script for your platform. To update, run the same command again.",
+	"cli_install_description": "Run the quick install script for your platform. To update later, run theodo-blueprints update (the CLI also tells you once a day when a newer release exists).",
 	"cli_auth_title": "Authenticate",
 	"cli_auth_description": "Log in with the device flow, or generate a token from your account and pass it directly.",
 	"cli_auth_token_hint": "Prefer a token? Generate one from your account and pass it to",
@@ -164,6 +164,7 @@
 	"cli_cmd_push": "Publish a blueprint markdown file, optionally under a project",
 	"cli_cmd_sync": "Publish a whole @Blueprint catalog from its TSV index (see below)",
 	"cli_cmd_projects": "List the projects you can publish to, or join one",
+	"cli_cmd_update": "Update the CLI to the latest release (add --check to only look)",
 	"cli_sync_title": "Sync from the blueprint skill",
 	"cli_sync_badge": "Optional",
 	"cli_sync_description": "If your repo uses the blueprint skill (@Blueprint annotations), publish its whole catalog in one command. Each @Blueprint becomes a registry blueprint whose slug is its pattern id, so re-running sync updates in place and never duplicates."

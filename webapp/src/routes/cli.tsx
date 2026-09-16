@@ -55,6 +55,11 @@ const COMMANDS = [
 		description: m.cli_cmd_projects,
 		code: 'theodo-blueprints projects list\ntheodo-blueprints projects join <slug>',
 	},
+	{
+		name: 'update',
+		description: m.cli_cmd_update,
+		code: 'theodo-blueprints update',
+	},
 ];
 
 function CopyButton({ code }: { code: string }) {
