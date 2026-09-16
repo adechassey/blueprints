@@ -1,5 +1,6 @@
 import {
 	boolean,
+	index,
 	integer,
 	pgEnum,
 	pgTable,
@@ -97,29 +98,35 @@ export const projects = pgTable('projects', {
 });
 
 // Blueprints
-export const blueprints = pgTable('blueprints', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	name: text('name').notNull(),
-	slug: text('slug').notNull().unique(),
-	description: text('description'),
-	usage: text('usage'),
-	currentVersionId: uuid('current_version_id'),
-	authorId: text('author_id')
-		.notNull()
-		.references(() => users.id),
-	stack: blueprintStack('stack').notNull(),
-	layer: text('layer').notNull(),
-	// Origin of the blueprint, e.g. "owner/repo:path/to/file.ts:42" for a synced
-	// `@Blueprint` code annotation
-	source: text('source'),
-	isPublic: boolean('is_public').notNull().default(true),
-	downloadCount: integer('download_count').notNull().default(0),
-	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
-		.notNull()
-		.defaultNow()
-		.$onUpdate(() => new Date()),
-});
+export const blueprints = pgTable(
+	'blueprints',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		name: text('name').notNull(),
+		// Unique within each project the blueprint belongs to (and among project-less
+		// blueprints), enforced by the blueprints service — not globally.
+		slug: text('slug').notNull(),
+		description: text('description'),
+		usage: text('usage'),
+		currentVersionId: uuid('current_version_id'),
+		authorId: text('author_id')
+			.notNull()
+			.references(() => users.id),
+		stack: blueprintStack('stack').notNull(),
+		layer: text('layer').notNull(),
+		// Origin of the blueprint, e.g. "owner/repo:path/to/file.ts:42" for a synced
+		// `@Blueprint` code annotation
+		source: text('source'),
+		isPublic: boolean('is_public').notNull().default(true),
+		downloadCount: integer('download_count').notNull().default(0),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true })
+			.notNull()
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+	},
+	(t) => [index('blueprints_slug_idx').on(t.slug)],
+);
 
 // Blueprint versions
 export const blueprintVersions = pgTable('blueprint_versions', {
