@@ -62,6 +62,9 @@ theodo-blueprints pull <slug> -o output.md
 # Push a blueprint
 theodo-blueprints push blueprint.md --project my-project
 
+# Sync blueprints from a blueprint skill TSV index (docs/blueprints.tsv)
+theodo-blueprints sync --repo owner/repo --project my-project
+
 # Manage projects
 theodo-blueprints projects list
 theodo-blueprints projects join <slug>
@@ -86,6 +89,18 @@ The CLI is not published to npm yet. When it's time:
    ```
 
 4. Users then install globally: `npm install -g @theodo-blueprints/cli`.
+
+## Syncing from the blueprint skill
+
+If your repo uses the [`blueprint` skill](https://github.com/theodo-group/future-of-software) (`@Blueprint` annotations), you can publish its whole catalog to the registry in one command. Generate the TSV index with the skill (`bash .claude/skills/blueprint/index.sh`), then:
+
+```sh
+theodo-blueprints sync --repo owner/repo [--project my-project] [--stack server] [--layer layer] [--dry-run]
+```
+
+- Each `@Blueprint` becomes a registry blueprint whose slug is the pattern-id, so re-running `sync` updates in place (never duplicates).
+- The layer is inferred from the declared globs (`*.controller.ts` → `controller`, `/hooks/` → `hook`, `.tsx` → `component`, …); `--layer` overrides the fallback.
+- The exemplar excerpt is embedded in the content, and `source` records `--repo:path:line` for traceability.
 
 ## Development
 

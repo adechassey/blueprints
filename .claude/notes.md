@@ -27,3 +27,12 @@
 - ALWAYS destructure `{ default: grammar }` from the dynamic language imports — the import() returns a namespace object, and refractor's register throws `Cannot convert object to primitive value` (null-prototype object string-concat) when given one.
 - Import via explicit `dist/esm/...` subpaths WITH `.js` extension (`prism-light.js`, `styles/prism/one-dark.js`, `languages/prism/tsx.js`): the package main resolves to CJS and mixing it with ESM subpaths creates broken interop wrappers. The @types package only covers extensionless paths — add local `declare module` for the `.js` subpaths (webapp/src/types/react-syntax-highlighter.d.ts).
 - Debugging prod-only rendering bugs: build + `vite preview` + Playwright with a mocked `**/api/auth/get-session` route (fake `{ user, session }` payload) bypasses Better Auth without the API.
+
+## Sync CLI ↔ blueprint skill (future-of-software)
+
+- `theodo-blueprints sync` pushes the skill's TSV index (`docs/blueprints.tsv`, from `index.sh`) to the registry. Slug = pattern-id → idempotent (create vs update via GET-by-slug).
+- **Gotcha**: `@blueprints/shared` resolves via `dist/` at runtime (see package.json exports). After editing shared schemas, run `pnpm --filter @blueprints/shared build` or the API silently strips the new fields (zod schema stale).
+- **Gotcha**: `updateBlueprint` used to regenerate the slug from `name` on every PUT — synced blueprints now pin the slug explicitly. Fix in `blueprints.ts`: explicit `slug` wins, otherwise regenerate only when the name actually changed.
+- **Bug fixé**: `getBlueprintById` accepte un slug mais faisait les jointures (tags/projets) avec l'id brut → requêtes cassées sur lookup par slug.
+- Runtime test env: API needs `DATABASE_URL` (docker: `postgresql://blueprints:blueprints@localhost:5433/blueprints`), `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID/SECRET`. Bearer token = Better Auth session token (insertable directly in DB for local tests). CLI config: `~/.theodo-blueprints/config.json`.
+- Pre-commit hook runs repo-wide `biome check .` + knip: uncommitted WIP from other work (e.g. e2e suite) can block commits — check the failing file isn't yours before `--no-verify`.

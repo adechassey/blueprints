@@ -59,6 +59,23 @@ Publish a blueprint to the registry.
 **Via MCP**: Use the `publish_blueprint` tool with name, stack, layer, content.
 **Via CLI**: `theodo-blueprints push ./my-blueprint.md --project my-project`
 
+### `/theodo-blueprints push`
+
+Publish a blueprint to the registry.
+
+**Via MCP**: Use the `publish_blueprint` tool with name, stack, layer, content.
+**Via CLI**: `theodo-blueprints push ./my-blueprint.md --project my-project`
+
+### `/theodo-blueprints sync`
+
+Publish a whole repo catalog annotated with the shared `blueprint` skill (see [future-of-software/skills/blueprint](https://github.com/theodo-group/future-of-software/tree/main/skills/blueprint)).
+
+Generate the TSV index with the skill, then push every `@Blueprint` at once:
+
+**Via CLI**: `theodo-blueprints sync --repo owner/repo [--project my-project] [--dry-run]`
+
+Each pattern-id becomes the registry slug, so re-running `sync` updates blueprints in place. The layer is inferred from `@BlueprintGlobs`, and the source location (`repo:path:line`) is recorded on the blueprint.
+
 ## Blueprint Format
 
 Blueprints are markdown files with YAML frontmatter:
