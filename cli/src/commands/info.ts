@@ -6,10 +6,14 @@ export function registerInfoCommand(program: Command) {
 	program
 		.command('info <slug>')
 		.description('Show full details of a blueprint')
-		.action(async (slug: string) => {
+		.option('--project <slug>', 'Project that scopes the slug (slugs are unique per project)')
+		.action(async (slug: string, opts: { project?: string }) => {
 			try {
 				const client = createApiClient();
-				const res = await client.api.blueprints[':id'].$get({ param: { id: slug } });
+				const res = await client.api.blueprints[':id'].$get({
+					param: { id: slug },
+					query: opts.project === undefined ? {} : { project: opts.project },
+				});
 				const blueprint = await unwrapResponse(res);
 
 				if ('error' in blueprint) {
