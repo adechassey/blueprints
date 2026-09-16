@@ -51,5 +51,5 @@ if ($UserPath -notlike "*$InstallDir*") {
 # Cleanup
 Remove-Item $TmpDir -Recurse -Force
 
-Write-Host "Installed $BinaryName to $InstallDir"
+Write-Host "Installed $BinaryName $Tag to $InstallDir"
 Write-Host "Run '$BinaryName --help' to get started."
