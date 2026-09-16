@@ -36,3 +36,18 @@
 - **Bug fixé**: `getBlueprintById` accepte un slug mais faisait les jointures (tags/projets) avec l'id brut → requêtes cassées sur lookup par slug.
 - Runtime test env: API needs `DATABASE_URL` (docker: `postgresql://blueprints:blueprints@localhost:5433/blueprints`), `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID/SECRET`. Bearer token = Better Auth session token (insertable directly in DB for local tests). CLI config: `~/.theodo-blueprints/config.json`.
 - Pre-commit hook runs repo-wide `biome check .` + knip: uncommitted WIP from other work (e.g. e2e suite) can block commits — check the failing file isn't yours before `--no-verify`.
+
+## CLI release & local install
+
+- `install.sh` / `install.ps1` only ever install the **latest GitHub release**. To ship new CLI commands: `git tag cli-vX.Y.Z origin/main && git push origin cli-vX.Y.Z` → the `CLI Release` workflow (~2 min) builds the tarballs → re-run the install command. Tag from `origin/main`, not a feature branch.
+- To test unreleased CLI code locally: `pnpm --filter cli bundle` then `sudo cp cli/dist/theodo-blueprints.cjs /usr/local/bin/theodo-blueprints`.
+- **Gotcha**: `theodo-blueprints --version` is hardcoded to `0.0.0` (cli/package.json + commander), so it can't tell installs apart — check `--help` for the command you expect instead.
+
+## Git worktrees & pre-commit
+
+- A fresh `git worktree` fails lefthook's pre-commit until you run, inside it: `pnpm install --offline --frozen-lockfile`, `pnpm --filter @blueprints/shared build`, and `cd webapp && pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/paraglide`. Symptoms otherwise: api tests fail on `Failed to resolve entry for package "@blueprints/shared"` and knip lists every `paraglide/messages.js` import as unresolved.
+- After adding keys to `webapp/messages/en.json`, re-run the paraglide compile before `tsc` — `check-types` does not compile messages (only `build` does).
+
+## Screenshotting pages behind Google SSO
+
+- Reuse the e2e helpers (`createTestUser` + `authenticate` in `e2e/helpers`, from the e2e suite) in a throwaway `e2e/zz-*.spec.ts`: Playwright's `webServer` boots webapp + API against the docker e2e DB (port 5433), and the forged session cookie skips Google OAuth. `page.addInitScript((t) => localStorage.setItem('theme', t), 'dark')` before `goto` renders dark mode. Delete the spec afterwards.
