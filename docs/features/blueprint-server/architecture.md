@@ -222,11 +222,11 @@ projects (loose namespace — no membership model)
 blueprints
 ├── id (uuid, PK)
 ├── name
-├── slug (unique within project)
+├── slug (unique within each project it belongs to, or among project-less blueprints — never globally)
 ├── description (short summary)
 ├── usage (when/how to use)
 ├── currentVersionId (FK → blueprint_versions, nullable)
-├── projectId (FK → projects, nullable)
+├── projects (many-to-many via blueprint_projects — a blueprint may be shared into several projects)
 ├── authorId (FK → users)
 ├── stack (enum: server, webapp, shared, fullstack)
 ├── layer (text — controller, service, hook, etc.)
@@ -283,7 +283,7 @@ Better Auth creates and manages its own tables:
 - **Projects are loose namespaces** — anyone can create a project, no membership model. Like npm scopes.
 - **Tags are shared globally** — normalized tag table, many-to-many with blueprints
 - **Comments support threading** — `parentId` enables nested replies
-- **Slug uniqueness** — blueprint slugs are unique within a project (or globally if no project)
+- **Slug uniqueness** — blueprint slugs are unique within a namespace: each project a blueprint belongs to, or the project-less pool. Never globally, so `aquila-ap` and `lefebvre-dalloz-sig-web` each own a `form-field`. Enforced by the blueprints service (the many-to-many link rules out a DB constraint): an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
 
 ## 4. API Design
 
@@ -292,7 +292,7 @@ Better Auth creates and manages its own tables:
 **Blueprints**:
 - `GET /api/blueprints` — List/filter blueprints (pagination, filters, text search)
 - `GET /api/blueprints/search` — Semantic vector search
-- `GET /api/blueprints/:id` — Get blueprint with current version
+- `GET /api/blueprints/:id` — Get blueprint with current version (`:id` is a UUID or a slug; `?project=<slug|uuid>` scopes a slug lookup, also on `PUT`/`DELETE`)
 - `GET /api/blueprints/:id/versions` — List all versions
 - `GET /api/blueprints/:id/versions/:version` — Get specific version
 - `POST /api/blueprints` — Create blueprint (with initial version)

@@ -49,8 +49,10 @@ Browse blueprints with optional filters.
 
 Download a blueprint's content.
 
-**Via MCP**: Use the `download_blueprint` tool.
-**Via CLI**: `theodo-blueprints pull my-blueprint -o ./blueprint.md`
+**Via MCP**: Use the `download_blueprint` tool (pass `project` when the slug exists in several projects).
+**Via CLI**: `theodo-blueprints pull my-blueprint --project my-project -o ./blueprint.md`
+
+Slugs are unique per project, not globally: a slug lookup without a project answers 409 when several projects hold it.
 
 ### `/theodo-blueprints push`
 
@@ -72,9 +74,9 @@ Publish a whole repo catalog annotated with the shared `blueprint` skill (see [f
 
 Generate the TSV index with the skill, then push every `@Blueprint` at once:
 
-**Via CLI**: `theodo-blueprints sync --repo owner/repo [--project my-project] [--dry-run]`
+**Via CLI**: `theodo-blueprints sync --repo owner/repo --project my-project [--dry-run]`
 
-Each pattern-id becomes the registry slug, so re-running `sync` updates blueprints in place. The layer is inferred from `@BlueprintGlobs`, and the source location (`repo:path:line`) is recorded on the blueprint.
+Each pattern-id becomes the registry slug, so re-running `sync` updates blueprints in place. Slugs are unique per project: `--project` scopes the create-or-update lookup to your namespace (create it first with `theodo-blueprints projects create <slug> --name "…"`), and an unscoped sync never overwrites a blueprint that belongs to a project. The layer is inferred from `@BlueprintGlobs`, and the source location (`repo:path:line`) is recorded on the blueprint.
 
 ## Blueprint Format
 
