@@ -11,6 +11,7 @@ import {
 } from '../lib/validation.js';
 import { getUser, requireAuth } from '../middleware/auth.js';
 import { generateBlueprintIndex } from '../services/blueprint-index.core.js';
+import { isSlugTaken } from '../services/blueprints.js';
 
 export const projectRoutes = new Hono()
 	.get('/projects', async (c) => {
@@ -206,7 +207,7 @@ export const projectRoutes = new Hono()
 			}
 
 			const [blueprint] = await db
-				.select({ id: blueprints.id, authorId: blueprints.authorId })
+				.select({ id: blueprints.id, slug: blueprints.slug, authorId: blueprints.authorId })
 				.from(blueprints)
 				.where(eq(blueprints.id, blueprintId))
 				.limit(1);
@@ -233,6 +234,14 @@ export const projectRoutes = new Hono()
 
 			if (existing.length > 0) {
 				return c.json({ message: 'Blueprint already in project' });
+			}
+
+			// Slugs are unique within a project: joining must not create a duplicate
+			if (await isSlugTaken(db, blueprint.slug, project.id, blueprint.id)) {
+				return c.json(
+					{ error: `Slug "${blueprint.slug}" already exists in project ${project.slug}` },
+					409,
+				);
 			}
 
 			await db.insert(blueprintProjects).values({

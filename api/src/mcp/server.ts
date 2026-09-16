@@ -47,9 +47,16 @@ const searchBlueprintsTool: ToolDefinition = {
 const getBlueprintTool: ToolDefinition = {
 	name: 'get_blueprint',
 	description: 'Get a blueprint by ID or slug',
-	inputSchema: z.object({ id: z.string().describe('Blueprint ID or slug') }),
+	inputSchema: z.object({
+		id: z.string().describe('Blueprint ID or slug'),
+		project: z
+			.string()
+			.optional()
+			.describe('Project slug or ID that scopes a slug lookup (slugs are unique per project)'),
+	}),
 	handler: async (args) => {
-		const blueprint = await getBlueprintById(db, args.id as string);
+		const { id, project } = args as { id: string; project?: string };
+		const blueprint = await getBlueprintById(db, id, project);
 		if (!blueprint) {
 			return { content: [{ type: 'text' as const, text: 'Blueprint not found' }] };
 		}
@@ -148,11 +155,15 @@ const downloadBlueprintTool: ToolDefinition = {
 	description: 'Download blueprint content (increments download count)',
 	inputSchema: z.object({
 		id: z.string().describe('Blueprint ID or slug'),
+		project: z
+			.string()
+			.optional()
+			.describe('Project slug or ID that scopes a slug lookup (slugs are unique per project)'),
 		version: z.number().int().optional().describe('Specific version number'),
 	}),
 	handler: async (args) => {
-		const { id, version } = args as { id: string; version?: number };
-		const blueprint = await getBlueprintById(db, id);
+		const { id, project, version } = args as { id: string; project?: string; version?: number };
+		const blueprint = await getBlueprintById(db, id, project);
 		if (!blueprint) {
 			return { content: [{ type: 'text' as const, text: 'Blueprint not found' }] };
 		}
