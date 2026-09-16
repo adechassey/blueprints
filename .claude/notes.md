@@ -59,3 +59,4 @@
 - Read pino JSON logs to get the REAL pg error (hono error handler logs `err.cause` — the toast/API response only shows drizzle's "Failed query" wrapper).
 - TanStack Router: a route file with BOTH a component and a directory of child routes swallows the children (component has no <Outlet/>). Pattern: `$id.tsx` = bare route (no component) + `$id/index.tsx` = the actual page.
 - Rate limits broke E2E (100 req/min shared by 'unknown' IP when no x-forwarded-for) — now configurable via RATE_LIMIT_GENERAL/STRICT/DOWNLOAD.
+- GitHub Actions: a PR whose merge into base is CONFLICTING (`mergeStateStatus: DIRTY`) does NOT trigger pull_request workflows at all — no run, no check, nothing. Resolve conflicts and the workflows appear on the next push.
