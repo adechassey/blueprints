@@ -16,7 +16,7 @@ A blueprint registry and discovery platform where developers can publish, browse
 curl -fsSL https://raw.githubusercontent.com/adechassey/blueprints/main/install.sh | sh
 ```
 
-To update, run the same command again.
+To update, run `theodo-blueprints update` (or the same command again).
 
 ### Manual install
 
@@ -42,7 +42,11 @@ sudo mv theodo-blueprints /usr/local/bin/
 irm https://raw.githubusercontent.com/adechassey/blueprints/main/install.ps1 | iex
 ```
 
-This installs to `%LOCALAPPDATA%\theodo-blueprints` and adds it to your `PATH`. To update, run the same command again.
+This installs to `%LOCALAPPDATA%\theodo-blueprints` and adds it to your `PATH`. To update, run `theodo-blueprints update` (or the same command again).
+
+### Staying up to date
+
+Once a day, the CLI checks GitHub for a newer release and prints a notice after the command when one exists. The check is skipped in CI, for dev builds, when the output is not a terminal, or when `THEODO_BLUEPRINTS_NO_UPDATE_CHECK=1` is set. `theodo-blueprints update --check` reports the latest release without installing it.
 
 ## CLI Usage
 
@@ -69,6 +73,9 @@ theodo-blueprints sync --repo owner/repo --project my-project
 theodo-blueprints projects list
 theodo-blueprints projects join <slug>
 theodo-blueprints projects members <slug>
+
+# Update the CLI to the latest release
+theodo-blueprints update
 ```
 
 ## Publishing the CLI to npm (future)
