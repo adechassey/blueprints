@@ -8,6 +8,7 @@ import { registerProjectsCommand } from './commands/projects.js';
 import { registerPullCommand } from './commands/pull.js';
 import { registerPushCommand } from './commands/push.js';
 import { registerSearchCommand } from './commands/search.js';
+import { registerSyncCommand } from './commands/sync.js';
 
 const program = new Command();
 
@@ -18,6 +19,7 @@ program
 
 registerAuthCommands(program);
 registerPushCommand(program);
+registerSyncCommand(program);
 registerPullCommand(program);
 registerSearchCommand(program);
 registerListCommand(program);
