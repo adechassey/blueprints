@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+	AmbiguousSlugError,
 	appendSlugSuffix,
 	generateSlug,
 	normalizeTagName,
+	pickSlug,
+	pickSlugCandidate,
+	type SlugCandidate,
+	SlugConflictError,
 	shouldCreateNewVersion,
 } from './blueprints.core.js';
 
@@ -78,5 +83,70 @@ describe('shouldCreateNewVersion', () => {
 
 	it('returns false when content is identical', () => {
 		expect(shouldCreateNewVersion('same', 'same')).toBe(false);
+	});
+});
+
+describe('pickSlug', () => {
+	it('keeps the requested slug when it is free', () => {
+		expect(
+			pickSlug({
+				requested: 'form-field',
+				explicit: true,
+				taken: false,
+				projectLabel: 'aquila-ap',
+			}),
+		).toBe('form-field');
+	});
+
+	it('suffixes a generated slug on collision', () => {
+		expect(
+			pickSlug({ requested: 'form-field', explicit: false, taken: true, projectLabel: null }),
+		).toMatch(/^form-field-[a-z0-9]+$/);
+	});
+
+	it('rejects an explicit slug on collision, naming the project', () => {
+		expect(() =>
+			pickSlug({ requested: 'form-field', explicit: true, taken: true, projectLabel: 'aquila-ap' }),
+		).toThrow(new SlugConflictError('form-field', 'aquila-ap'));
+	});
+
+	it('names the global namespace when there is no project', () => {
+		const err = new SlugConflictError('form-field', null);
+		expect(err.message).toBe('Slug "form-field" already exists in the global namespace');
+		expect(err.status).toBe(409);
+		expect(err.name).toBe('SlugConflictError');
+	});
+});
+
+describe('pickSlugCandidate', () => {
+	it('returns null when nothing matches', () => {
+		expect(pickSlugCandidate('form-field', [])).toBeNull();
+	});
+
+	it('returns the single match', () => {
+		const only = { id: 'a', projectSlugs: ['aquila-ap'] };
+		expect(pickSlugCandidate('form-field', [only])).toBe(only);
+	});
+
+	it('throws an ambiguity error listing every namespace', () => {
+		const candidates: SlugCandidate[] = [
+			{ id: 'a', projectSlugs: ['aquila-ap'] },
+			{ id: 'b', projectSlugs: [] },
+			{ id: 'c', projectSlugs: ['x', 'y'] },
+		];
+		let caught: unknown;
+		try {
+			pickSlugCandidate('form-field', candidates);
+		} catch (err) {
+			caught = err;
+		}
+		expect(caught).toBeInstanceOf(AmbiguousSlugError);
+		const err = caught as AmbiguousSlugError;
+		expect(err.message).toBe(
+			'Slug "form-field" exists in several namespaces (aquila-ap, global, x+y): pass project= to disambiguate',
+		);
+		expect(err.status).toBe(409);
+		expect(err.name).toBe('AmbiguousSlugError');
+		expect(err.candidates).toBe(candidates);
 	});
 });
