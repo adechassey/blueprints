@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 export const createBlueprintSchema = z.object({
 	name: z.string().min(1).max(200),
+	slug: z
+		.string()
+		.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'Slug must be kebab-case')
+		.optional(),
+	source: z.string().max(500).optional(),
 	description: z.string().optional(),
 	usage: z.string().optional(),
 	stack: z.enum(['server', 'webapp', 'shared', 'fullstack']),
@@ -16,6 +21,7 @@ export type CreateBlueprintInput = z.infer<typeof createBlueprintSchema>;
 
 export const updateBlueprintSchema = z.object({
 	name: z.string().min(1).max(200).optional(),
+	source: z.string().max(500).optional(),
 	description: z.string().optional(),
 	usage: z.string().optional(),
 	stack: z.enum(['server', 'webapp', 'shared', 'fullstack']).optional(),

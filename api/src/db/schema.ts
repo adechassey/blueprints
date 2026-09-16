@@ -109,6 +109,9 @@ export const blueprints = pgTable('blueprints', {
 		.references(() => users.id),
 	stack: blueprintStack('stack').notNull(),
 	layer: text('layer').notNull(),
+	// Origin of the blueprint, e.g. "owner/repo:path/to/file.ts:42" for a synced
+	// `@Blueprint` code annotation
+	source: text('source'),
 	isPublic: boolean('is_public').notNull().default(true),
 	downloadCount: integer('download_count').notNull().default(0),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

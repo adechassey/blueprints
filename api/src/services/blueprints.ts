@@ -45,7 +45,7 @@ async function upsertTags(db: DB, tagNames: string[]) {
 }
 
 export async function createBlueprint(db: DB, input: CreateBlueprintInput, authorId: string) {
-	let slug = generateSlug(input.name);
+	let slug = input.slug ?? generateSlug(input.name);
 
 	// Check for global slug collision
 	const existingSlug = await db
@@ -67,6 +67,7 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			usage: input.usage,
 			stack: input.stack,
 			layer: input.layer,
+			source: input.source,
 			authorId,
 			isPublic: input.isPublic ?? true,
 		})
@@ -157,6 +158,7 @@ export async function updateBlueprint(
 	if (input.usage !== undefined) metadataUpdate.usage = input.usage;
 	if (input.stack !== undefined) metadataUpdate.stack = input.stack;
 	if (input.layer !== undefined) metadataUpdate.layer = input.layer;
+	if (input.source !== undefined) metadataUpdate.source = input.source;
 	if (input.isPublic !== undefined) metadataUpdate.isPublic = input.isPublic;
 
 	if (needsNewVersion && input.content) {
