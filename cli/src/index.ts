@@ -9,13 +9,14 @@ import { registerPullCommand } from './commands/pull.js';
 import { registerPushCommand } from './commands/push.js';
 import { registerSearchCommand } from './commands/search.js';
 import { registerSyncCommand } from './commands/sync.js';
+import { CLI_VERSION } from './lib/version.js';
 
 const program = new Command();
 
 program
 	.name('theodo-blueprints')
 	.description('CLI for the Theodo Blueprints registry')
-	.version('0.0.0');
+	.version(CLI_VERSION);
 
 registerAuthCommands(program);
 registerPushCommand(program);

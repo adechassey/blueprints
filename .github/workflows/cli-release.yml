@@ -36,6 +36,15 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Resolve CLI version from tag
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_NAME" == cli-v* ]]; then
+            echo "CLI_VERSION=${GITHUB_REF_NAME#cli-v}" >> "$GITHUB_ENV"
+          else
+            echo "CLI_VERSION=0.0.0-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+          fi
+
       - name: Bundle CLI
         run: pnpm --filter cli bundle
 

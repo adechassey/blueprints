@@ -70,6 +70,10 @@ fi
 
 chmod +x "$INSTALL_DIR/$BINARY_NAME"
 
-echo "Installed $BINARY_NAME to $INSTALL_DIR/$BINARY_NAME"
-echo ""
-$BINARY_NAME --version 2>/dev/null && echo "Run '$BINARY_NAME --help' to get started." || echo "Run '$INSTALL_DIR/$BINARY_NAME --help' to get started."
+VERSION=$("$INSTALL_DIR/$BINARY_NAME" --version 2>/dev/null || echo "$LATEST")
+echo "Installed $BINARY_NAME $VERSION to $INSTALL_DIR/$BINARY_NAME"
+if command -v "$BINARY_NAME" >/dev/null 2>&1; then
+  echo "Run '$BINARY_NAME --help' to get started."
+else
+  echo "Run '$INSTALL_DIR/$BINARY_NAME --help' to get started."
+fi
