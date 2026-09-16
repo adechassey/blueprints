@@ -58,7 +58,7 @@
 	"search_placeholder": "Search blueprints...",
 	"search_button": "Search",
 	"search_clear": "Clear search",
-	"search_results_title": "Search results for \"{query}\"",
+	"search_results_title": "Search results",
 	"search_no_results": "No blueprints found for \"{query}\"",
 	"comments_title": "Comments",
 	"comments_empty": "No comments yet. Be the first to comment!",

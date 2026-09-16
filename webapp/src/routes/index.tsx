@@ -83,7 +83,7 @@ function IndexPage() {
 					<h1 className="text-4xl font-extrabold tracking-tight font-headline text-on-surface">
 						{isSearchMode ? (
 							<>
-								{m.search_results_title({ query: q ?? '' })}{' '}
+								{m.search_results_title()}{' '}
 								<span className="text-primary italic">&ldquo;{q}&rdquo;</span>
 							</>
 						) : (
