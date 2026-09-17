@@ -6,7 +6,7 @@ export function registerSearchCommand(program: Command) {
 	program
 		.command('search <query>')
 		.description('Search blueprints with natural language')
-		.option('--stack <stack>', 'Filter by stack')
+		.option('--techno <slugs>', 'Filter by technology slugs (comma-separated, any-match)')
 		.option('--layer <layer>', 'Filter by layer')
 		.option('--tag <tag>', 'Filter by tag')
 		.option('--project <slug>', 'Filter by project slug')
@@ -15,7 +15,7 @@ export function registerSearchCommand(program: Command) {
 			async (
 				query: string,
 				opts: {
-					stack?: string;
+					techno?: string;
 					layer?: string;
 					tag?: string;
 					project?: string;
@@ -25,7 +25,7 @@ export function registerSearchCommand(program: Command) {
 				try {
 					const client = createApiClient();
 					const filters: Record<string, string> = {};
-					if (opts.stack) filters.stack = opts.stack;
+					if (opts.techno) filters.techno = opts.techno;
 					if (opts.layer) filters.layer = opts.layer;
 					if (opts.tag) filters.tag = opts.tag;
 					if (opts.project) filters.project = opts.project;
@@ -43,7 +43,7 @@ export function registerSearchCommand(program: Command) {
 					for (const item of result.items) {
 						const score = item.score ? chalk.gray(` (${Math.round(item.score * 100)}%)`) : '';
 						console.log(`${chalk.bold(item.name)}${score}`);
-						console.log(`  ${chalk.cyan(item.stack)} · ${item.slug}`);
+						console.log(`  ${chalk.cyan(item.layer)} · ${item.slug}`);
 						if (item.description) console.log(`  ${chalk.gray(item.description)}`);
 						console.log();
 					}

@@ -7,7 +7,7 @@ export interface FrontmatterMeta {
 	name?: string;
 	description?: string;
 	usage?: string;
-	stack?: string;
+	technologies?: string[];
 	project?: string;
 	layer?: string;
 	tags?: string[];
@@ -35,14 +35,19 @@ export function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content:
 			case 'name':
 				meta.name = rawValue;
 				break;
+			case 'technologies':
+			case 'tech':
+				meta.technologies = rawValue
+					.replace(/^\[|\]$/g, '')
+					.split(',')
+					.map((t) => t.trim().replace(/^["']|["']$/g, ''))
+					.filter(Boolean);
+				break;
 			case 'description':
 				meta.description = rawValue;
 				break;
 			case 'usage':
 				meta.usage = rawValue;
-				break;
-			case 'stack':
-				meta.stack = rawValue;
 				break;
 			case 'project':
 				meta.project = rawValue;

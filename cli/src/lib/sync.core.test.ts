@@ -74,21 +74,21 @@ describe('splitLocation', () => {
 
 describe('inferLayer', () => {
 	it.each([
-		['src/**/*.controller.ts', 'controller'],
-		['src/**/*.service.ts', 'service'],
-		['src/**/*.repository.ts', 'repository'],
-		['src/**/*.middleware.ts', 'middleware'],
-		['src/**/*.guard.ts', 'guard'],
-		['src/**/*.hook.ts', 'hook'],
-		['src/hooks/useAuth.ts', 'hook'],
-		['src/**/*.tsx', 'component'],
-		['src/**/*.jsx', 'component'],
+		['src/**/*.controller.ts', 'api'],
+		['src/**/*.service.ts', 'domain'],
+		['src/**/*.repository.ts', 'database'],
+		['src/**/*.middleware.ts', 'api'],
+		['src/**/*.guard.ts', 'api'],
+		['src/**/*.hook.ts', 'ui'],
+		['src/hooks/useAuth.ts', 'ui'],
+		['src/**/*.tsx', 'ui'],
+		['src/**/*.jsx', 'ui'],
 	])('infers layer from glob %s', (glob, expected) => {
 		expect(inferLayer(glob)).toBe(expected);
 	});
 
 	it('uses only the first glob when several are declared', () => {
-		expect(inferLayer('src/**/*.service.ts, src/**/*.controller.ts')).toBe('service');
+		expect(inferLayer('src/**/*.service.ts, src/**/*.controller.ts')).toBe('domain');
 	});
 
 	it('ignores a leading exclusion glob and falls back', () => {
@@ -96,7 +96,7 @@ describe('inferLayer', () => {
 	});
 
 	it('returns the fallback when globs are empty', () => {
-		expect(inferLayer('')).toBe('pattern');
+		expect(inferLayer('')).toBe('domain');
 		expect(inferLayer('', 'unknown')).toBe('unknown');
 	});
 });

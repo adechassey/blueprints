@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Stack } from '@blueprints/shared';
+import { BLUEPRINT_LAYERS, type BlueprintLayer } from '@blueprints/shared';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { createApiClient, unwrapResponse } from '../lib/api.js';
@@ -73,12 +73,22 @@ export function registerPushCommand(program: Command) {
 						}
 					}
 
+					if (!meta.layer || !BLUEPRINT_LAYERS.includes(meta.layer as never)) {
+						console.error(
+							chalk.red(
+								`✗ Invalid or missing layer in frontmatter: "${meta.layer}"\n` +
+									`  Allowed layers: ${BLUEPRINT_LAYERS.join(', ')}`,
+							),
+						);
+						continue;
+					}
+
 					const payload = {
 						name: meta.name || filePath.replace(/.*\//, '').replace(/\.md$/, ''),
 						description: meta.description,
 						usage: meta.usage,
-						stack: (meta.stack || 'server') as Stack,
-						layer: meta.layer || 'unknown',
+						technologies: meta.technologies,
+						layer: meta.layer as BlueprintLayer,
 						tags: meta.tags,
 						content,
 						projectId: resolvedProjectId,

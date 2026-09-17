@@ -26,7 +26,12 @@ export function registerInfoCommand(program: Command) {
 				if (blueprint.description) console.log(`  ${blueprint.description}`);
 				if (blueprint.usage) console.log(`  ${chalk.gray(`Usage: ${blueprint.usage}`)}`);
 				console.log();
-				console.log(`  Stack:     ${chalk.cyan(blueprint.stack)}`);
+				console.log(`  Layer:     ${chalk.cyan(blueprint.layer)}`);
+				if (blueprint.technologies?.length) {
+					console.log(
+						`  Techs:     ${chalk.cyan(blueprint.technologies.map((t) => t.name).join(', '))}`,
+					);
+				}
 				console.log(`  Layer:     ${blueprint.layer}`);
 				console.log(`  Author:    ${blueprint.author?.name || 'Unknown'}`);
 				console.log(`  Downloads: ${blueprint.downloadCount}`);

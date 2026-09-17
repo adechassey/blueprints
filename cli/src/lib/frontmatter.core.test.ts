@@ -7,8 +7,8 @@ describe('parseFrontmatter', () => {
 name: Test Blueprint
 description: A test
 usage: Use it
-stack: server
-layer: service
+technologies: [hono, drizzle]
+layer: api
 tags: [nestjs, typescript]
 ---
 
@@ -18,8 +18,8 @@ tags: [nestjs, typescript]
 		expect(meta.name).toBe('Test Blueprint');
 		expect(meta.description).toBe('A test');
 		expect(meta.usage).toBe('Use it');
-		expect(meta.stack).toBe('server');
-		expect(meta.layer).toBe('service');
+		expect(meta.technologies).toEqual(['hono', 'drizzle']);
+		expect(meta.layer).toBe('api');
 		expect(meta.tags).toEqual(['nestjs', 'typescript']);
 		expect(content).toBe('# Content');
 	});
@@ -30,19 +30,19 @@ tags: [nestjs, typescript]
 		expect(content).toBe('Just content');
 	});
 
-	it('parses project field separately from stack', () => {
+	it('parses project field separately from technologies', () => {
 		const raw = `---
 project: my-team
-stack: webapp
+technologies: [react]
 ---
 
 Content`;
 		const { meta } = parseFrontmatter(raw);
 		expect(meta.project).toBe('my-team');
-		expect(meta.stack).toBe('webapp');
+		expect(meta.technologies).toEqual(['react']);
 	});
 
-	it('parses project field without stack', () => {
+	it('parses project field without technologies', () => {
 		const raw = `---
 project: backend-team
 ---
@@ -50,7 +50,7 @@ project: backend-team
 Content`;
 		const { meta } = parseFrontmatter(raw);
 		expect(meta.project).toBe('backend-team');
-		expect(meta.stack).toBeUndefined();
+		expect(meta.technologies).toBeUndefined();
 	});
 
 	it('handles lines without colons', () => {

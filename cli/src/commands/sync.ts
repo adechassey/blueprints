@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import type { Stack } from '@blueprints/shared';
+import { BLUEPRINT_LAYERS, type BlueprintLayer } from '@blueprints/shared';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { ApiError, createApiClient, unwrapResponse } from '../lib/api.js';
@@ -16,7 +16,7 @@ import {
 
 interface SyncOptions {
 	project?: string;
-	stack?: string;
+	techno?: string;
 	layer?: string;
 	repo?: string;
 	dryRun?: boolean;
@@ -67,8 +67,14 @@ export function registerSyncCommand(program: Command) {
 			'--project <slug>',
 			'Publish under a project namespace (must be a member); slugs are unique per project',
 		)
-		.option('--stack <stack>', 'Stack for synced blueprints (default: server)')
-		.option('--layer <layer>', 'Layer fallback when globs are absent or unrecognized')
+		.option(
+			'--techno <slugs>',
+			'Comma-separated technology slugs attached to synced blueprints (e.g. react,hono)',
+		)
+		.option(
+			'--layer <layer>',
+			`Layer fallback when globs are absent or unrecognized (${BLUEPRINT_LAYERS.join('|')})`,
+		)
 		.option('--repo <repo>', 'Repository identifier (e.g. owner/repo) recorded in the source field')
 		.option('--dry-run', 'Show what would be pushed without calling the API')
 		.action(async (index: string | undefined, opts: SyncOptions) => {
@@ -93,7 +99,20 @@ export function registerSyncCommand(program: Command) {
 				return;
 			}
 
-			const stack = (opts.stack || 'server') as Stack;
+			const technologies = opts.techno
+				? opts.techno
+						.split(',')
+						.map((t) => t.trim().toLowerCase())
+						.filter(Boolean)
+				: undefined;
+			if (opts.layer && !BLUEPRINT_LAYERS.includes(opts.layer as never)) {
+				console.error(
+					chalk.red(
+						`✗ Invalid layer: ${opts.layer}\n  Allowed layers: ${BLUEPRINT_LAYERS.join(', ')}`,
+					),
+				);
+				process.exit(1);
+			}
 			const client = createApiClient();
 			const config = getConfig();
 
@@ -123,7 +142,7 @@ export function registerSyncCommand(program: Command) {
 					const excerpt = readExcerpt(row);
 					const content = buildBlueprintContent(row, excerpt);
 					const source = buildSource(opts.repo, row.location);
-					const layer = opts.layer ?? inferLayer(row.globs);
+					const layer = (opts.layer ?? inferLayer(row.globs)) as BlueprintLayer;
 
 					const existing = await fetchExistingBySlug(client, row.id, opts.project);
 
@@ -160,7 +179,7 @@ export function registerSyncCommand(program: Command) {
 								slug: row.id,
 								description: row.description,
 								usage: row.usage,
-								stack,
+								technologies,
 								layer,
 								content,
 								changelog: SYNC_CHANGELOG,
@@ -176,7 +195,7 @@ export function registerSyncCommand(program: Command) {
 								slug: row.id,
 								description: row.description,
 								usage: row.usage,
-								stack,
+								technologies,
 								layer,
 								content,
 								source,

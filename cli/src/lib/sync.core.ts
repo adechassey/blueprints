@@ -43,13 +43,13 @@ export function splitLocation(location: string): { path: string; line: number | 
 }
 
 const LAYER_GLOB_PATTERNS: Array<[RegExp, string]> = [
-	[/\.controller\./, 'controller'],
-	[/\.service\./, 'service'],
-	[/\.repository\./, 'repository'],
-	[/\.middleware\./, 'middleware'],
-	[/\.guard\./, 'guard'],
-	[/\.hook\./, 'hook'],
-	[/[\\/]hooks[\\/]/, 'hook'],
+	[/\.controller\./, 'api'],
+	[/\.service\./, 'domain'],
+	[/\.repository\./, 'database'],
+	[/\.middleware\./, 'api'],
+	[/\.guard\./, 'api'],
+	[/\.hook\./, 'ui'],
+	[/[\\/]hooks[\\/]/, 'ui'],
 ];
 
 /**
@@ -57,14 +57,14 @@ const LAYER_GLOB_PATTERNS: Array<[RegExp, string]> = [
  * filename convention (e.g. `*.controller.ts`) or its extension (`.tsx` →
  * component). Falls back when globs are absent or unrecognized.
  */
-export function inferLayer(globs: string, fallback = 'pattern'): string {
+export function inferLayer(globs: string, fallback = 'domain'): string {
 	// biome-ignore lint/style/noNonNullAssertion: split always returns at least one element
 	const firstGlob = globs.split(',')[0]!.trim().replace(/^!/, '');
 	if (!firstGlob) return fallback;
 	for (const [pattern, layer] of LAYER_GLOB_PATTERNS) {
 		if (pattern.test(firstGlob)) return layer;
 	}
-	if (/\.(tsx|jsx)$/.test(firstGlob)) return 'component';
+	if (/\.(tsx|jsx)$/.test(firstGlob)) return 'ui';
 	return fallback;
 }
 
