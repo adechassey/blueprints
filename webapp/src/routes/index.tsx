@@ -11,6 +11,7 @@ import { Skeleton } from '../components/ui/skeleton.js';
 import { useBlueprints } from '../hooks/useBlueprints.js';
 import { useSearch } from '../hooks/useSearch.js';
 import { toLayer } from '../lib/layers.core.js';
+import { parseList } from '../lib/technologies.core.js';
 import * as m from '../paraglide/messages.js';
 
 interface SearchParams {
@@ -35,6 +36,7 @@ export const Route = createFileRoute('/')({
 
 function IndexPage() {
 	const { page = 1, techno, layer, tag, q } = Route.useSearch();
+	const technos = parseList(techno);
 	const navigate = useNavigate();
 
 	const browseQuery = useBlueprints({ page, techno, layer, tag });
@@ -56,7 +58,7 @@ function IndexPage() {
 		});
 	};
 
-	const handleFilterChange = (key: string, value: string | undefined) => {
+	const handleFilterChange = (key: 'techno' | 'layer' | 'tag', value: string | undefined) => {
 		navigate({
 			to: '/',
 			search: (prev: SearchParams) => ({
@@ -75,6 +77,11 @@ function IndexPage() {
 	};
 
 	const clearAll = () => navigate({ to: '/', search: {} });
+	const clearFilters = () =>
+		navigate({
+			to: '/',
+			search: (prev: SearchParams) => ({ q: prev.q }),
+		});
 
 	const paginationData = !isSearchMode ? browseQuery.data : undefined;
 
@@ -96,15 +103,14 @@ function IndexPage() {
 				</>
 			)}
 
-			{!isSearchMode && (
-				<FilterBar
-					techno={techno}
-					layer={layer}
-					tag={tag}
-					onFilterChange={handleFilterChange}
-					total={data?.items?.length}
-				/>
-			)}
+			<FilterBar
+				technos={technos}
+				layer={layer}
+				tag={tag}
+				onFilterChange={handleFilterChange}
+				onClear={clearFilters}
+				total={isSearchMode ? data?.items?.length : browseQuery.data?.total}
+			/>
 
 			{isLoading ? (
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

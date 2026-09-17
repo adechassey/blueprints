@@ -27,7 +27,6 @@ test.describe('Technology references (API)', () => {
 
 	test.afterEach(async () => {
 		await cleanupE2eData();
-		await query(`DELETE FROM technologies WHERE slug LIKE 'e2e-tech%'`);
 	});
 
 	test('a blueprint resolves slugs and display names to the catalog row', async ({ request }) => {

@@ -5,13 +5,14 @@ import {
 } from '@blueprints/shared';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects.js';
-import { useTechnologies } from '../hooks/useTags.js';
 import type { BlueprintFrontmatter } from '../lib/frontmatter.core.js';
 import { toLayer } from '../lib/layers.core.js';
 import { LAYER_META } from '../lib/layers.js';
+import { parseList } from '../lib/technologies.core.js';
 import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
 import { LayerOption } from './LayerBadge.js';
+import { TechnologyPicker } from './TechnologyPicker.js';
 import { Button } from './ui/button.js';
 import { Input } from './ui/input.js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select.js';
@@ -49,22 +50,19 @@ export function BlueprintForm({
 	const [name, setName] = useState(initialValues.name || '');
 	const [description, setDescription] = useState(initialValues.description || '');
 	const [usage, setUsage] = useState(initialValues.usage || '');
-	const [technologiesInput, setTechnologiesInput] = useState(
-		(initialValues.technologies || []).join(', '),
-	);
+	const [technologies, setTechnologies] = useState<string[]>(initialValues.technologies ?? []);
 	const [layer, setLayer] = useState<BlueprintLayer>(toLayer(initialValues.layer) ?? 'domain');
 	const [tagsInput, setTagsInput] = useState((initialValues.tags || []).join(', '));
 	const [projectId, setProjectId] = useState(initialValues.projectId || '');
 	const [content, setContent] = useState(initialValues.content || '');
 	const [changelog, setChangelog] = useState('');
 	const { data: projects } = useProjects();
-	const { data: technologies } = useTechnologies();
 
 	const handleParsed = (meta: BlueprintFrontmatter, parsedContent: string) => {
 		if (meta.name) setName(meta.name);
 		if (meta.description) setDescription(meta.description);
 		if (meta.usage) setUsage(meta.usage);
-		if (meta.technologies) setTechnologiesInput(meta.technologies.join(', '));
+		if (meta.technologies) setTechnologies(meta.technologies);
 		// Legacy free-text layers ("service"…) would be rejected by the API: keep the current one
 		const importedLayer = toLayer(meta.layer);
 		if (importedLayer) setLayer(importedLayer);
@@ -74,19 +72,14 @@ export function BlueprintForm({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const splitList = (v: string) =>
-			v
-				.split(',')
-				.map((s) => s.trim())
-				.filter(Boolean);
 		const data: BlueprintFormData = {
 			name,
 			description: description || undefined,
 			usage: usage || undefined,
-			technologies: splitList(technologiesInput),
+			technologies,
 			layer,
 			projectId: projectId || undefined,
-			tags: splitList(tagsInput),
+			tags: parseList(tagsInput),
 			content,
 		};
 		if (showChangelog && changelog) {
@@ -178,19 +171,13 @@ export function BlueprintForm({
 					<label htmlFor="bp-technologies" className="block text-sm font-semibold text-on-surface">
 						{m.form_technologies()}
 					</label>
-					<Input
+					<TechnologyPicker
 						id="bp-technologies"
-						type="text"
-						list="form-technologies-datalist"
-						value={technologiesInput}
-						onChange={(e) => setTechnologiesInput(e.target.value)}
+						value={technologies}
+						onValueChange={setTechnologies}
+						creatable
 						placeholder={m.form_technologies_placeholder()}
 					/>
-					<datalist id="form-technologies-datalist">
-						{(technologies ?? []).map((t: { id: string; slug: string }) => (
-							<option key={t.id} value={t.slug} />
-						))}
-					</datalist>
 				</div>
 			</div>
 
