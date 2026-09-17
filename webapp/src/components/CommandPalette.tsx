@@ -14,7 +14,7 @@ import {
 	CommandList,
 	CommandSeparator,
 } from './ui/command.js';
-import { Dialog } from './ui/dialog.js';
+import { Dialog, DialogTitle } from './ui/dialog.js';
 
 function layerLabel(layer: string) {
 	const known = toLayer(layer);
@@ -64,6 +64,7 @@ export function CommandPalette() {
 
 	return (
 		<Dialog open={open} onClose={() => setOpen(false)} className="max-w-xl space-y-0 p-0">
+			<DialogTitle className="sr-only">{m.search_placeholder()}</DialogTitle>
 			<Command className="w-full max-w-xl" loop>
 				<CommandInput placeholder={m.search_placeholder()} autoFocus />
 				<CommandList>

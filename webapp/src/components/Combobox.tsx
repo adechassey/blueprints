@@ -96,7 +96,8 @@ export function Combobox({
 	const hidden = value.length - shown.length;
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		// Modal: its own scroll lock, otherwise an enclosing Dialog's lock swallows wheel events on the list
+		<Popover open={open} onOpenChange={setOpen} modal>
 			<PopoverTrigger asChild>
 				<button
 					id={id}

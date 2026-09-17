@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { Dialog as DialogPrimitive } from 'radix-ui';
 import { cn } from '../../lib/utils.js';
 
 interface DialogProps {
@@ -8,60 +8,51 @@ interface DialogProps {
 	className?: string;
 }
 
+/**
+ * shadcn Dialog (Radix primitive) behind the app's controlled `open`/`onClose`
+ * API. Radix stacks dismissable layers: Escape or an outside click closes a
+ * popover opened inside the dialog, not the dialog itself.
+ */
 export function Dialog({ open, onClose, children, className }: DialogProps) {
-	const overlayRef = useRef<HTMLDivElement>(null);
-
-	const handleKeyDown = useCallback(
-		(e: KeyboardEvent) => {
-			if (e.key === 'Escape') onClose();
-		},
-		[onClose],
-	);
-
-	useEffect(() => {
-		if (open) {
-			document.addEventListener('keydown', handleKeyDown);
-			document.body.style.overflow = 'hidden';
-		}
-		return () => {
-			document.removeEventListener('keydown', handleKeyDown);
-			document.body.style.overflow = '';
-		};
-	}, [open, handleKeyDown]);
-
-	if (!open) return null;
-
 	return (
-		// biome-ignore lint/a11y/noStaticElementInteractions: overlay dismiss pattern
-		// biome-ignore lint/a11y/useKeyWithClickEvents: keyboard handled via Escape key listener
-		<div
-			ref={overlayRef}
-			className="fixed inset-0 z-50 flex items-center justify-center bg-inverse-surface/50 backdrop-blur-sm"
-			onClick={(e) => {
-				if (e.target === overlayRef.current) onClose();
-			}}
-		>
-			<div
-				className={cn(
-					'bg-surface-container-lowest rounded-2xl shadow-hover p-6 max-w-md w-full mx-4 space-y-4',
-					className,
-				)}
-			>
-				{children}
-			</div>
-		</div>
+		<DialogPrimitive.Root open={open} onOpenChange={(next) => !next && onClose()}>
+			<DialogPrimitive.Portal>
+				<DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-inverse-surface/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+				<DialogPrimitive.Content
+					className={cn(
+						'fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-2xl bg-surface-container-lowest p-6 shadow-hover outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+						className,
+					)}
+				>
+					{children}
+				</DialogPrimitive.Content>
+			</DialogPrimitive.Portal>
+		</DialogPrimitive.Root>
 	);
 }
 
-export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-	return <h2 className={cn('text-lg font-bold font-headline', className)} {...props} />;
+export function DialogTitle({
+	className,
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+	return (
+		<DialogPrimitive.Title
+			className={cn('text-lg font-bold font-headline', className)}
+			{...props}
+		/>
+	);
 }
 
 export function DialogDescription({
 	className,
 	...props
-}: React.HTMLAttributes<HTMLParagraphElement>) {
-	return <p className={cn('text-sm text-on-surface-variant', className)} {...props} />;
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+	return (
+		<DialogPrimitive.Description
+			className={cn('text-sm text-on-surface-variant', className)}
+			{...props}
+		/>
+	);
 }
 
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
