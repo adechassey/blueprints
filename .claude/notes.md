@@ -64,3 +64,11 @@
 - agent-browser's `mouse wheel` only scrolls the window, never an inner overflow element: verify scroll behaviour with Playwright `page.mouse.wheel`.
 - Lefthook runs its four commands in parallel and each re-runs pnpm's `prepare`; when node_modules and package.json disagree (e.g. a stashed dependency change) `check` can fail spuriously. Rerun before investigating.
 - The search text fallback (above) now fires only when NO embedded blueprint matches the filters; an empty vector page past the end stays empty, so paging never switches index mid-way.
+
+## Prod re-sync with classification (2026-09-17)
+- `sync` now classifies each row from its exemplar file: layer from the path (then globs), technologies from imports. Imports cannot see wrapped clients (LD's `@/server/core/db/client`, Aquila's Prisma → SQL Server): split the TSV by path and pass `--techno` per subset (LD repositories: `Next.js,Kysely,Oracle Database`, LD rest: `Next.js`; Aquila repositories/adapters: `SQL Server`).
+- Always dry-run first: it prints layer (flagging fallbacks) and technologies per row. Run the CLI from source (`cli/node_modules/.bin/tsx cli/src/index.ts sync …`) with cwd = the synced repo root, since exemplar paths are relative. Write the TSV to a scratch dir, not the client repo.
+- Aquila (pr-aquila-ap-v2) has no index.sh (its skill writes a markdown index). LD's generic `index.sh` works on it: `bash <pcl-sig-web>/.claude/skills/blueprint/index.sh <out>.md target/server/src target/webapp/src target/schemas/src`.
+- Aquila prod slugs had been derived from names by the seed (`count-endpoint`) while the code uses pattern ids (`controller-count`): a sync would have created duplicates. 28 slugs were renamed by name match (PUT `{slug}`: same id, history kept) before syncing. Result: 84 updated, 15 created; `service-admin-lifecycle-transition` is no longer annotated in code and stays as is.
+- Migration 0009 was already applied on prod when the runbook's `db:migrate` ran after the PR #17 deploy (Vercel builds do not migrate; another session may have run it). Check `GET /api/technologies` rather than assuming.
+- zsh gotcha: `path` is tied to `PATH`, so `for path in …` in a shell loop wipes the command search path ("command not found: curl"). Use another variable name.
