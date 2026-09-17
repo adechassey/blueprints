@@ -104,56 +104,97 @@ describe('inferLayer', () => {
 describe('scanLine', () => {
 	it('counts positive and negative bracket deltas', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('foo({ [', state)).toBe(3);
-		expect(scanLine('}) ]', state)).toBe(-3);
+		expect(scanLine('foo({ [', state).depth).toBe(3);
+		expect(scanLine('}) ]', state).depth).toBe(-3);
 	});
 
 	it('ignores brackets inside string literals', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('const s = "a{b(c[d";', state)).toBe(0);
+		expect(scanLine('const s = "a{b(c[d";', state).depth).toBe(0);
 		expect(state.inStr).toBeNull();
 	});
 
 	it('ignores escaped quotes inside strings', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('const s = "a\\"; b";', state)).toBe(0);
+		expect(scanLine('const s = "a\\"; b";', state).depth).toBe(0);
 		expect(state.inStr).toBeNull();
 	});
 
 	it('carries an open string across lines', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('const s = "open', state)).toBe(0);
+		expect(scanLine('const s = "open', state).depth).toBe(0);
 		expect(state.inStr).toBe('"');
-		expect(scanLine('} close";', state)).toBe(0);
+		expect(scanLine('} close";', state).depth).toBe(0);
 		expect(state.inStr).toBeNull();
 	});
 
 	it('ignores brackets inside template literals spanning lines', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('const s = `a{', state)).toBe(0);
+		expect(scanLine('const s = `a{', state).depth).toBe(0);
 		expect(state.inStr).toBe('`');
-		expect(scanLine('b} c`;', state)).toBe(0);
+		expect(scanLine('b} c`;', state).depth).toBe(0);
 	});
 
 	it('ignores brackets in line comments (// and #)', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('foo({ // { [ open', state)).toBe(2);
-		expect(scanLine('foo( # { [ open', state)).toBe(1);
+		expect(scanLine('foo({ // { [ open', state).depth).toBe(2);
+		expect(scanLine('foo( # { [ open', state).depth).toBe(1);
 	});
 
 	it('ignores brackets inside block comments, within and across lines', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('foo({ /* { [ open', state)).toBe(2);
+		expect(scanLine('foo({ /* { [ open', state).depth).toBe(2);
 		expect(state.inBlock).toBe(true);
-		expect(scanLine('still comment {', state)).toBe(0);
-		expect(scanLine('comment ends */ {', state)).toBe(1);
+		expect(scanLine('still comment {', state).depth).toBe(0);
+		expect(scanLine('comment ends */ {', state).depth).toBe(1);
 		expect(state.inBlock).toBe(false);
 	});
 
 	it('handles a complete block comment within one line', () => {
 		const state: ScanState = { inStr: null, inBlock: false };
-		expect(scanLine('a /* { } */ b {', state)).toBe(1);
+		expect(scanLine('a /* { } */ b {', state).depth).toBe(1);
 		expect(state.inBlock).toBe(false);
+	});
+
+	it('returns the code without its comments, strings kept verbatim', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('const a = "x // y" + 1; // see docs.', state).code).toBe(
+			'const a = "x // y" + 1; ',
+		);
+		expect(scanLine('b = "q\\"" # note', state).code).toBe('b = "q\\"" ');
+		expect(scanLine('c /* d */ e /* open', state).code).toBe('c  e ');
+		expect(scanLine('still */ f', state).code).toBe(' f');
+	});
+
+	it('reads a JS quote right after an identifier character as JSX text', () => {
+		const state: ScanState = { inStr: null, inBlock: false, js: true };
+		expect(scanLine("<p>Choix de l'imprimante {", state).depth).toBe(1);
+		expect(scanLine('<p>Écran 12" réservé à l\'équipe (', state).depth).toBe(1);
+		expect(state.inStr).toBeNull();
+		expect(scanLine('\'{\' + f("(")', state).depth).toBe(0);
+	});
+
+	it('reads # as a private member in JS, not as a comment', () => {
+		const js: ScanState = { inStr: null, inBlock: false, js: true };
+		expect(scanLine('this.#handlers.set(key, () => { // #1 {', js)).toEqual({
+			depth: 2,
+			code: 'this.#handlers.set(key, () => { ',
+		});
+		const py: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('run( # { note', py).depth).toBe(1);
+	});
+
+	it('closes a JS quote literal left open at the end of its line', () => {
+		const state: ScanState = { inStr: null, inBlock: false, js: true };
+		expect(scanLine("<p>'90s {", state).depth).toBe(0);
+		expect(state.inStr).toBeNull();
+		expect(scanLine('<p>"quoted {', state).depth).toBe(0);
+		expect(state.inStr).toBeNull();
+		expect(scanLine("const s = 'continued \\", state).depth).toBe(0);
+		expect(state.inStr).toBe("'");
+		expect(scanLine("line';", state).depth).toBe(0);
+		expect(scanLine('const t = `open {', state).depth).toBe(0);
+		expect(state.inStr).toBe('`');
 	});
 });
 
@@ -166,16 +207,16 @@ describe('extractExcerpt', () => {
 	].join('\n');
 
 	it('extracts the comment block plus the declaration line', () => {
-		expect(extractExcerpt(file, 1)).toBe(
+		expect(extractExcerpt(file, 1)?.code).toBe(
 			'// @Blueprint controller-create\n// @BlueprintName Create\nexport const x = 1;',
 		);
 	});
 
 	it('supports block comments and # comments', () => {
 		const jsdoc = ['/** @Blueprint ctrl */', ' * more', 'export const a;'].join('\n');
-		expect(extractExcerpt(jsdoc, 1)).toBe('/** @Blueprint ctrl */\n * more\nexport const a;');
+		expect(extractExcerpt(jsdoc, 1)?.code).toBe('/** @Blueprint ctrl */\n * more\nexport const a;');
 		const py = ['# @Blueprint ctrl', 'class A: ...', 'x = 1'].join('\n');
-		expect(extractExcerpt(py, 1)).toBe('# @Blueprint ctrl\nclass A: ...');
+		expect(extractExcerpt(py, 1)?.code).toBe('# @Blueprint ctrl\nclass A: ...');
 	});
 
 	it('returns undefined for out-of-bounds lines', () => {
@@ -186,7 +227,7 @@ describe('extractExcerpt', () => {
 
 	it('runs to end of file when only comments remain', () => {
 		const onlyComments = '// @Blueprint a\n// @BlueprintName A';
-		expect(extractExcerpt(onlyComments, 1)).toBe(onlyComments);
+		expect(extractExcerpt(onlyComments, 1)?.code).toBe(onlyComments);
 	});
 
 	it('captures the full body of a braced declaration', () => {
@@ -201,7 +242,7 @@ describe('extractExcerpt', () => {
 			'}',
 			'async update() {',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(
+		expect(extractExcerpt(src, 1)?.code).toBe(
 			[
 				'// @Blueprint service-create',
 				'async create(input: CreateArea) {',
@@ -223,12 +264,12 @@ describe('extractExcerpt', () => {
 			'\tthis.audit.emit();',
 			'}',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src);
+		expect(extractExcerpt(src, 1)?.code).toBe(src);
 	});
 
 	it('stops at the first declaration when it closes on the same line', () => {
 		const src = '// @Blueprint a\nfunction f() { return 1; }\nfunction g() { return 2; }';
-		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a\nfunction f() { return 1; }');
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\nfunction f() { return 1; }');
 	});
 
 	it('ignores brackets inside strings and comments of the body', () => {
@@ -241,7 +282,7 @@ describe('extractExcerpt', () => {
 			'}',
 			'function g() {}',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 6).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 6).join('\n'));
 	});
 
 	it('handles multi-line template literals in the body', () => {
@@ -253,7 +294,7 @@ describe('extractExcerpt', () => {
 			'\treturn 1;',
 			'}',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src);
+		expect(extractExcerpt(src, 1)?.code).toBe(src);
 	});
 
 	it('follows Python indentation blocks', () => {
@@ -265,35 +306,179 @@ describe('extractExcerpt', () => {
 			'        return self.repo.create(dto)',
 			'def helper(): ...',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 5).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 5).join('\n'));
 	});
 
 	it('trims trailing blank lines of an indented body', () => {
 		const src = ['# @Blueprint a', 'def f():', '    return 1', '', '', 'def g(): ...'].join('\n');
-		expect(extractExcerpt(src, 1)).toBe('# @Blueprint a\ndef f():\n    return 1');
+		expect(extractExcerpt(src, 1)?.code).toBe('# @Blueprint a\ndef f():\n    return 1');
 	});
 
 	it('runs the indented body to end of file', () => {
 		const src = '# @Blueprint a\ndef f():\n    return 1\n\n';
-		expect(extractExcerpt(src, 1)).toBe('# @Blueprint a\ndef f():\n    return 1');
+		expect(extractExcerpt(src, 1)?.code).toBe('# @Blueprint a\ndef f():\n    return 1');
 	});
 
 	it('truncates at MAX_EXCERPT_LINES when the body never closes', () => {
 		const body = Array.from({ length: 300 }, (_, i) => `\tif (${i}) {`).join('\n');
 		const src = `// @Blueprint a\nfunction f() {\n${body}`;
-		const excerpt = (extractExcerpt(src, 1) ?? '').split('\n');
-		expect(excerpt).toHaveLength(MAX_EXCERPT_LINES);
+		const excerpt = extractExcerpt(src, 1);
+		expect(excerpt?.code.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		expect(excerpt?.truncated).toBe(true);
 	});
 
 	it('truncates a long annotation block at MAX_EXCERPT_LINES', () => {
 		const comments = Array.from({ length: 300 }, (_, i) => `// line ${i}`).join('\n');
-		const excerpt = extractExcerpt(`${comments}\nexport const x;`, 1) ?? '';
-		expect(excerpt.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		const excerpt = extractExcerpt(`${comments}\nexport const x;`, 1);
+		expect(excerpt?.code.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		expect(excerpt?.truncated).toBe(true);
+	});
+
+	it('does not flag a declaration that fits exactly within the cap', () => {
+		const body = Array.from({ length: MAX_EXCERPT_LINES - 3 }, (_, i) => `\tcall(${i});`);
+		const src = ['// @Blueprint a', 'function f() {', ...body, '}', 'function g() {}'].join('\n');
+		const excerpt = extractExcerpt(src, 1);
+		expect(excerpt?.code.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		expect(excerpt?.truncated).toBe(false);
 	});
 
 	it('returns only the annotation when it sits on the last line', () => {
 		const src = '// @Blueprint a';
-		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a');
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a');
+	});
+
+	it('follows a method chain that starts on the line after the declaration', () => {
+		const src = [
+			'// @Blueprint url-schema',
+			'export const urlSchema = z',
+			'\t.object({',
+			'\t\tdtDeb: z.iso.date().catch(DEFAULT),',
+			'\t})',
+			'\t// sort and pagination',
+			'\t.merge(paginationSchema);',
+			'',
+			'export type UrlParams = z.infer<typeof urlSchema>;',
+		].join('\n');
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 7).join('\n'));
+	});
+
+	it('follows a statement carried by a trailing operator or a leading union', () => {
+		const arrow = [
+			'// @Blueprint not-found',
+			'export const NotFound = (id: string) =>',
+			'\tnew NotFoundError({ id });',
+			'export const Other = 1;',
+		].join('\n');
+		expect(extractExcerpt(arrow, 1)?.code).toBe(arrow.split('\n').slice(0, 3).join('\n'));
+		const union = [
+			'// @Blueprint filtre',
+			'export type Filtre =',
+			'\t| { kind: "a" }',
+			'\t| { kind: "b" };',
+			'export type Other = string;',
+		].join('\n');
+		expect(extractExcerpt(union, 1)?.code).toBe(union.split('\n').slice(0, 4).join('\n'));
+	});
+
+	it('does not continue on a trailing comma, spread, increment or commented operator', () => {
+		const entries = [
+			'\t// @Blueprint column',
+			'\tcolumnHelper.accessor("a", {',
+			'\t\theader: "A",',
+			'\t}),',
+			'\tcolumnHelper.accessor("b", {}),',
+		].join('\n');
+		expect(extractExcerpt(entries, 1)?.code).toBe(entries.split('\n').slice(0, 4).join('\n'));
+		expect(extractExcerpt('# @Blueprint a\nclass A: ...\nx = 1', 1)?.code).toBe(
+			'# @Blueprint a\nclass A: ...',
+		);
+		expect(extractExcerpt('// @Blueprint a\ni++\nj++', 1)?.code).toBe('// @Blueprint a\ni++');
+		expect(extractExcerpt('// @Blueprint a\nrun(); // then =\nnext();', 1)?.code).toBe(
+			'// @Blueprint a\nrun(); // then =',
+		);
+	});
+
+	it('includes the decorators and the declaration they annotate', () => {
+		const src = [
+			'/**',
+			' * @Blueprint controller-cancel',
+			' */',
+			"@Patch(':id/cancel')",
+			'@ApiOperation({',
+			"\tsummary: 'Cancel',",
+			'})',
+			'@Deprecated',
+			'// @FollowsBlueprint lifecycle',
+			'/* multi-line',
+			'   note */',
+			'async cancel(',
+			'\t@Param() params: IdDto,',
+			'): Promise<void> {',
+			'\tawait this.service.cancel(params.id);',
+			'}',
+			'',
+			"@Get(':id')",
+		].join('\n');
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 16).join('\n'));
+	});
+
+	it('does not treat a one-line decorated declaration as a decorator', () => {
+		const src = '// @Blueprint a\n@Injectable() export class A {}\n@Injectable() export class B {}';
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\n@Injectable() export class A {}');
+	});
+
+	it('follows a decorated Python function with a multi-line signature', () => {
+		const src = [
+			'# @Blueprint route',
+			'@router.get("/")',
+			'def list_users(',
+			'    limit: int,',
+			'):  # paginated',
+			'    return repo.list(limit)',
+			'',
+			'def other(): ...',
+		].join('\n');
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 6).join('\n'));
+	});
+
+	it('keeps strings and block comments left open on a balanced line', () => {
+		const template = ['// @Blueprint a', 'export const sql = `', 'SELECT 1', '`;', 'x();'].join(
+			'\n',
+		);
+		expect(extractExcerpt(template, 1)?.code).toBe(template.split('\n').slice(0, 4).join('\n'));
+		const comment = [
+			'// @Blueprint a',
+			'export const a = 1; /* note',
+			'still note */',
+			'x();',
+		].join('\n');
+		expect(extractExcerpt(comment, 1)?.code).toBe(comment.split('\n').slice(0, 3).join('\n'));
+	});
+
+	it('stops at a blank line following the annotation block', () => {
+		const src = '// @Blueprint a\n\nexport const a = 1;';
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\n');
+	});
+
+	it('is not derailed by apostrophes in the JSX text of a .tsx exemplar', () => {
+		const src = [
+			'// @Blueprint printer-dialog',
+			'export function PrinterDialog({ open }: Props) {',
+			'	return (',
+			'		<Dialog open={open}>',
+			"			<DialogTitle>Choix de l'imprimante</DialogTitle>",
+			"			<p>Rock 'n roll des années '90 {open && (",
+			'				<Badge />',
+			'			)}</p>',
+			'		</Dialog>',
+			'	);',
+			'}',
+			'',
+			'export function Other() {}',
+		].join('\n');
+		const expected = src.split('\n').slice(0, 11).join('\n');
+		expect(extractExcerpt(src, 1, 'src/PrinterDialog.component.tsx')?.code).toBe(expected);
+		expect(extractExcerpt(src, 1, 'src/printer.py')?.code).not.toBe(expected);
 	});
 });
 
@@ -321,11 +506,26 @@ describe('buildBlueprintContent', () => {
 			globs: 'src/**/*.controller.ts',
 			location: 'src/areas/area.controller.ts:42',
 		};
-		const md = buildBlueprintContent(row, 'export const x = 1;');
+		const md = buildBlueprintContent(row, { code: 'export const x = 1;', truncated: false });
 		expect(md).toContain('## Context\n\nCreates a resource');
 		expect(md).toContain('## Usage\n\nUse for POST endpoints');
 		expect(md).toContain('Exemplar: `src/areas/area.controller.ts:42`');
-		expect(md).toContain('```typescript\nexport const x = 1;\n```');
+		expect(md).toContain('```typescript\nexport const x = 1;\n```\n');
+		expect(md).not.toContain('truncated');
+	});
+
+	it('notes a truncated excerpt below its code block', () => {
+		const row = {
+			id: 'ctrl',
+			name: 'Ctrl',
+			usage: 'Use for ctrl',
+			description: 'Does ctrl',
+			globs: '',
+			location: 'src/a.ts:1',
+		};
+		expect(buildBlueprintContent(row, { code: 'x', truncated: true })).toContain(
+			`\`\`\`\n\n_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._\n`,
+		);
 	});
 
 	it('returns undefined for an extension-less or unrecognized extension', () => {
@@ -351,7 +551,7 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.foo:1',
 		};
-		expect(buildBlueprintContent(row, 'x')).toContain('```\nx');
+		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toContain('```\nx');
 	});
 
 	it('omits the language tag for paths ending with a dot', () => {
@@ -363,7 +563,7 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.',
 		};
-		expect(buildBlueprintContent(row, 'x')).toContain('```\nx');
+		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toContain('```\nx');
 	});
 
 	it('falls back to a generic description when empty', () => {

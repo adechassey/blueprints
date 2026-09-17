@@ -8,6 +8,7 @@ import {
 	type BlueprintIndexRow,
 	buildBlueprintContent,
 	buildSource,
+	type Excerpt,
 	extractExcerpt,
 	foreignProjects,
 	inferLayer,
@@ -46,12 +47,12 @@ async function fetchExistingBySlug(
 	}
 }
 
-function readExcerpt(row: BlueprintIndexRow): string | undefined {
+function readExcerpt(row: BlueprintIndexRow): Excerpt | undefined {
 	try {
 		const [path, lineStr] = row.location.split(':');
 		if (!path || !lineStr) return undefined;
 		const fileContent = readFileSync(path, 'utf-8');
-		return extractExcerpt(fileContent, Number(lineStr));
+		return extractExcerpt(fileContent, Number(lineStr), path);
 	} catch {
 		return undefined;
 	}
