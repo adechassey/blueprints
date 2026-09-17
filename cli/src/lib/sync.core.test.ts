@@ -165,6 +165,27 @@ describe('scanLine', () => {
 		expect(scanLine('c /* d */ e /* open', state).code).toBe('c  e ');
 		expect(scanLine('still */ f', state).code).toBe(' f');
 	});
+
+	it('reads a JS quote right after an identifier character as JSX text', () => {
+		const state: ScanState = { inStr: null, inBlock: false, js: true };
+		expect(scanLine("<p>Choix de l'imprimante {", state).depth).toBe(1);
+		expect(scanLine('<p>Écran 12" réservé à l\'équipe (', state).depth).toBe(1);
+		expect(state.inStr).toBeNull();
+		expect(scanLine('\'{\' + f("(")', state).depth).toBe(0);
+	});
+
+	it('closes a JS quote literal left open at the end of its line', () => {
+		const state: ScanState = { inStr: null, inBlock: false, js: true };
+		expect(scanLine("<p>'90s {", state).depth).toBe(0);
+		expect(state.inStr).toBeNull();
+		expect(scanLine('<p>"quoted {', state).depth).toBe(0);
+		expect(state.inStr).toBeNull();
+		expect(scanLine("const s = 'continued \\", state).depth).toBe(0);
+		expect(state.inStr).toBe("'");
+		expect(scanLine("line';", state).depth).toBe(0);
+		expect(scanLine('const t = `open {', state).depth).toBe(0);
+		expect(state.inStr).toBe('`');
+	});
 });
 
 describe('extractExcerpt', () => {
@@ -427,6 +448,27 @@ describe('extractExcerpt', () => {
 	it('stops at a blank line following the annotation block', () => {
 		const src = '// @Blueprint a\n\nexport const a = 1;';
 		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\n');
+	});
+
+	it('is not derailed by apostrophes in the JSX text of a .tsx exemplar', () => {
+		const src = [
+			'// @Blueprint printer-dialog',
+			'export function PrinterDialog({ open }: Props) {',
+			'	return (',
+			'		<Dialog open={open}>',
+			"			<DialogTitle>Choix de l'imprimante</DialogTitle>",
+			"			<p>Rock 'n roll des années '90 {open && (",
+			'				<Badge />',
+			'			)}</p>',
+			'		</Dialog>',
+			'	);',
+			'}',
+			'',
+			'export function Other() {}',
+		].join('\n');
+		const expected = src.split('\n').slice(0, 11).join('\n');
+		expect(extractExcerpt(src, 1, 'src/PrinterDialog.component.tsx')?.code).toBe(expected);
+		expect(extractExcerpt(src, 1, 'src/printer.py')?.code).not.toBe(expected);
 	});
 });
 

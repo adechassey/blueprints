@@ -82,7 +82,19 @@ export interface ScanState {
 	inStr: string | null;
 	/** True while inside a `/* ... *\/` block comment. */
 	inBlock: boolean;
+	/**
+	 * JS/TS lexical rules for `'` and `"`: a literal never starts right after an
+	 * identifier character (that quote is JSX text: `<p>l'utilisateur</p>`) and
+	 * never spans lines, so a literal still open at the line end is closed.
+	 */
+	js?: boolean;
 }
+
+/** JS/TS source files (incl. JSX, ESM/CJS variants). */
+const JS_FAMILY_RE = /\.[cm]?[jt]sx?$/;
+
+/** A character a JS string literal can never directly follow. */
+const IDENTIFIER_CHAR_RE = /[\p{L}\p{N}_$]/u;
 
 export interface LineScan {
 	/** Net bracket depth delta of the line. */
@@ -96,7 +108,8 @@ export interface LineScan {
  * Skips string literals (single, double, template — escaped chars and
  * multi-line template spans via `state`), line comments (`//`, `#` for
  * Python/Ruby/Shell) and block comments. Braces inside template expressions
- * (`${...}`) are ignored with the rest of the literal.
+ * (`${...}`) are ignored with the rest of the literal. See `ScanState.js` for
+ * the JS/TS quote rules.
  */
 export function scanLine(line: string, state: ScanState): LineScan {
 	let depth = 0;
@@ -129,10 +142,16 @@ export function scanLine(line: string, state: ScanState): LineScan {
 			continue;
 		}
 		code += ch;
-		if (ch === "'" || ch === '"' || ch === '`') state.inStr = ch;
-		else if (ch === '{' || ch === '(' || ch === '[') depth++;
+		if (ch === '`') state.inStr = ch;
+		else if (ch === "'" || ch === '"') {
+			if (!state.js || !IDENTIFIER_CHAR_RE.test(line[i - 1] ?? '')) state.inStr = ch;
+		} else if (ch === '{' || ch === '(' || ch === '[') depth++;
 		else if (ch === '}' || ch === ')' || ch === ']') depth--;
 		i++;
+	}
+	// A JS '…' / "…" literal ends with its line (bar a trailing `\` continuation).
+	if (state.js && (state.inStr === "'" || state.inStr === '"') && !line.endsWith('\\')) {
+		state.inStr = null;
 	}
 	return { depth, code };
 }
@@ -173,10 +192,11 @@ export interface Excerpt {
  * aware) and no continuation carries it onto the next line (trailing `=`,
  * `=>` or operator; next line starting with `.`, `|`, `?`, `:`, `as`…).
  * A statement ending with `:` (Python) takes the block indented deeper than
- * the statement. Returns undefined when the line number is out of bounds,
- * and truncates at `MAX_EXCERPT_LINES` lines.
+ * the statement. `path` selects the JS/TS quote rules (see `ScanState.js`).
+ * Returns undefined when the line number is out of bounds, and truncates at
+ * `MAX_EXCERPT_LINES` lines.
  */
-export function extractExcerpt(content: string, line: number): Excerpt | undefined {
+export function extractExcerpt(content: string, line: number, path = ''): Excerpt | undefined {
 	const lines = content.split('\n');
 	const start = line - 1;
 	if (!Number.isInteger(line) || line < 1 || start >= lines.length) return undefined;
@@ -188,7 +208,7 @@ export function extractExcerpt(content: string, line: number): Excerpt | undefin
 	}
 
 	// 2) The declaration. Comments at EOF (no declaration) end the excerpt.
-	const state: ScanState = { inStr: null, inBlock: false };
+	const state: ScanState = { inStr: null, inBlock: false, js: JS_FAMILY_RE.test(path) };
 	let last = declIndex;
 	let stmtStart = declIndex + 1;
 	let depth = 0;
