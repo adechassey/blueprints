@@ -44,7 +44,7 @@ test.describe('Blueprint CRUD', () => {
 		await page.goto('/blueprints/new');
 		await page.getByLabel('Name', { exact: false }).fill(name);
 		await page.getByLabel('Description', { exact: false }).first().fill(description);
-		await page.getByLabel('Layer', { exact: false }).fill('e2e');
+		await page.getByLabel('Layer', { exact: false }).selectOption('domain');
 		await page.getByLabel('Content', { exact: false }).fill(content);
 		await page.getByRole('button', { name: /^save$/i }).click();
 

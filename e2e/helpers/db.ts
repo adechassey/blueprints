@@ -125,23 +125,21 @@ export async function seedBlueprint(
 		name,
 		description,
 		content,
-		stack = 'webapp',
-		layer = 'hooks',
+		layer = 'ui',
 	}: {
 		name: string;
 		description: string;
 		content: string;
-		stack?: 'webapp' | 'server' | 'shared' | 'fullstack';
 		layer?: string;
 	},
 ): Promise<SeededBlueprint> {
 	// Random suffix avoids unique-constraint collisions across runs
 	const slug = `e2e-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${crypto.randomUUID().slice(0, 8)}`;
 	const blueprintResult = await query<{ id: string; name: string; slug: string }>(
-		`INSERT INTO blueprints (name, slug, description, usage, author_id, stack, layer)
-		 VALUES ($1, $2, $3, 'Use when testing', $4, $5, $6)
+		`INSERT INTO blueprints (name, slug, description, usage, author_id, layer)
+		 VALUES ($1, $2, $3, 'Use when testing', $4, $5)
 		 RETURNING id, name, slug`,
-		[name, slug, description, authorId, stack, layer],
+		[name, slug, description, authorId, layer],
 	);
 	const versionResult = await query<{ id: string }>(
 		`INSERT INTO blueprint_versions (blueprint_id, version, content, author_id)

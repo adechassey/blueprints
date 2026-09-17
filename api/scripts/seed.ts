@@ -101,15 +101,9 @@ const LAYER_MAP: Record<string, string> = {
 	tooling: 'tooling',
 };
 
-function normalizeLayer(layer: string | undefined):
-	| 'database'
-	| 'api'
-	| 'domain'
-	| 'ui'
-	| 'state'
-	| 'infra'
-	| 'testing'
-	| 'tooling' {
+function normalizeLayer(
+	layer: string | undefined,
+): 'database' | 'api' | 'domain' | 'ui' | 'state' | 'infra' | 'testing' | 'tooling' {
 	return (LAYER_MAP[layer ?? ''] ?? 'domain') as never;
 }
 

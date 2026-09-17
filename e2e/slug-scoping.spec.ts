@@ -38,8 +38,7 @@ test.describe('Project-scoped slugs (API)', () => {
 		const blueprintPayload = (projectId: string | undefined) => ({
 			name: `E2E Form Field ${stamp}`,
 			slug,
-			stack: 'webapp',
-			layer: 'component',
+			layer: 'ui',
 			content: '# Form field',
 			projectId,
 		});

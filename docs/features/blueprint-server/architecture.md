@@ -228,8 +228,8 @@ blueprints
 ├── currentVersionId (FK → blueprint_versions, nullable)
 ├── projects (many-to-many via blueprint_projects — a blueprint may be shared into several projects)
 ├── authorId (FK → users)
-├── stack (enum: server, webapp, shared, fullstack)
-├── layer (text — controller, service, hook, etc.)
+├── technologies (many-to-many via blueprint_technologies — curated taxonomy)
+├── layer (enum: database, api, domain, ui, state, infra, testing, tooling)
 ├── isPublic (boolean, default true)
 ├── downloadCount (integer, default 0)
 ├── createdAt
@@ -330,7 +330,7 @@ The API also exposes an MCP endpoint at `/api/mcp` that supports:
 **Tools**:
 - `search_blueprints` — Semantic + filter search
 - `get_blueprint` — Fetch a blueprint by ID or slug
-- `list_blueprints` — List with filters (project, stack, layer, tags)
+- `list_blueprints` — List with filters (project, techno, layer, tags)
 - `publish_blueprint` — Upload a new blueprint
 - `update_blueprint` — Update existing blueprint (creates new version)
 - `download_blueprint` — Get blueprint content for local use
@@ -376,7 +376,7 @@ theodo-blueprints pull --project foo  # Download all blueprints from a project
 # Browsing
 theodo-blueprints search [query]      # Semantic search
 theodo-blueprints list                # List blueprints (with filters)
-theodo-blueprints list --stack server # Filter by stack
+theodo-blueprints list --techno react  # Filter by technology (comma-separated, any-match)
 theodo-blueprints list --tag nestjs   # Filter by tag
 theodo-blueprints list --project foo  # Filter by project
 theodo-blueprints info [slug]         # Show blueprint details
