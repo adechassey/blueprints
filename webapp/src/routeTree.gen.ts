@@ -15,9 +15,11 @@ import { Route as DeviceRouteImport } from './routes/device'
 import { Route as CliTokenRouteImport } from './routes/cli-token'
 import { Route as CliRouteImport } from './routes/cli'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as StacksIndexRouteImport } from './routes/stacks/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as UsersUserIdRouteImport } from './routes/users/$userId'
+import { Route as StacksSlugRouteImport } from './routes/stacks/$slug'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as BlueprintsNewRouteImport } from './routes/blueprints/new'
 import { Route as BlueprintsBlueprintIdRouteImport } from './routes/blueprints/$blueprintId'
@@ -58,6 +60,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StacksIndexRoute = StacksIndexRouteImport.update({
+  id: '/stacks/',
+  path: '/stacks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   id: '/projects/',
   path: '/projects/',
@@ -71,6 +78,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const UsersUserIdRoute = UsersUserIdRouteImport.update({
   id: '/users/$userId',
   path: '/users/$userId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StacksSlugRoute = StacksSlugRouteImport.update({
+  id: '/stacks/$slug',
+  path: '/stacks/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
@@ -135,9 +147,11 @@ export interface FileRoutesByFullPath {
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/stacks/$slug': typeof StacksSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/admin/': typeof AdminIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/stacks/': typeof StacksIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
   '/blueprints/$blueprintId/': typeof BlueprintsBlueprintIdIndexRoute
 }
@@ -154,9 +168,11 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/stacks/$slug': typeof StacksSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/admin': typeof AdminIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/stacks': typeof StacksIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdIndexRoute
 }
@@ -175,9 +191,11 @@ export interface FileRoutesById {
   '/blueprints/$blueprintId': typeof BlueprintsBlueprintIdRouteWithChildren
   '/blueprints/new': typeof BlueprintsNewRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/stacks/$slug': typeof StacksSlugRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/admin/': typeof AdminIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/stacks/': typeof StacksIndexRoute
   '/blueprints/$blueprintId/edit': typeof BlueprintsBlueprintIdEditRoute
   '/blueprints/$blueprintId/': typeof BlueprintsBlueprintIdIndexRoute
 }
@@ -197,9 +215,11 @@ export interface FileRouteTypes {
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
+    | '/stacks/$slug'
     | '/users/$userId'
     | '/admin/'
     | '/projects/'
+    | '/stacks/'
     | '/blueprints/$blueprintId/edit'
     | '/blueprints/$blueprintId/'
   fileRoutesByTo: FileRoutesByTo
@@ -216,9 +236,11 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/blueprints/new'
     | '/projects/$slug'
+    | '/stacks/$slug'
     | '/users/$userId'
     | '/admin'
     | '/projects'
+    | '/stacks'
     | '/blueprints/$blueprintId/edit'
     | '/blueprints/$blueprintId'
   id:
@@ -236,9 +258,11 @@ export interface FileRouteTypes {
     | '/blueprints/$blueprintId'
     | '/blueprints/new'
     | '/projects/$slug'
+    | '/stacks/$slug'
     | '/users/$userId'
     | '/admin/'
     | '/projects/'
+    | '/stacks/'
     | '/blueprints/$blueprintId/edit'
     | '/blueprints/$blueprintId/'
   fileRoutesById: FileRoutesById
@@ -257,9 +281,11 @@ export interface RootRouteChildren {
   BlueprintsBlueprintIdRoute: typeof BlueprintsBlueprintIdRouteWithChildren
   BlueprintsNewRoute: typeof BlueprintsNewRoute
   ProjectsSlugRoute: typeof ProjectsSlugRoute
+  StacksSlugRoute: typeof StacksSlugRoute
   UsersUserIdRoute: typeof UsersUserIdRoute
   AdminIndexRoute: typeof AdminIndexRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
+  StacksIndexRoute: typeof StacksIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -306,6 +332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stacks/': {
+      id: '/stacks/'
+      path: '/stacks'
+      fullPath: '/stacks/'
+      preLoaderRoute: typeof StacksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/projects/': {
       id: '/projects/'
       path: '/projects'
@@ -325,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/users/$userId'
       fullPath: '/users/$userId'
       preLoaderRoute: typeof UsersUserIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stacks/$slug': {
+      id: '/stacks/$slug'
+      path: '/stacks/$slug'
+      fullPath: '/stacks/$slug'
+      preLoaderRoute: typeof StacksSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects/$slug': {
@@ -422,9 +462,11 @@ const rootRouteChildren: RootRouteChildren = {
   BlueprintsBlueprintIdRoute: BlueprintsBlueprintIdRouteWithChildren,
   BlueprintsNewRoute: BlueprintsNewRoute,
   ProjectsSlugRoute: ProjectsSlugRoute,
+  StacksSlugRoute: StacksSlugRoute,
   UsersUserIdRoute: UsersUserIdRoute,
   AdminIndexRoute: AdminIndexRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
+  StacksIndexRoute: StacksIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

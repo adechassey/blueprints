@@ -65,6 +65,9 @@ function RootLayout() {
 								<Link to="/" className={navLinkClass} activeOptions={{ exact: true }}>
 									{m.nav_all()}
 								</Link>
+								<Link to="/stacks" className={navLinkClass}>
+									{m.nav_stacks()}
+								</Link>
 								<Link to="/projects" className={navLinkClass}>
 									{m.nav_projects()}
 								</Link>
@@ -118,6 +121,9 @@ function RootLayout() {
 								className={navLinkClass}
 							>
 								{m.nav_all()}
+							</Link>
+							<Link to="/stacks" onClick={closeMobile} className={navLinkClass}>
+								{m.nav_stacks()}
 							</Link>
 							<Link to="/projects" onClick={closeMobile} className={navLinkClass}>
 								{m.nav_projects()}
