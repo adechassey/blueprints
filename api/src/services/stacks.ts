@@ -1,4 +1,4 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
 	blueprints,
@@ -13,13 +13,13 @@ import { generateSlug } from './blueprints.core.js';
 import { groupBlueprintsByLayer, type StackBlueprint } from './stacks.core.js';
 import { resolveTechnologies } from './technologies.js';
 
-/** Thrown when a stack slug is already taken (HTTP 409). */
-class StackSlugConflictError extends Error {
+/** Thrown when a stack slug or name is already taken (HTTP 409). */
+class StackConflictError extends Error {
 	readonly status = 409;
 
-	constructor(slug: string) {
-		super(`Stack slug "${slug}" already exists`);
-		this.name = 'StackSlugConflictError';
+	constructor(field: 'slug' | 'name', value: string) {
+		super(`Stack ${field} "${value}" already exists`);
+		this.name = 'StackConflictError';
 	}
 }
 
@@ -58,8 +58,16 @@ export async function getStack(db: DB, id: string) {
 
 export async function createStack(db: DB, input: CreateStackInput, userId: string) {
 	const slug = input.slug ?? generateSlug(input.name);
-	const [existing] = await db.select().from(stacks).where(eq(stacks.slug, slug)).limit(1);
-	if (existing) throw new StackSlugConflictError(slug);
+	const [existing] = await db
+		.select({ slug: stacks.slug })
+		.from(stacks)
+		.where(or(eq(stacks.slug, slug), eq(stacks.name, input.name)))
+		.limit(1);
+	if (existing) {
+		throw existing.slug === slug
+			? new StackConflictError('slug', slug)
+			: new StackConflictError('name', input.name);
+	}
 	// Resolved before any write: an invalid reference must not leave an orphan stack
 	const techs = await resolveTechnologies(db, input.technologies);
 
@@ -90,6 +98,14 @@ export async function updateStack(db: DB, id: string, input: UpdateStackInput) {
 	const existing = await findStack(db, id);
 	if (!existing) return null;
 
+	if (input.name !== undefined && input.name !== existing.name) {
+		const [taken] = await db
+			.select({ id: stacks.id })
+			.from(stacks)
+			.where(and(eq(stacks.name, input.name), ne(stacks.id, existing.id)))
+			.limit(1);
+		if (taken) throw new StackConflictError('name', input.name);
+	}
 	// Resolved before unlinking: a failure must not strip the stack of its technologies
 	const techs =
 		input.technologies === undefined ? null : await resolveTechnologies(db, input.technologies);
