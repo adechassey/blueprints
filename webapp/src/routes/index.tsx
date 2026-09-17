@@ -10,6 +10,7 @@ import { EmptyState } from '../components/ui/empty.js';
 import { Skeleton } from '../components/ui/skeleton.js';
 import { useBlueprints } from '../hooks/useBlueprints.js';
 import { useSearch } from '../hooks/useSearch.js';
+import { toLayer } from '../lib/layers.core.js';
 import * as m from '../paraglide/messages.js';
 
 interface SearchParams {
@@ -24,7 +25,8 @@ export const Route = createFileRoute('/')({
 	validateSearch: (search: Record<string, unknown>): SearchParams => ({
 		page: Number(search.page) || undefined,
 		techno: (search.techno as string) || undefined,
-		layer: (search.layer as string) || undefined,
+		// An unknown layer (legacy link, typo) would make the API reject the whole query
+		layer: toLayer(search.layer),
 		tag: (search.tag as string) || undefined,
 		q: (search.q as string) || undefined,
 	}),

@@ -1,11 +1,17 @@
-import type { CreateBlueprintInput } from '@blueprints/shared';
-import { BLUEPRINT_LAYERS } from '@blueprints/shared';
+import {
+	BLUEPRINT_LAYERS,
+	type BlueprintLayer,
+	type CreateBlueprintInput,
+} from '@blueprints/shared';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects.js';
 import { useTechnologies } from '../hooks/useTags.js';
 import type { BlueprintFrontmatter } from '../lib/frontmatter.core.js';
+import { toLayer } from '../lib/layers.core.js';
+import { LAYER_META } from '../lib/layers.js';
 import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
+import { LayerOption } from './LayerBadge.js';
 import { Button } from './ui/button.js';
 import { Input } from './ui/input.js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select.js';
@@ -46,7 +52,7 @@ export function BlueprintForm({
 	const [technologiesInput, setTechnologiesInput] = useState(
 		(initialValues.technologies || []).join(', '),
 	);
-	const [layer, setLayer] = useState(initialValues.layer || 'domain');
+	const [layer, setLayer] = useState<BlueprintLayer>(toLayer(initialValues.layer) ?? 'domain');
 	const [tagsInput, setTagsInput] = useState((initialValues.tags || []).join(', '));
 	const [projectId, setProjectId] = useState(initialValues.projectId || '');
 	const [content, setContent] = useState(initialValues.content || '');
@@ -59,7 +65,9 @@ export function BlueprintForm({
 		if (meta.description) setDescription(meta.description);
 		if (meta.usage) setUsage(meta.usage);
 		if (meta.technologies) setTechnologiesInput(meta.technologies.join(', '));
-		if (meta.layer) setLayer(meta.layer);
+		// Legacy free-text layers ("service"…) would be rejected by the API: keep the current one
+		const importedLayer = toLayer(meta.layer);
+		if (importedLayer) setLayer(importedLayer);
 		if (meta.tags) setTagsInput(meta.tags.join(', '));
 		if (parsedContent) setContent(parsedContent);
 	};
@@ -76,7 +84,7 @@ export function BlueprintForm({
 			description: description || undefined,
 			usage: usage || undefined,
 			technologies: splitList(technologiesInput),
-			layer: layer as BlueprintFormData['layer'],
+			layer,
 			projectId: projectId || undefined,
 			tags: splitList(tagsInput),
 			content,
@@ -150,18 +158,21 @@ export function BlueprintForm({
 					<label htmlFor="bp-layer" className="block text-sm font-semibold text-on-surface">
 						{m.form_layer()}
 					</label>
-					<Select value={layer} onValueChange={setLayer}>
-						<SelectTrigger id="bp-layer">
+					<Select value={layer} onValueChange={(v) => setLayer(toLayer(v) ?? layer)}>
+						<SelectTrigger id="bp-layer" aria-describedby="bp-layer-description">
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
 							{BLUEPRINT_LAYERS.map((l) => (
 								<SelectItem key={l} value={l}>
-									{l}
+									<LayerOption layer={l} />
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
+					<p id="bp-layer-description" className="text-xs text-on-surface-variant">
+						{LAYER_META[layer].description()}
+					</p>
 				</div>
 				<div className="space-y-2">
 					<label htmlFor="bp-technologies" className="block text-sm font-semibold text-on-surface">

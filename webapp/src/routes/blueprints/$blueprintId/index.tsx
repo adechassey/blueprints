@@ -1,8 +1,9 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Copy, Info, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../../components/CommentSection.js';
+import { LayerBadge } from '../../../components/LayerBadge.js';
 import { MarkdownRenderer } from '../../../components/MarkdownRenderer.js';
 import { MatchSection } from '../../../components/MatchSection.js';
 import { markBlueprintViewed } from '../../../components/Onboarding.js';
@@ -25,6 +26,9 @@ import { api } from '../../../lib/api.js';
 import { authClient } from '../../../lib/auth-client.js';
 import { cn } from '../../../lib/utils.js';
 import * as m from '../../../paraglide/messages.js';
+
+const filterLinkClass =
+	'inline-flex no-underline rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
 
 export const Route = createFileRoute('/blueprints/$blueprintId/')({
 	component: BlueprintDetailPage,
@@ -124,18 +128,20 @@ function BlueprintDetailPage() {
 					</div>
 				</div>
 
-				{/* Tags */}
-				<div className="flex flex-wrap gap-3">
-					<Badge variant="secondary">{blueprint.layer}</Badge>
+				{/* Layer, technologies and tags — each opens the matching filtered listing */}
+				<div className="flex flex-wrap items-center gap-2">
+					<Link to="/" search={{ layer: blueprint.layer }} className={filterLinkClass}>
+						<LayerBadge layer={blueprint.layer} />
+					</Link>
 					{blueprint.technologies?.map((t: { name: string; slug: string }) => (
-						<Badge key={t.slug} variant="primary">
-							{t.name}
-						</Badge>
+						<Link key={t.slug} to="/" search={{ techno: t.slug }} className={filterLinkClass}>
+							<Badge variant="secondary">{t.name}</Badge>
+						</Link>
 					))}
 					{blueprint.tags?.map((tag: { name: string }) => (
-						<Badge key={tag.name} variant="default">
-							{tag.name}
-						</Badge>
+						<Link key={tag.name} to="/" search={{ tag: tag.name }} className={filterLinkClass}>
+							<Badge variant="default">#{tag.name}</Badge>
+						</Link>
 					))}
 					<span className="flex items-center text-xs text-on-surface-variant font-medium">
 						{m.blueprint_detail_downloads({ count: blueprint.downloadCount ?? 0 })}

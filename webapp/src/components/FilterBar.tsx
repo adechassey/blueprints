@@ -1,6 +1,7 @@
 import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 import { useTags, useTechnologies } from '../hooks/useTags.js';
 import * as m from '../paraglide/messages.js';
+import { LayerOption } from './LayerBadge.js';
 import {
 	Select,
 	SelectContent,
@@ -40,7 +41,7 @@ export function FilterBar({ techno, layer, tag, onFilterChange, total, showing }
 					<SelectSeparator />
 					{BLUEPRINT_LAYERS.map((l) => (
 						<SelectItem key={l} value={l}>
-							{l}
+							<LayerOption layer={l} />
 						</SelectItem>
 					))}
 				</SelectContent>

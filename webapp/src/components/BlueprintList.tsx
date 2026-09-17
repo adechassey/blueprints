@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Blocks, Download } from 'lucide-react';
+import { LayerBadge } from './LayerBadge.js';
 import { Badge } from './ui/badge.js';
 
 interface Blueprint {
@@ -42,7 +43,7 @@ function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 				</p>
 			)}
 			<div className="flex flex-wrap items-center gap-1.5">
-				<Badge variant={(blueprint.layer as never) || 'default'}>{blueprint.layer}</Badge>
+				<LayerBadge layer={blueprint.layer} />
 				{blueprint.technologies?.map((t) => (
 					<Badge key={t.slug} variant="secondary">
 						{t.name}
