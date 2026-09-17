@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TechnologiesRouteImport } from './routes/technologies'
 import { Route as TagsRouteImport } from './routes/tags'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DeviceRouteImport } from './routes/device'
@@ -30,6 +31,11 @@ import { Route as AdminBlueprintsRouteImport } from './routes/admin/blueprints'
 import { Route as BlueprintsBlueprintIdIndexRouteImport } from './routes/blueprints/$blueprintId/index'
 import { Route as BlueprintsBlueprintIdEditRouteImport } from './routes/blueprints/$blueprintId/edit'
 
+const TechnologiesRoute = TechnologiesRouteImport.update({
+  id: '/technologies',
+  path: '/technologies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TagsRoute = TagsRouteImport.update({
   id: '/tags',
   path: '/tags',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/device': typeof DeviceRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
+  '/technologies': typeof TechnologiesRoute
   '/admin/blueprints': typeof AdminBlueprintsRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/projects': typeof AdminProjectsRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/device': typeof DeviceRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
+  '/technologies': typeof TechnologiesRoute
   '/admin/blueprints': typeof AdminBlueprintsRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/projects': typeof AdminProjectsRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/device': typeof DeviceRoute
   '/login': typeof LoginRoute
   '/tags': typeof TagsRoute
+  '/technologies': typeof TechnologiesRoute
   '/admin/blueprints': typeof AdminBlueprintsRoute
   '/admin/comments': typeof AdminCommentsRoute
   '/admin/projects': typeof AdminProjectsRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/login'
     | '/tags'
+    | '/technologies'
     | '/admin/blueprints'
     | '/admin/comments'
     | '/admin/projects'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/login'
     | '/tags'
+    | '/technologies'
     | '/admin/blueprints'
     | '/admin/comments'
     | '/admin/projects'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/device'
     | '/login'
     | '/tags'
+    | '/technologies'
     | '/admin/blueprints'
     | '/admin/comments'
     | '/admin/projects'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   DeviceRoute: typeof DeviceRoute
   LoginRoute: typeof LoginRoute
   TagsRoute: typeof TagsRoute
+  TechnologiesRoute: typeof TechnologiesRoute
   AdminBlueprintsRoute: typeof AdminBlueprintsRoute
   AdminCommentsRoute: typeof AdminCommentsRoute
   AdminProjectsRoute: typeof AdminProjectsRoute
@@ -290,6 +303,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/technologies': {
+      id: '/technologies'
+      path: '/technologies'
+      fullPath: '/technologies'
+      preLoaderRoute: typeof TechnologiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tags': {
       id: '/tags'
       path: '/tags'
@@ -455,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   DeviceRoute: DeviceRoute,
   LoginRoute: LoginRoute,
   TagsRoute: TagsRoute,
+  TechnologiesRoute: TechnologiesRoute,
   AdminBlueprintsRoute: AdminBlueprintsRoute,
   AdminCommentsRoute: AdminCommentsRoute,
   AdminProjectsRoute: AdminProjectsRoute,

@@ -56,17 +56,20 @@ function RootLayout() {
 						<div className="flex items-center gap-6">
 							<Link
 								to="/"
-								className="flex items-center gap-2 text-lg font-extrabold text-on-surface tracking-tight font-headline no-underline"
+								className="flex items-center gap-2 text-lg font-extrabold whitespace-nowrap text-on-surface tracking-tight font-headline no-underline"
 							>
 								<img src="/logo.svg" alt="" className="h-8 w-8 rounded-lg shadow-xs" />
 								{m.app_title()}
 							</Link>
-							<nav className="hidden md:flex gap-1 items-center">
+							<nav className="hidden xl:flex gap-1 items-center">
 								<Link to="/" className={navLinkClass} activeOptions={{ exact: true }}>
 									{m.nav_all()}
 								</Link>
 								<Link to="/stacks" className={navLinkClass}>
 									{m.nav_stacks()}
+								</Link>
+								<Link to="/technologies" className={navLinkClass}>
+									{m.nav_technologies()}
 								</Link>
 								<Link to="/projects" className={navLinkClass}>
 									{m.nav_projects()}
@@ -104,7 +107,7 @@ function RootLayout() {
 							<Button
 								variant="ghost"
 								size="icon"
-								className="md:hidden"
+								className="xl:hidden"
 								aria-label="Menu"
 								onClick={() => setMobileOpen((prev) => !prev)}
 							>
@@ -113,7 +116,7 @@ function RootLayout() {
 						</div>
 					</div>
 					{mobileOpen && (
-						<nav className="flex flex-col gap-1 border-t border-outline-variant/50 px-4 py-3 md:hidden">
+						<nav className="flex flex-col gap-1 border-t border-outline-variant/50 px-4 py-3 xl:hidden">
 							<Link
 								to="/"
 								onClick={closeMobile}
@@ -124,6 +127,9 @@ function RootLayout() {
 							</Link>
 							<Link to="/stacks" onClick={closeMobile} className={navLinkClass}>
 								{m.nav_stacks()}
+							</Link>
+							<Link to="/technologies" onClick={closeMobile} className={navLinkClass}>
+								{m.nav_technologies()}
 							</Link>
 							<Link to="/projects" onClick={closeMobile} className={navLinkClass}>
 								{m.nav_projects()}

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeReferences, parseList, technologyName } from './technologies.core.js';
+import {
+	groupByCategory,
+	normalizeReferences,
+	parseList,
+	technologyName,
+} from './technologies.core.js';
 
 const catalog = [
 	{ name: 'React', slug: 'react' },
@@ -37,5 +42,26 @@ describe('technologyName', () => {
 
 	it('returns the reference itself when unknown', () => {
 		expect(technologyName('Deno', catalog)).toBe('Deno');
+	});
+});
+
+describe('groupByCategory', () => {
+	it('groups in canonical category order, skipping empty categories', () => {
+		const groups = groupByCategory([
+			{ slug: 'react', category: 'framework' },
+			{ slug: 'typescript', category: 'language' },
+			{ slug: 'hono', category: 'framework' },
+			{ slug: 'odd', category: 'unknown' },
+		]);
+		expect(groups).toEqual([
+			{ category: 'language', technologies: [{ slug: 'typescript', category: 'language' }] },
+			{
+				category: 'framework',
+				technologies: [
+					{ slug: 'react', category: 'framework' },
+					{ slug: 'hono', category: 'framework' },
+				],
+			},
+		]);
 	});
 });

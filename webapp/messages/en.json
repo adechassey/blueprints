@@ -215,5 +215,9 @@
 	"stack_confirm_delete": "Delete the stack \"{name}\"? Its blueprints are kept.",
 	"toast_stack_created": "Stack created",
 	"toast_stack_updated": "Stack updated",
-	"toast_stack_deleted": "Stack deleted"
+	"toast_stack_deleted": "Stack deleted",
+	"nav_technologies": "Technologies",
+	"technologies_title": "Technologies",
+	"technologies_intro": "The technology catalog, by category. Pick one to list the blueprints that use it.",
+	"technologies_empty": "No technologies yet"
 }

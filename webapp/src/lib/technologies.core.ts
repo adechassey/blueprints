@@ -2,6 +2,8 @@
  * Pure technology-reference helpers.
  * 100% test coverage required.
  */
+import { TECHNOLOGY_CATEGORIES, type TechnologyCategory } from '@blueprints/shared';
+
 interface CatalogEntry {
 	name: string;
 	slug: string;
@@ -41,4 +43,19 @@ export function normalizeReferences(refs: string[], catalog: CatalogEntry[]): st
 /** Display name of a reference: the catalog name when known, else the reference itself. */
 export function technologyName(ref: string, catalog: CatalogEntry[]): string {
 	return findTechnology(catalog, ref)?.name ?? ref;
+}
+
+interface CategoryGroup<T> {
+	category: TechnologyCategory;
+	technologies: T[];
+}
+
+/** Groups technologies by category in canonical order, skipping empty categories. */
+export function groupByCategory<T extends { category: string }>(
+	technologies: T[],
+): CategoryGroup<T>[] {
+	return TECHNOLOGY_CATEGORIES.map((category) => ({
+		category,
+		technologies: technologies.filter((t) => t.category === category),
+	})).filter((group) => group.technologies.length > 0);
 }

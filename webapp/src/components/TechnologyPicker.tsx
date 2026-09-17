@@ -4,7 +4,7 @@ import { normalizeReferences, technologyName } from '../lib/technologies.core.js
 import * as m from '../paraglide/messages.js';
 import { Combobox } from './Combobox.js';
 
-const CATEGORY_LABEL: Record<TechnologyCategory, () => string> = {
+export const CATEGORY_LABEL: Record<TechnologyCategory, () => string> = {
 	language: m.technology_category_language,
 	framework: m.technology_category_framework,
 	library: m.technology_category_library,
