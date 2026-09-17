@@ -20,6 +20,7 @@ import {
 import { getUser, requireAuth } from '../middleware/auth.js';
 import { generateBlueprintIndex } from '../services/blueprint-index.core.js';
 import { isSlugTaken } from '../services/blueprints.js';
+import { technologiesOfMany } from '../services/technologies.js';
 
 export const projectRoutes = new Hono()
 	.get('/projects', async (c) => {
@@ -59,9 +60,17 @@ export const projectRoutes = new Hono()
 			isMember = !!membership;
 		}
 
+		const technologiesByBlueprint = await technologiesOfMany(
+			db,
+			projectBlueprints.map((row) => row.blueprints.id),
+		);
+
 		return c.json({
 			...project,
-			blueprints: projectBlueprints.map((row) => row.blueprints),
+			blueprints: projectBlueprints.map((row) => ({
+				...row.blueprints,
+				technologies: technologiesByBlueprint.get(row.blueprints.id) ?? [],
+			})),
 			memberCount: memberCountResult?.count ?? 0,
 			isMember,
 		});
