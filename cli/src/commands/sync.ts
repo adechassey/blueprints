@@ -3,16 +3,15 @@ import { BLUEPRINT_LAYERS, type BlueprintLayer } from '@blueprints/shared';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { ApiError, createApiClient, unwrapResponse } from '../lib/api.js';
+import { detectTechnologies, inferLayer, mergeTechnologies } from '../lib/classify.core.js';
 import { getConfig } from '../lib/config.js';
 import {
-	type BlueprintIndexRow,
 	buildBlueprintContent,
 	buildSource,
-	type Excerpt,
 	extractExcerpt,
 	foreignProjects,
-	inferLayer,
 	parseIndexTsv,
+	splitLocation,
 } from '../lib/sync.core.js';
 
 interface SyncOptions {
@@ -47,12 +46,10 @@ async function fetchExistingBySlug(
 	}
 }
 
-function readExcerpt(row: BlueprintIndexRow): Excerpt | undefined {
+/** The exemplar file's content, or undefined when it cannot be read from the working directory. */
+function readExemplar(path: string): string | undefined {
 	try {
-		const [path, lineStr] = row.location.split(':');
-		if (!path || !lineStr) return undefined;
-		const fileContent = readFileSync(path, 'utf-8');
-		return extractExcerpt(fileContent, Number(lineStr), path);
+		return readFileSync(path, 'utf-8');
 	} catch {
 		return undefined;
 	}
@@ -69,12 +66,12 @@ export function registerSyncCommand(program: Command) {
 			'Publish under a project namespace (must be a member); slugs are unique per project',
 		)
 		.option(
-			'--techno <slugs>',
-			'Comma-separated technology slugs attached to synced blueprints (e.g. react,hono)',
+			'--techno <names>',
+			"Comma-separated technologies added to the ones detected from each exemplar's imports (e.g. Next.js,Oracle Database)",
 		)
 		.option(
 			'--layer <layer>',
-			`Layer fallback when globs are absent or unrecognized (${BLUEPRINT_LAYERS.join('|')})`,
+			`Layer for blueprints whose exemplar path and globs match no convention (${BLUEPRINT_LAYERS.join('|')}, default: domain)`,
 		)
 		.option('--repo <repo>', 'Repository identifier (e.g. owner/repo) recorded in the source field')
 		.option('--dry-run', 'Show what would be pushed without calling the API')
@@ -100,12 +97,11 @@ export function registerSyncCommand(program: Command) {
 				return;
 			}
 
-			const technologies = opts.techno
-				? opts.techno
-						.split(',')
-						.map((t) => t.trim().toLowerCase())
-						.filter(Boolean)
-				: undefined;
+			// Casing is kept: the registry creates unknown technologies under the name it receives
+			const explicitTechnologies = (opts.techno ?? '')
+				.split(',')
+				.map((t) => t.trim())
+				.filter(Boolean);
 			if (opts.layer && !BLUEPRINT_LAYERS.includes(opts.layer as never)) {
 				console.error(
 					chalk.red(
@@ -136,14 +132,33 @@ export function registerSyncCommand(program: Command) {
 			let created = 0;
 			let updated = 0;
 			let failed = 0;
+			const fallbackLayer = (opts.layer ?? 'domain') as BlueprintLayer;
+			const unclassified: string[] = [];
 
 			for (const row of rows) {
 				const label = `${row.name} (${chalk.gray(row.id)})`;
 				try {
-					const excerpt = readExcerpt(row);
+					const { path, line } = splitLocation(row.location);
+					const exemplar = readExemplar(path);
+					const excerpt =
+						exemplar === undefined || line === undefined
+							? undefined
+							: extractExcerpt(exemplar, line, path);
 					const content = buildBlueprintContent(row, excerpt);
 					const source = buildSource(opts.repo, row.location);
-					const layer = (opts.layer ?? inferLayer(row.globs)) as BlueprintLayer;
+
+					const inferredLayer = inferLayer(path, row.globs);
+					const layer = inferredLayer ?? fallbackLayer;
+					if (!inferredLayer) unclassified.push(row.id);
+
+					// An unreadable exemplar detects nothing: leave the blueprint's technologies
+					// untouched rather than replacing them with the explicit ones only
+					const technologies =
+						exemplar === undefined
+							? explicitTechnologies.length > 0
+								? explicitTechnologies
+								: undefined
+							: mergeTechnologies(detectTechnologies(path, exemplar), explicitTechnologies);
 
 					const existing = await fetchExistingBySlug(client, row.id, opts.project);
 
@@ -163,9 +178,10 @@ export function registerSyncCommand(program: Command) {
 
 					if (opts.dryRun) {
 						const action = existing ? 'update' : 'create';
+						const layerNote = inferredLayer ? layer : `${layer} (fallback)`;
 						console.log(
 							chalk.gray(
-								`  [dry-run] would ${action}: ${label} — layer: ${layer}, source: ${source}`,
+								`  [dry-run] would ${action}: ${label} — layer: ${layerNote}, technologies: ${technologies?.join(', ') || '-'}, source: ${source}`,
 							),
 						);
 						continue;
@@ -221,6 +237,13 @@ export function registerSyncCommand(program: Command) {
 				}
 			}
 
+			if (unclassified.length > 0) {
+				console.log(
+					chalk.yellow(
+						`\n⚠ ${unclassified.length} blueprint(s) matched no layer convention and were filed under "${fallbackLayer}": ${unclassified.join(', ')}`,
+					),
+				);
+			}
 			console.log(
 				`\n${chalk.bold('Summary:')} ${chalk.green(`${created} created`)}, ${chalk.blue(`${updated} updated`)}, ${failed ? chalk.red(`${failed} failed`) : '0 failed'}`,
 			);
