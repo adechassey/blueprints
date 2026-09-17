@@ -15,6 +15,7 @@ import {
 import { logger } from '../lib/logger.js';
 import { cosineSimilarityToScore } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
+import { technologiesOfMany } from './technologies.js';
 
 interface SearchFilters {
 	technologies?: string[];
@@ -65,7 +66,18 @@ export async function semanticSearch(db: DB, query: string, filters: SearchFilte
 		offset,
 	};
 
-	return searchIndex(db, queryEmbedding, query, resolved);
+	const result = await searchIndex(db, queryEmbedding, query, resolved);
+	const technologiesByBlueprint = await technologiesOfMany(
+		db,
+		result.items.map((item) => item.id),
+	);
+	return {
+		...result,
+		items: result.items.map((item) => ({
+			...item,
+			technologies: technologiesByBlueprint.get(item.id) ?? [],
+		})),
+	};
 }
 
 async function searchIndex(
