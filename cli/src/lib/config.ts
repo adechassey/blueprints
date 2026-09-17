@@ -8,6 +8,10 @@ interface Config {
 }
 
 export function getConfig(): Config {
+	// Env override to target a local/dev server without touching the saved config
+	const envServer = process.env.BLUEPRINTS_SERVER_URL;
+	if (envServer) return { server: envServer };
+
 	const configPath = getConfigPath();
 	if (!existsSync(configPath)) {
 		return { server: getDefaultServerUrl() };

@@ -9,6 +9,7 @@ import { registerProjectsCommand } from './commands/projects.js';
 import { registerPullCommand } from './commands/pull.js';
 import { registerPushCommand } from './commands/push.js';
 import { registerSearchCommand } from './commands/search.js';
+import { registerStackCommand } from './commands/stack.js';
 import { registerSyncCommand } from './commands/sync.js';
 import { registerUpdateCommand } from './commands/update.js';
 import { printUpdateNotice, startUpdateCheck } from './lib/update.js';
@@ -40,6 +41,7 @@ registerListCommand(program);
 registerInfoCommand(program);
 registerIndexCommand(program);
 registerProjectsCommand(program);
+registerStackCommand(program);
 registerUpdateCommand(program);
 
 program.parseAsync().catch((err: unknown) => {
