@@ -22,7 +22,7 @@ theodo-blueprints sync --repo owner/repo --project my-project --dry-run
 # 3. Publish the catalog (re-run any time: blueprints update in place)
 theodo-blueprints sync --repo owner/repo --project my-project
 
-# Optional: --stack <stack> (default: server), --layer <layer> fallback`;
+# Optional: --techno <slugs> to attach technologies, --layer <layer> fallback`;
 
 const COMMANDS = [
 	{
@@ -33,7 +33,12 @@ const COMMANDS = [
 	{
 		name: 'list',
 		description: m.cli_cmd_list,
-		code: 'theodo-blueprints list --stack nestjs --tag hooks',
+		code: 'theodo-blueprints list --techno react,hono --layer api',
+	},
+	{
+		name: 'stack',
+		description: m.cli_cmd_stack,
+		code: 'theodo-blueprints stack list\ntheodo-blueprints stack scaffold <stack> ./blueprints',
 	},
 	{
 		name: 'pull',

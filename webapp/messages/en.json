@@ -154,7 +154,7 @@
 	"cli_usage_description": "Each command with a copy-ready example.",
 	"cli_usage_help": "Every flag is documented in",
 	"cli_cmd_search": "Search blueprints with natural language",
-	"cli_cmd_list": "List blueprints, optionally filtered by stack or tag",
+	"cli_cmd_list": "List blueprints, optionally filtered by technology, layer or tag",
 	"cli_cmd_pull": "Download a blueprint to a local markdown file",
 	"cli_cmd_push": "Publish a blueprint markdown file, optionally under a project",
 	"cli_cmd_sync": "Publish a whole @Blueprint catalog from its TSV index (see below)",
@@ -219,5 +219,6 @@
 	"nav_technologies": "Technologies",
 	"technologies_title": "Technologies",
 	"technologies_intro": "The technology catalog, by category. Pick one to list the blueprints that use it.",
-	"technologies_empty": "No technologies yet"
+	"technologies_empty": "No technologies yet",
+	"cli_cmd_stack": "List stacks, or scaffold every blueprint of a stack into a directory, grouped by layer"
 }
