@@ -174,6 +174,16 @@ describe('scanLine', () => {
 		expect(scanLine('\'{\' + f("(")', state).depth).toBe(0);
 	});
 
+	it('reads # as a private member in JS, not as a comment', () => {
+		const js: ScanState = { inStr: null, inBlock: false, js: true };
+		expect(scanLine('this.#handlers.set(key, () => { // #1 {', js)).toEqual({
+			depth: 2,
+			code: 'this.#handlers.set(key, () => { ',
+		});
+		const py: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('run( # { note', py).depth).toBe(1);
+	});
+
 	it('closes a JS quote literal left open at the end of its line', () => {
 		const state: ScanState = { inStr: null, inBlock: false, js: true };
 		expect(scanLine("<p>'90s {", state).depth).toBe(0);

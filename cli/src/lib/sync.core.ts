@@ -83,9 +83,10 @@ export interface ScanState {
 	/** True while inside a `/* ... *\/` block comment. */
 	inBlock: boolean;
 	/**
-	 * JS/TS lexical rules for `'` and `"`: a literal never starts right after an
-	 * identifier character (that quote is JSX text: `<p>l'utilisateur</p>`) and
-	 * never spans lines, so a literal still open at the line end is closed.
+	 * JS/TS lexical rules: `#` starts a private member (`this.#cache`), not a
+	 * comment; a `'`/`"` literal never starts right after an identifier
+	 * character (that quote is JSX text: `<p>l'utilisateur</p>`) and never spans
+	 * lines, so a literal still open at the line end is closed.
 	 */
 	js?: boolean;
 }
@@ -106,10 +107,10 @@ export interface LineScan {
 /**
  * Scans one line: its bracket depth delta and its code without comments.
  * Skips string literals (single, double, template — escaped chars and
- * multi-line template spans via `state`), line comments (`//`, `#` for
- * Python/Ruby/Shell) and block comments. Braces inside template expressions
+ * multi-line template spans via `state`), line comments (`//`, `#` outside
+ * JS/TS) and block comments. Braces inside template expressions
  * (`${...}`) are ignored with the rest of the literal. See `ScanState.js` for
- * the JS/TS quote rules.
+ * the JS/TS rules.
  */
 export function scanLine(line: string, state: ScanState): LineScan {
 	let depth = 0;
@@ -135,7 +136,7 @@ export function scanLine(line: string, state: ScanState): LineScan {
 			i++;
 			continue;
 		}
-		if ((ch === '/' && line[i + 1] === '/') || ch === '#') break;
+		if ((ch === '/' && line[i + 1] === '/') || (ch === '#' && !state.js)) break;
 		if (ch === '/' && line[i + 1] === '*') {
 			state.inBlock = true;
 			i += 2;
@@ -192,7 +193,7 @@ export interface Excerpt {
  * aware) and no continuation carries it onto the next line (trailing `=`,
  * `=>` or operator; next line starting with `.`, `|`, `?`, `:`, `as`…).
  * A statement ending with `:` (Python) takes the block indented deeper than
- * the statement. `path` selects the JS/TS quote rules (see `ScanState.js`).
+ * the statement. `path` selects the JS/TS lexical rules (see `ScanState.js`).
  * Returns undefined when the line number is out of bounds, and truncates at
  * `MAX_EXCERPT_LINES` lines.
  */
