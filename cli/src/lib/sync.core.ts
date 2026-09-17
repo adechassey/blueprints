@@ -71,24 +71,116 @@ export function inferLayer(globs: string, fallback = 'pattern'): string {
 const COMMENT_LINE_RE = /^\s*(\/\/|\/\*|\*|#)/;
 
 /**
+ * Maximum number of lines in an extracted excerpt (annotation block + body).
+ * A safety net for pathological inputs: the excerpt is truncated rather than
+ * dumping an entire file into a blueprint.
+ */
+export const MAX_EXCERPT_LINES = 150;
+
+export interface ScanState {
+	/** Open quote character (`'`, `"` or `` ` ``) while inside a string literal. */
+	inStr: string | null;
+	/** True while inside a `/* ... *\/` block comment. */
+	inBlock: boolean;
+}
+
+/**
+ * Bracket depth delta of one line, skipping string literals (single, double,
+ * template — escaped chars and multi-line template spans via `state`), line
+ * comments (`//`, `#` for Python/Ruby/Shell) and block comments. Braces inside
+ * template expressions (`${...}`) are ignored with the rest of the literal.
+ */
+export function scanLine(line: string, state: ScanState): number {
+	let depth = 0;
+	let i = 0;
+	while (i < line.length) {
+		if (state.inBlock) {
+			const end = line.indexOf('*/', i);
+			if (end === -1) return depth;
+			i = end + 2;
+			state.inBlock = false;
+			continue;
+		}
+		const ch = line[i] as string;
+		if (state.inStr) {
+			if (ch === '\\') {
+				i += 2;
+				continue;
+			}
+			if (ch === state.inStr) state.inStr = null;
+			i++;
+			continue;
+		}
+		if (ch === '/' && line[i + 1] === '/') return depth;
+		if (ch === '/' && line[i + 1] === '*') {
+			state.inBlock = true;
+			i += 2;
+			continue;
+		}
+		if (ch === '#') return depth;
+		if (ch === "'" || ch === '"' || ch === '`') {
+			state.inStr = ch;
+			i++;
+			continue;
+		}
+		if (ch === '{' || ch === '(' || ch === '[') depth++;
+		else if (ch === '}' || ch === ')' || ch === ']') depth--;
+		i++;
+	}
+	return depth;
+}
+
+/**
  * Extracts the exemplar excerpt: the annotation comment block starting at
- * `line`, plus the declaration line that follows it. Returns undefined when
- * the line number is out of bounds.
+ * `line`, plus the full declaration body that follows it — the body is
+ * bracket-balanced (braces/parens/brackets opened by the declaration must
+ * close before the excerpt ends), string/comment aware. Python-style
+ * indentation blocks (declaration ending with `:`) are followed by indent
+ * level instead. Returns undefined when the line number is out of bounds,
+ * and truncates at `MAX_EXCERPT_LINES` lines.
  */
 export function extractExcerpt(content: string, line: number): string | undefined {
 	const lines = content.split('\n');
 	const start = line - 1;
 	if (!Number.isInteger(line) || line < 1 || start >= lines.length) return undefined;
 
-	let end = start;
-	for (let i = start; i < lines.length; i++) {
-		if (i > start && !COMMENT_LINE_RE.test(lines[i] as string)) {
-			end = i; // first line after the comment block: the declaration
-			break;
-		}
-		end = i;
+	// 1) The annotation comment block: every line up to the first code line.
+	let declIndex = start;
+	while (declIndex + 1 < lines.length && COMMENT_LINE_RE.test(lines[declIndex + 1] as string)) {
+		declIndex++;
 	}
-	return lines.slice(start, end + 1).join('\n');
+
+	// 2) The declaration body. Comments at EOF (no declaration) end the excerpt.
+	let last = declIndex;
+	const decl = lines[declIndex + 1];
+	if (decl !== undefined) {
+		last = declIndex + 1;
+		const state: ScanState = { inStr: null, inBlock: false };
+		let depth = scanLine(decl, state);
+		const cap = start + MAX_EXCERPT_LINES;
+		if (depth > 0) {
+			// Braced body (TS/Java/Go/Rust/C/…): consume until brackets close.
+			for (let i = declIndex + 2; i < lines.length && i < cap; i++) {
+				last = i;
+				const d = scanLine(lines[i] as string, state);
+				if (depth + d <= 0) break;
+				depth += d;
+			}
+		} else if (/:\s*$/.test(decl)) {
+			// Indentation body (Python): consume lines indented deeper than the
+			// declaration.
+			const indent = decl.length - decl.trimStart().length;
+			for (let i = declIndex + 2; i < lines.length && i < cap; i++) {
+				const l = lines[i] as string;
+				if (l.trim() === '') continue;
+				if (l.length - l.trimStart().length <= indent) break;
+				last = i;
+			}
+		}
+	}
+
+	// Clamp the excerpt to the cap (a long annotation block can overflow it), then join.
+	return lines.slice(start, Math.min(last, start + MAX_EXCERPT_LINES - 1) + 1).join('\n');
 }
 
 const EXTENSION_TO_LANG: Record<string, string> = {

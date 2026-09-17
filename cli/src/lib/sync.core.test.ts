@@ -5,7 +5,10 @@ import {
 	extractExcerpt,
 	foreignProjects,
 	inferLayer,
+	MAX_EXCERPT_LINES,
 	parseIndexTsv,
+	type ScanState,
+	scanLine,
 	splitLocation,
 } from './sync.core.js';
 
@@ -98,6 +101,62 @@ describe('inferLayer', () => {
 	});
 });
 
+describe('scanLine', () => {
+	it('counts positive and negative bracket deltas', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('foo({ [', state)).toBe(3);
+		expect(scanLine('}) ]', state)).toBe(-3);
+	});
+
+	it('ignores brackets inside string literals', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('const s = "a{b(c[d";', state)).toBe(0);
+		expect(state.inStr).toBeNull();
+	});
+
+	it('ignores escaped quotes inside strings', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('const s = "a\\"; b";', state)).toBe(0);
+		expect(state.inStr).toBeNull();
+	});
+
+	it('carries an open string across lines', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('const s = "open', state)).toBe(0);
+		expect(state.inStr).toBe('"');
+		expect(scanLine('} close";', state)).toBe(0);
+		expect(state.inStr).toBeNull();
+	});
+
+	it('ignores brackets inside template literals spanning lines', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('const s = `a{', state)).toBe(0);
+		expect(state.inStr).toBe('`');
+		expect(scanLine('b} c`;', state)).toBe(0);
+	});
+
+	it('ignores brackets in line comments (// and #)', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('foo({ // { [ open', state)).toBe(2);
+		expect(scanLine('foo( # { [ open', state)).toBe(1);
+	});
+
+	it('ignores brackets inside block comments, within and across lines', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('foo({ /* { [ open', state)).toBe(2);
+		expect(state.inBlock).toBe(true);
+		expect(scanLine('still comment {', state)).toBe(0);
+		expect(scanLine('comment ends */ {', state)).toBe(1);
+		expect(state.inBlock).toBe(false);
+	});
+
+	it('handles a complete block comment within one line', () => {
+		const state: ScanState = { inStr: null, inBlock: false };
+		expect(scanLine('a /* { } */ b {', state)).toBe(1);
+		expect(state.inBlock).toBe(false);
+	});
+});
+
 describe('extractExcerpt', () => {
 	const file = [
 		'// @Blueprint controller-create',
@@ -128,6 +187,113 @@ describe('extractExcerpt', () => {
 	it('runs to end of file when only comments remain', () => {
 		const onlyComments = '// @Blueprint a\n// @BlueprintName A';
 		expect(extractExcerpt(onlyComments, 1)).toBe(onlyComments);
+	});
+
+	it('captures the full body of a braced declaration', () => {
+		const src = [
+			'// @Blueprint service-create',
+			'async create(input: CreateArea) {',
+			'\tconst existing = await this.repository.findOne(input.name);',
+			'\tif (existing) {',
+			'\t\tthrow DuplicateAreaName(input.name);',
+			'\t}',
+			'\treturn this.repository.create(input);',
+			'}',
+			'async update() {',
+		].join('\n');
+		expect(extractExcerpt(src, 1)).toBe(
+			[
+				'// @Blueprint service-create',
+				'async create(input: CreateArea) {',
+				'\tconst existing = await this.repository.findOne(input.name);',
+				'\tif (existing) {',
+				'\t\tthrow DuplicateAreaName(input.name);',
+				'\t}',
+				'\treturn this.repository.create(input);',
+				'}',
+			].join('\n'),
+		);
+	});
+
+	it('keeps nested @Blueprint follower annotations inside the body', () => {
+		const src = [
+			'// @Blueprint service-create',
+			'async create() {',
+			'\t// @Blueprint audit-log-emit',
+			'\tthis.audit.emit();',
+			'}',
+		].join('\n');
+		expect(extractExcerpt(src, 1)).toBe(src);
+	});
+
+	it('stops at the first declaration when it closes on the same line', () => {
+		const src = '// @Blueprint a\nfunction f() { return 1; }\nfunction g() { return 2; }';
+		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a\nfunction f() { return 1; }');
+	});
+
+	it('ignores brackets inside strings and comments of the body', () => {
+		const src = [
+			'// @Blueprint a',
+			'function f() {',
+			'\tconst s = "unbalanced { [ (";',
+			'\t// comment } close',
+			'\treturn 1;',
+			'}',
+			'function g() {}',
+		].join('\n');
+		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 6).join('\n'));
+	});
+
+	it('handles multi-line template literals in the body', () => {
+		const src = [
+			'// @Blueprint a',
+			'function f() {',
+			'\tconst s = `line1 {',
+			'\tline2 }`;',
+			'\treturn 1;',
+			'}',
+		].join('\n');
+		expect(extractExcerpt(src, 1)).toBe(src);
+	});
+
+	it('follows Python indentation blocks', () => {
+		const src = [
+			'# @Blueprint user-repository',
+			'class UserRepository:',
+			'    def create(self, dto):',
+			'        existing = self.repo.find_one(dto.name)',
+			'        return self.repo.create(dto)',
+			'def helper(): ...',
+		].join('\n');
+		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 5).join('\n'));
+	});
+
+	it('trims trailing blank lines of an indented body', () => {
+		const src = ['# @Blueprint a', 'def f():', '    return 1', '', '', 'def g(): ...'].join('\n');
+		expect(extractExcerpt(src, 1)).toBe('# @Blueprint a\ndef f():\n    return 1');
+	});
+
+	it('runs the indented body to end of file', () => {
+		const src = '# @Blueprint a\ndef f():\n    return 1\n\n';
+		expect(extractExcerpt(src, 1)).toBe('# @Blueprint a\ndef f():\n    return 1');
+	});
+
+	it('truncates at MAX_EXCERPT_LINES when the body never closes', () => {
+		const body = Array.from({ length: 300 }, (_, i) => `\tif (${i}) {`).join('\n');
+		const src = `// @Blueprint a\nfunction f() {\n${body}`;
+		const excerpt = (extractExcerpt(src, 1) ?? '').split('\n');
+		expect(excerpt).toHaveLength(MAX_EXCERPT_LINES);
+	});
+
+	it('truncates a long annotation block at MAX_EXCERPT_LINES', () => {
+		const comments = Array.from({ length: 300 }, (_, i) => `// line ${i}`).join('\n');
+		const excerpt = extractExcerpt(`${comments}\nexport const x;`, 1) ?? '';
+		expect(excerpt.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+	});
+
+	it('returns only the annotation when it sits on the last line', () => {
+		const src = '// @Blueprint a';
+		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a');
 	});
 });
 
