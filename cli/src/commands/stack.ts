@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import chalk from 'chalk';
 import type { Command } from 'commander';
 import { createApiClient, unwrapResponse } from '../lib/api.js';
-import { buildScaffoldFiles } from '../lib/scaffold.core.js';
+import { buildScaffoldFiles, findSlugCollisions } from '../lib/scaffold.core.js';
 
 interface StackSummary {
 	id: string;
@@ -24,6 +24,7 @@ interface StackBlueprintsResponse {
 			layer: string;
 			description: string | null;
 			technologies: string[];
+			projects?: string[];
 			content: string;
 		}[];
 	}[];
@@ -129,6 +130,18 @@ export function registerStackCommand(program: Command) {
 					console.log(
 						`  ${chalk.cyan(group.layer.padEnd(10))} ${chalk.gray(`${group.blueprints.length} blueprint(s)`)}`,
 					);
+				}
+				const collisions = findSlugCollisions(blueprints);
+				if (collisions.length > 0) {
+					console.log(
+						chalk.yellow(
+							`\n⚠ ${collisions.length} pattern(s) published by several projects, one file per project:`,
+						),
+					);
+					for (const c of collisions) {
+						console.log(chalk.yellow(`  ${c.layer}/${c.slug}: ${c.namespaces.join(', ')}`));
+					}
+					console.log(chalk.gray('  Candidates for a single canonical blueprint.'));
 				}
 				console.log(chalk.gray(`\n  ${dir}/index.md — start here`));
 				console.log(chalk.gray(`  ${dir}/stack.json — manifest of the scaffold run`));

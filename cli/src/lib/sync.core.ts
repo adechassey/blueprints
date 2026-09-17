@@ -42,32 +42,6 @@ export function splitLocation(location: string): { path: string; line: number | 
 	return { path, line: Number.isInteger(line) && line > 0 ? line : undefined };
 }
 
-const LAYER_GLOB_PATTERNS: Array<[RegExp, string]> = [
-	[/\.controller\./, 'api'],
-	[/\.service\./, 'domain'],
-	[/\.repository\./, 'database'],
-	[/\.middleware\./, 'api'],
-	[/\.guard\./, 'api'],
-	[/\.hook\./, 'ui'],
-	[/[\\/]hooks[\\/]/, 'ui'],
-];
-
-/**
- * Infers the architecture layer from the row's globs: the first positive glob's
- * filename convention (e.g. `*.controller.ts`) or its extension (`.tsx` →
- * component). Falls back when globs are absent or unrecognized.
- */
-export function inferLayer(globs: string, fallback = 'domain'): string {
-	// biome-ignore lint/style/noNonNullAssertion: split always returns at least one element
-	const firstGlob = globs.split(',')[0]!.trim().replace(/^!/, '');
-	if (!firstGlob) return fallback;
-	for (const [pattern, layer] of LAYER_GLOB_PATTERNS) {
-		if (pattern.test(firstGlob)) return layer;
-	}
-	if (/\.(tsx|jsx)$/.test(firstGlob)) return 'ui';
-	return fallback;
-}
-
 const COMMENT_LINE_RE = /^\s*(\/\/|\/\*|\*|#)/;
 
 /**

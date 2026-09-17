@@ -1,9 +1,11 @@
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
+	blueprintProjects,
 	blueprints,
 	blueprintTechnologies,
 	blueprintVersions,
+	projects,
 	stacks,
 	stackTechnologies,
 	technologies,
@@ -11,35 +13,16 @@ import {
 import type { CreateStackInput, UpdateStackInput } from '../lib/validation.js';
 import { generateSlug } from './blueprints.core.js';
 import { groupBlueprintsByLayer, type StackBlueprint } from './stacks.core.js';
+import { resolveTechnologies } from './technologies.js';
 
-/** Thrown when a stack slug is already taken (HTTP 409). */
-class StackSlugConflictError extends Error {
+/** Thrown when a stack slug or name is already taken (HTTP 409). */
+class StackConflictError extends Error {
 	readonly status = 409;
 
-	constructor(slug: string) {
-		super(`Stack slug "${slug}" already exists`);
-		this.name = 'StackSlugConflictError';
+	constructor(field: 'slug' | 'name', value: string) {
+		super(`Stack ${field} "${value}" already exists`);
+		this.name = 'StackConflictError';
 	}
-}
-
-async function upsertStackTechnologies(db: DB, names: string[]) {
-	const result = [];
-	for (const name of names) {
-		const slug = generateSlug(name);
-		const [existing] = await db
-			.select()
-			.from(technologies)
-			.where(eq(technologies.slug, slug))
-			.limit(1);
-		if (existing) {
-			result.push(existing);
-		} else {
-			const [created] = await db.insert(technologies).values({ name, slug }).returning();
-			if (!created) throw new Error('Insert technology failed');
-			result.push(created);
-		}
-	}
-	return result;
 }
 
 async function technologiesOfStack(db: DB, stackId: string) {
@@ -77,8 +60,18 @@ export async function getStack(db: DB, id: string) {
 
 export async function createStack(db: DB, input: CreateStackInput, userId: string) {
 	const slug = input.slug ?? generateSlug(input.name);
-	const [existing] = await db.select().from(stacks).where(eq(stacks.slug, slug)).limit(1);
-	if (existing) throw new StackSlugConflictError(slug);
+	const [existing] = await db
+		.select({ slug: stacks.slug })
+		.from(stacks)
+		.where(or(eq(stacks.slug, slug), eq(stacks.name, input.name)))
+		.limit(1);
+	if (existing) {
+		throw existing.slug === slug
+			? new StackConflictError('slug', slug)
+			: new StackConflictError('name', input.name);
+	}
+	// Resolved before any write: an invalid reference must not leave an orphan stack
+	const techs = await resolveTechnologies(db, input.technologies);
 
 	const [stack] = await db
 		.insert(stacks)
@@ -91,13 +84,14 @@ export async function createStack(db: DB, input: CreateStackInput, userId: strin
 		.returning();
 	if (!stack) throw new Error('Insert stack failed');
 
-	const techs = await upsertStackTechnologies(db, input.technologies);
-	await db.insert(stackTechnologies).values(
-		techs.map((t) => ({
-			stackId: stack.id,
-			technologyId: t.id,
-		})),
-	);
+	if (techs.length > 0) {
+		await db.insert(stackTechnologies).values(
+			techs.map((t) => ({
+				stackId: stack.id,
+				technologyId: t.id,
+			})),
+		);
+	}
 
 	return { ...stack, technologies: techs.map((t) => ({ name: t.name, slug: t.slug, id: t.id })) };
 }
@@ -106,6 +100,18 @@ export async function updateStack(db: DB, id: string, input: UpdateStackInput) {
 	const existing = await findStack(db, id);
 	if (!existing) return null;
 
+	if (input.name !== undefined && input.name !== existing.name) {
+		const [taken] = await db
+			.select({ id: stacks.id })
+			.from(stacks)
+			.where(and(eq(stacks.name, input.name), ne(stacks.id, existing.id)))
+			.limit(1);
+		if (taken) throw new StackConflictError('name', input.name);
+	}
+	// Resolved before unlinking: a failure must not strip the stack of its technologies
+	const techs =
+		input.technologies === undefined ? null : await resolveTechnologies(db, input.technologies);
+
 	const metadataUpdate: Record<string, unknown> = {};
 	if (input.name !== undefined) metadataUpdate.name = input.name;
 	if (input.description !== undefined) metadataUpdate.description = input.description;
@@ -113,15 +119,16 @@ export async function updateStack(db: DB, id: string, input: UpdateStackInput) {
 		await db.update(stacks).set(metadataUpdate).where(eq(stacks.id, existing.id));
 	}
 
-	if (input.technologies !== undefined) {
+	if (techs) {
 		await db.delete(stackTechnologies).where(eq(stackTechnologies.stackId, existing.id));
-		const techs = await upsertStackTechnologies(db, input.technologies);
-		await db.insert(stackTechnologies).values(
-			techs.map((t) => ({
-				stackId: existing.id,
-				technologyId: t.id,
-			})),
-		);
+		if (techs.length > 0) {
+			await db.insert(stackTechnologies).values(
+				techs.map((t) => ({
+					stackId: existing.id,
+					technologyId: t.id,
+				})),
+			);
+		}
 	}
 
 	return getStack(db, existing.id);
@@ -186,6 +193,25 @@ async function getStackBlueprints(db: DB, stackId: string): Promise<StackBluepri
 		techsByBlueprint.set(row.blueprintId, list);
 	}
 
+	const projectRows = rows.length
+		? await db
+				.select({ blueprintId: blueprintProjects.blueprintId, slug: projects.slug })
+				.from(blueprintProjects)
+				.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
+				.where(
+					inArray(
+						blueprintProjects.blueprintId,
+						rows.map((r) => r.id),
+					),
+				)
+		: [];
+	const projectsByBlueprint = new Map<string, string[]>();
+	for (const row of projectRows) {
+		const list = projectsByBlueprint.get(row.blueprintId) ?? [];
+		list.push(row.slug);
+		projectsByBlueprint.set(row.blueprintId, list);
+	}
+
 	return rows
 		.map((r) => ({
 			slug: r.slug,
@@ -193,6 +219,7 @@ async function getStackBlueprints(db: DB, stackId: string): Promise<StackBluepri
 			layer: r.layer,
 			description: r.description,
 			technologies: techsByBlueprint.get(r.id) ?? [],
+			projects: projectsByBlueprint.get(r.id) ?? [],
 			content: r.content,
 		}))
 		.sort((a, b) => a.name.localeCompare(b.name));

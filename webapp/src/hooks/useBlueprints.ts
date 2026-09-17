@@ -14,9 +14,13 @@ interface BlueprintListFilters {
 	authorId?: string;
 }
 
-export function useBlueprints(filters: BlueprintListFilters = {}) {
+export function useBlueprints(
+	filters: BlueprintListFilters = {},
+	{ enabled = true }: { enabled?: boolean } = {},
+) {
 	return useQuery({
 		queryKey: ['blueprints', filters],
+		enabled,
 		queryFn: async () => {
 			const query: Record<string, string> = {};
 			for (const [key, value] of Object.entries(filters)) {

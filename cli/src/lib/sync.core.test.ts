@@ -4,7 +4,6 @@ import {
 	buildSource,
 	extractExcerpt,
 	foreignProjects,
-	inferLayer,
 	MAX_EXCERPT_LINES,
 	parseIndexTsv,
 	type ScanState,
@@ -69,35 +68,6 @@ describe('splitLocation', () => {
 
 	it('keeps path intact when it contains colons beyond the last one', () => {
 		expect(splitLocation('a:b.ts:7')).toEqual({ path: 'a:b.ts', line: 7 });
-	});
-});
-
-describe('inferLayer', () => {
-	it.each([
-		['src/**/*.controller.ts', 'api'],
-		['src/**/*.service.ts', 'domain'],
-		['src/**/*.repository.ts', 'database'],
-		['src/**/*.middleware.ts', 'api'],
-		['src/**/*.guard.ts', 'api'],
-		['src/**/*.hook.ts', 'ui'],
-		['src/hooks/useAuth.ts', 'ui'],
-		['src/**/*.tsx', 'ui'],
-		['src/**/*.jsx', 'ui'],
-	])('infers layer from glob %s', (glob, expected) => {
-		expect(inferLayer(glob)).toBe(expected);
-	});
-
-	it('uses only the first glob when several are declared', () => {
-		expect(inferLayer('src/**/*.service.ts, src/**/*.controller.ts')).toBe('domain');
-	});
-
-	it('ignores a leading exclusion glob and falls back', () => {
-		expect(inferLayer('!**/*.test.ts, src/**/*.unknown.ts', 'fallback')).toBe('fallback');
-	});
-
-	it('returns the fallback when globs are empty', () => {
-		expect(inferLayer('')).toBe('domain');
-		expect(inferLayer('', 'unknown')).toBe('unknown');
 	});
 });
 

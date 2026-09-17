@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { Blocks, Download } from 'lucide-react';
+import { LayerBadge } from './LayerBadge.js';
 import { Badge } from './ui/badge.js';
 
 interface Blueprint {
@@ -42,7 +43,7 @@ function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 				</p>
 			)}
 			<div className="flex flex-wrap items-center gap-1.5">
-				<Badge variant={(blueprint.layer as never) || 'default'}>{blueprint.layer}</Badge>
+				<LayerBadge layer={blueprint.layer} />
 				{blueprint.technologies?.map((t) => (
 					<Badge key={t.slug} variant="secondary">
 						{t.name}
@@ -79,5 +80,40 @@ export function BlueprintList({ blueprints }: { blueprints: Blueprint[] }) {
 				<BlueprintCard key={b.id} blueprint={b} />
 			))}
 		</div>
+	);
+}
+
+/** Dense one-row-per-blueprint list, for listings already grouped by layer. */
+export function CompactBlueprintList({ blueprints }: { blueprints: Blueprint[] }) {
+	return (
+		<ul className="divide-y divide-outline-variant/50 overflow-hidden rounded-xl border border-outline-variant/70 bg-surface-container-lowest shadow-rest">
+			{blueprints.map((b) => (
+				<li key={b.id}>
+					<Link
+						to="/blueprints/$blueprintId"
+						params={{ blueprintId: b.id }}
+						className="group flex flex-col gap-2 px-4 py-3 no-underline transition-colors hover:bg-surface-container-low sm:flex-row sm:items-center sm:gap-6"
+					>
+						<div className="min-w-0 flex-1">
+							<p className="truncate text-sm font-semibold text-on-surface transition-colors group-hover:text-primary">
+								{b.name}
+							</p>
+							{b.description && (
+								<p className="truncate text-sm text-on-surface-variant">{b.description}</p>
+							)}
+						</div>
+						{!!b.technologies?.length && (
+							<div className="flex shrink-0 flex-wrap gap-1.5 sm:justify-end">
+								{b.technologies.map((t) => (
+									<Badge key={t.slug} variant="secondary">
+										{t.name}
+									</Badge>
+								))}
+							</div>
+						)}
+					</Link>
+				</li>
+			))}
+		</ul>
 	);
 }

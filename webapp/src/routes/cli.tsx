@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Check, Copy, ExternalLink, Terminal } from 'lucide-react';
-import { useState } from 'react';
+import { ExternalLink, Terminal } from 'lucide-react';
+import { CopyButton } from '../components/CopyButton.js';
 import { Badge } from '../components/ui/badge.js';
 import { Button } from '../components/ui/button.js';
 import { Card, CardContent } from '../components/ui/card.js';
@@ -22,7 +22,8 @@ theodo-blueprints sync --repo owner/repo --project my-project --dry-run
 # 3. Publish the catalog (re-run any time: blueprints update in place)
 theodo-blueprints sync --repo owner/repo --project my-project
 
-# Optional: --stack <stack> (default: server), --layer <layer> fallback`;
+# Layers and technologies are inferred from each exemplar file
+# Optional: --techno <names> adds technologies, --layer <layer> sets the fallback layer`;
 
 const COMMANDS = [
 	{
@@ -33,7 +34,12 @@ const COMMANDS = [
 	{
 		name: 'list',
 		description: m.cli_cmd_list,
-		code: 'theodo-blueprints list --stack nestjs --tag hooks',
+		code: 'theodo-blueprints list --techno react,hono --layer api',
+	},
+	{
+		name: 'stack',
+		description: m.cli_cmd_stack,
+		code: 'theodo-blueprints stack list\ntheodo-blueprints stack scaffold <stack> ./blueprints',
 	},
 	{
 		name: 'pull',
@@ -61,29 +67,6 @@ const COMMANDS = [
 		code: 'theodo-blueprints update',
 	},
 ];
-
-function CopyButton({ code }: { code: string }) {
-	const [copied, setCopied] = useState(false);
-
-	const handleCopy = async () => {
-		await navigator.clipboard.writeText(code);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
-	};
-
-	return (
-		<Button
-			variant="ghost"
-			size="sm"
-			onClick={handleCopy}
-			aria-live="polite"
-			className="h-7 shrink-0 gap-1.5 px-2 text-on-surface-variant text-xs"
-		>
-			{copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
-			{copied ? m.cli_copied() : m.cli_copy()}
-		</Button>
-	);
-}
 
 /** Splits a snippet into lines with stable keys (content + occurrence, not index). */
 function keyedLines(code: string): { key: string; line: string }[] {

@@ -15,6 +15,7 @@ import {
 import { logger } from '../lib/logger.js';
 import { cosineSimilarityToScore } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
+import { technologiesOfMany } from './technologies.js';
 
 interface SearchFilters {
 	technologies?: string[];
@@ -65,14 +66,43 @@ export async function semanticSearch(db: DB, query: string, filters: SearchFilte
 		offset,
 	};
 
-	if (queryEmbedding) {
-		const vector = await vectorSearch(db, queryEmbedding, query, resolved);
-		// Blueprints without embeddings (e.g. a failed embedding job) are invisible
-		// to the vector index: fall back to text search rather than returning an
-		// empty page for a query the text index can answer.
-		if (vector.items.length > 0) return vector;
+	const result = await searchIndex(db, queryEmbedding, query, resolved);
+	const technologiesByBlueprint = await technologiesOfMany(
+		db,
+		result.items.map((item) => item.id),
+	);
+	return {
+		...result,
+		items: result.items.map((item) => ({
+			...item,
+			technologies: technologiesByBlueprint.get(item.id) ?? [],
+		})),
+	};
+}
+
+async function searchIndex(
+	db: DB,
+	queryEmbedding: number[] | null,
+	query: string,
+	filters: ResolvedFilters,
+) {
+	if (!queryEmbedding) return textSearch(db, query, filters);
+
+	const vector = await vectorSearch(db, queryEmbedding, query, filters);
+	if (vector.items.length > 0) return vector;
+	// Past the first page, an empty page is the end of the vector results: stay on
+	// the vector index so a client paging through never switches index mid-way.
+	if (filters.offset > 0) {
+		const first = await vectorSearch(db, queryEmbedding, query, {
+			...filters,
+			offset: 0,
+			limit: 1,
+		});
+		if (first.items.length > 0) return vector;
 	}
-	return textSearch(db, query, resolved);
+	// No embedded blueprint matches at all (e.g. every embedding job failed): the
+	// text index may still answer the query.
+	return textSearch(db, query, filters);
 }
 
 async function vectorSearch(

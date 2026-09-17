@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { LayerBadge } from '../../components/LayerBadge.js';
 import { ProtectedRoute } from '../../components/ProtectedRoute.js';
-import { Badge } from '../../components/ui/badge.js';
 import { Button } from '../../components/ui/button.js';
 import {
 	Dialog,
@@ -54,7 +54,7 @@ function AdminBlueprintsPage() {
 								<div className="space-y-1">
 									<p className="font-semibold text-on-surface">{bp.name}</p>
 									<div className="flex items-center gap-2">
-										<Badge variant={(bp.layer as never) ?? 'default'}>{bp.layer}</Badge>
+										<LayerBadge layer={bp.layer} />
 										<span className="text-sm text-on-surface-variant">{bp.slug}</span>
 										<span className="text-sm text-outline">{bp.authorName || 'Unknown'}</span>
 									</div>

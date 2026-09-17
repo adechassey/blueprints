@@ -44,30 +44,6 @@ interface FrontmatterMeta {
 	source?: string;
 }
 
-/** Curated technology taxonomy, upserted on every seed run. */
-const TECHNOLOGY_CATALOG: Array<{
-	name: string;
-	slug: string;
-	category: 'language' | 'framework' | 'library' | 'database' | 'infra' | 'tooling';
-}> = [
-	{ name: 'TypeScript', slug: 'typescript', category: 'language' },
-	{ name: 'Python', slug: 'python', category: 'language' },
-	{ name: 'Node.js', slug: 'node', category: 'infra' },
-	{ name: 'React', slug: 'react', category: 'framework' },
-	{ name: 'Next.js', slug: 'nextjs', category: 'framework' },
-	{ name: 'Nest.js', slug: 'nestjs', category: 'framework' },
-	{ name: 'Hono', slug: 'hono', category: 'framework' },
-	{ name: 'Vite', slug: 'vite', category: 'tooling' },
-	{ name: 'TanStack Router', slug: 'tanstack-router', category: 'library' },
-	{ name: 'TanStack Query', slug: 'tanstack-query', category: 'library' },
-	{ name: 'Tailwind CSS', slug: 'tailwindcss', category: 'library' },
-	{ name: 'Drizzle ORM', slug: 'drizzle', category: 'database' },
-	{ name: 'Prisma', slug: 'prisma', category: 'database' },
-	{ name: 'PostgreSQL', slug: 'postgresql', category: 'database' },
-	{ name: 'Zod', slug: 'zod', category: 'library' },
-	{ name: 'Docker', slug: 'docker', category: 'infra' },
-];
-
 /** Fallback technologies per legacy `project` frontmatter field. */
 const STACK_TECHNOLOGIES: Record<string, string[]> = {
 	webapp: ['react', 'vite', 'tailwindcss'],
@@ -143,20 +119,8 @@ async function main() {
 		console.log('  ✓ System user exists');
 	}
 
-	// 2. Seed technology taxonomy
-	for (const tech of TECHNOLOGY_CATALOG) {
-		const [existing] = await db
-			.select({ id: technologies.id })
-			.from(technologies)
-			.where(eq(technologies.slug, tech.slug))
-			.limit(1);
-		if (!existing) {
-			await db.insert(technologies).values(tech);
-		}
-	}
-	console.log(`  ✓ Technology catalog seeded (${TECHNOLOGY_CATALOG.length})`);
-
-	// 3. Seed the default stack (preset of technologies used by the scaffold command)
+	// 2. Seed the default stack (preset of technologies used by the scaffold command;
+	// the technology catalog itself comes from migration 0009_technology_catalog)
 	const defaultStackSlug = 'theodo-node-react';
 	const [existingStack] = await db
 		.select({ id: stacks.id })

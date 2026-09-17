@@ -2,6 +2,8 @@ import { useNavigate } from '@tanstack/react-router';
 import { ArrowRight, Blocks, Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useBlueprints } from '../hooks/useBlueprints.js';
+import { toLayer } from '../lib/layers.core.js';
+import { LAYER_META } from '../lib/layers.js';
 import * as m from '../paraglide/messages.js';
 import {
 	Command,
@@ -12,7 +14,12 @@ import {
 	CommandList,
 	CommandSeparator,
 } from './ui/command.js';
-import { Dialog } from './ui/dialog.js';
+import { Dialog, DialogTitle } from './ui/dialog.js';
+
+function layerLabel(layer: string) {
+	const known = toLayer(layer);
+	return known ? LAYER_META[known].label() : layer;
+}
 
 export function CommandPalette() {
 	const [open, setOpen] = useState(false);
@@ -57,6 +64,7 @@ export function CommandPalette() {
 
 	return (
 		<Dialog open={open} onClose={() => setOpen(false)} className="max-w-xl space-y-0 p-0">
+			<DialogTitle className="sr-only">{m.search_placeholder()}</DialogTitle>
 			<Command className="w-full max-w-xl" loop>
 				<CommandInput placeholder={m.search_placeholder()} autoFocus />
 				<CommandList>
@@ -72,12 +80,12 @@ export function CommandPalette() {
 						{blueprints.map((b) => (
 							<CommandItem
 								key={b.id}
-								value={`${b.name} ${b.layer} ${(b.technologies ?? []).map((t: { name: string }) => t.name).join(' ')} ${b.description ?? ''}`}
+								value={`${b.name} ${b.layer} ${layerLabel(b.layer)} ${(b.technologies ?? []).map((t: { name: string }) => t.name).join(' ')} ${b.description ?? ''}`}
 								onSelect={() => go('/blueprints/$blueprintId', { blueprintId: b.id })}
 							>
 								<Blocks className="h-4 w-4 text-outline" />
 								<span className="truncate font-medium">{b.name}</span>
-								<span className="ml-auto text-xs text-outline">{b.layer}</span>
+								<span className="ml-auto text-xs text-outline">{layerLabel(b.layer)}</span>
 							</CommandItem>
 						))}
 					</CommandGroup>

@@ -111,6 +111,8 @@ export async function cleanupE2eData(): Promise<void> {
 		`DELETE FROM projects WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
 	);
 	await query(`DELETE FROM users WHERE email LIKE '%@e2e.local'`);
+	// Technologies created on the fly by E2E writes (links cascade)
+	await query(`DELETE FROM technologies WHERE slug LIKE 'e2e-%'`);
 }
 
 interface SeededBlueprint {

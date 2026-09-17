@@ -27,9 +27,10 @@ import {
 } from './blueprints.core.js';
 import { prepareEmbeddingText } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
+import { resolveTechnologies, technologiesOfMany } from './technologies.js';
 
 async function upsertTags(db: DB, tagNames: string[]) {
-	const normalized = tagNames.map(normalizeTagName).filter(Boolean);
+	const normalized = [...new Set(tagNames.map(normalizeTagName).filter(Boolean))];
 	if (normalized.length === 0) return [];
 
 	const result = [];
@@ -42,30 +43,6 @@ async function upsertTags(db: DB, tagNames: string[]) {
 		} else {
 			const [created] = await db.insert(tags).values({ name, slug }).returning();
 			if (!created) throw new Error('Insert tag failed');
-			result.push(created);
-		}
-	}
-	return result;
-}
-
-async function upsertTechnologies(db: DB, technologyNames: string[]) {
-	const normalized = technologyNames.map(normalizeTagName).filter(Boolean);
-	if (normalized.length === 0) return [];
-
-	const result = [];
-	for (const name of normalized) {
-		const slug = generateSlug(name);
-		const existing = await db
-			.select()
-			.from(technologies)
-			.where(eq(technologies.name, name))
-			.limit(1);
-		const first = existing[0];
-		if (first) {
-			result.push(first);
-		} else {
-			const [created] = await db.insert(technologies).values({ name, slug }).returning();
-			if (!created) throw new Error('Insert technology failed');
 			result.push(created);
 		}
 	}
@@ -112,27 +89,6 @@ async function namespaceLabel(db: DB, namespace: SlugNamespace): Promise<string 
 	return p?.slug ?? namespace;
 }
 
-/** Technologies attached to blueprints, keyed by blueprint id. */
-async function technologiesOfMany(db: DB, blueprintIds: string[]) {
-	if (blueprintIds.length === 0) return new Map<string, { name: string; slug: string }[]>();
-	const rows = await db
-		.select({
-			blueprintId: blueprintTechnologies.blueprintId,
-			name: technologies.name,
-			slug: technologies.slug,
-		})
-		.from(blueprintTechnologies)
-		.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
-		.where(inArray(blueprintTechnologies.blueprintId, blueprintIds));
-	const map = new Map<string, { name: string; slug: string }[]>();
-	for (const row of rows) {
-		const list = map.get(row.blueprintId) ?? [];
-		list.push({ name: row.name, slug: row.slug });
-		map.set(row.blueprintId, list);
-	}
-	return map;
-}
-
 function selectIdsBySlugInNamespace(db: DB, slug: string, namespace: SlugNamespace) {
 	if (namespace === null) {
 		const linked = db
@@ -177,6 +133,8 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		taken: await isSlugTaken(db, requested, namespace),
 		projectLabel: await namespaceLabel(db, namespace),
 	});
+	// Resolved before any write: an invalid reference must not leave a half-created blueprint
+	const technologyRecords = await resolveTechnologies(db, input.technologies ?? []);
 
 	const [blueprint] = await db
 		.insert(blueprints)
@@ -244,8 +202,7 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		);
 	}
 
-	if (input.technologies && input.technologies.length > 0) {
-		const technologyRecords = await upsertTechnologies(db, input.technologies);
+	if (technologyRecords.length > 0) {
 		await db.insert(blueprintTechnologies).values(
 			technologyRecords.map((t) => ({
 				blueprintId: blueprint.id,
@@ -362,9 +319,10 @@ export async function updateBlueprint(
 	}
 
 	if (input.technologies !== undefined) {
+		// Resolved before unlinking: a failure must not strip the blueprint of its technologies
+		const technologyRecords = await resolveTechnologies(db, input.technologies);
 		await db.delete(blueprintTechnologies).where(eq(blueprintTechnologies.blueprintId, id));
-		if (input.technologies.length > 0) {
-			const technologyRecords = await upsertTechnologies(db, input.technologies);
+		if (technologyRecords.length > 0) {
 			await db.insert(blueprintTechnologies).values(
 				technologyRecords.map((t) => ({
 					blueprintId: id,

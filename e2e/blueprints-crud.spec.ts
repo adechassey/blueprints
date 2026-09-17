@@ -32,7 +32,14 @@ test.describe('Blueprint CRUD', () => {
 		await page.goto('/blueprints/new');
 		await page.getByLabel('Name', { exact: false }).fill(name);
 		await page.getByLabel('Description', { exact: false }).first().fill(description);
-		await page.getByLabel('Layer', { exact: false }).selectOption('domain');
+		await page.getByLabel('Layer', { exact: false }).click();
+		await page.getByRole('option', { name: /^domain/i }).click();
+		// Technologies: type a name absent from the catalog and add it
+		const technology = `E2E Tech Crud ${Date.now()}`;
+		await page.getByLabel('Technologies', { exact: false }).click();
+		await page.getByPlaceholder('Search technologies...').fill(technology);
+		await page.getByRole('option', { name: `Add “${technology}”` }).click();
+		await page.keyboard.press('Escape');
 		await page.getByLabel('Content', { exact: false }).fill(content);
 		await page.getByRole('button', { name: /^save$/i }).click();
 
@@ -44,6 +51,7 @@ test.describe('Blueprint CRUD', () => {
 		await expect(page.getByRole('heading', { name })).toBeVisible();
 		await expect(page.getByText(description)).toBeVisible();
 		await expect(page.getByText('Do the thing.')).toBeVisible();
+		await expect(page.getByRole('link', { name: technology })).toBeVisible();
 
 		const { rows } = await query<{ id: string }>(`SELECT id FROM blueprints WHERE name = $1`, [
 			name,

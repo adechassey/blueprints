@@ -11,6 +11,8 @@ export interface StackBlueprint {
 	layer: string;
 	description: string | null;
 	technologies: string[];
+	/** Slugs of the projects the blueprint belongs to: slugs are only unique per project. */
+	projects: string[];
 	content: string;
 }
 
@@ -42,65 +44,4 @@ export function groupBlueprintsByLayer<T extends { layer: string }>(
 	return [...byLayer.entries()]
 		.sort((a, b) => layerIndex(a[0]) - layerIndex(b[0]))
 		.map(([layer, group]) => ({ layer, blueprints: group }));
-}
-
-/** Relative file path of a blueprint inside a scaffold output directory. */
-export function scaffoldFilePath(blueprint: { layer: string; slug: string }): string {
-	return `blueprints/${blueprint.layer}/${blueprint.slug}.md`;
-}
-
-/** Serialized manifest describing a scaffold run (machine-readable summary). */
-export function buildScaffoldManifest(input: {
-	stackSlug: string;
-	stackName: string;
-	technologies: { name: string; slug: string }[];
-	blueprints: StackBlueprint[];
-}): string {
-	const layers = groupBlueprintsByLayer(input.blueprints).map((g) => ({
-		layer: g.layer,
-		blueprints: g.blueprints.map((b) => b.slug),
-	}));
-	return JSON.stringify(
-		{
-			stack: input.stackSlug,
-			name: input.stackName,
-			generatedAt: new Date().toISOString(),
-			technologies: input.technologies,
-			layers,
-		},
-		null,
-		2,
-	);
-}
-
-/** Markdown index of the scaffolded stack, grouped by layer. */
-export function buildScaffoldIndex(
-	stackName: string,
-	stackDescription: string | null,
-	technologies: { name: string; slug: string }[],
-	blueprints: StackBlueprint[],
-): string {
-	const lines: string[] = [];
-	lines.push(`# ${stackName}`);
-	if (stackDescription) {
-		lines.push('');
-		lines.push(stackDescription);
-	}
-	lines.push('');
-	lines.push(`**Technologies:** ${technologies.map((t) => t.name).join(', ')}`);
-	lines.push('');
-	for (const group of groupBlueprintsByLayer(blueprints)) {
-		lines.push(`## ${capitalize(group.layer)}`);
-		lines.push('');
-		for (const bp of group.blueprints) {
-			const desc = bp.description ? ` — ${bp.description}` : '';
-			lines.push(`- [${bp.name}](./${scaffoldFilePath(bp)})${desc}`);
-		}
-		lines.push('');
-	}
-	return lines.join('\n');
-}
-
-function capitalize(s: string): string {
-	return s.charAt(0).toUpperCase() + s.slice(1);
 }

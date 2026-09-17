@@ -1,15 +1,25 @@
-import type { CreateBlueprintInput } from '@blueprints/shared';
-import { BLUEPRINT_LAYERS } from '@blueprints/shared';
+import {
+	BLUEPRINT_LAYERS,
+	type BlueprintLayer,
+	type CreateBlueprintInput,
+} from '@blueprints/shared';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects.js';
-import { useTechnologies } from '../hooks/useTags.js';
 import type { BlueprintFrontmatter } from '../lib/frontmatter.core.js';
+import { toLayer } from '../lib/layers.core.js';
+import { LAYER_META } from '../lib/layers.js';
+import { parseList } from '../lib/technologies.core.js';
 import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
+import { LayerOption } from './LayerBadge.js';
+import { TechnologyPicker } from './TechnologyPicker.js';
 import { Button } from './ui/button.js';
 import { Input } from './ui/input.js';
-import { Select } from './ui/select.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select.js';
 import { Textarea } from './ui/textarea.js';
+
+/** Radix Select items cannot carry an empty value: sentinel for "no project". */
+const NO_PROJECT = 'none';
 
 export interface BlueprintFormData extends Omit<CreateBlueprintInput, 'isPublic'> {
 	changelog?: string;
@@ -40,42 +50,36 @@ export function BlueprintForm({
 	const [name, setName] = useState(initialValues.name || '');
 	const [description, setDescription] = useState(initialValues.description || '');
 	const [usage, setUsage] = useState(initialValues.usage || '');
-	const [technologiesInput, setTechnologiesInput] = useState(
-		(initialValues.technologies || []).join(', '),
-	);
-	const [layer, setLayer] = useState(initialValues.layer || 'domain');
+	const [technologies, setTechnologies] = useState<string[]>(initialValues.technologies ?? []);
+	const [layer, setLayer] = useState<BlueprintLayer>(toLayer(initialValues.layer) ?? 'domain');
 	const [tagsInput, setTagsInput] = useState((initialValues.tags || []).join(', '));
 	const [projectId, setProjectId] = useState(initialValues.projectId || '');
 	const [content, setContent] = useState(initialValues.content || '');
 	const [changelog, setChangelog] = useState('');
 	const { data: projects } = useProjects();
-	const { data: technologies } = useTechnologies();
 
 	const handleParsed = (meta: BlueprintFrontmatter, parsedContent: string) => {
 		if (meta.name) setName(meta.name);
 		if (meta.description) setDescription(meta.description);
 		if (meta.usage) setUsage(meta.usage);
-		if (meta.technologies) setTechnologiesInput(meta.technologies.join(', '));
-		if (meta.layer) setLayer(meta.layer);
+		if (meta.technologies) setTechnologies(meta.technologies);
+		// Legacy free-text layers ("service"…) would be rejected by the API: keep the current one
+		const importedLayer = toLayer(meta.layer);
+		if (importedLayer) setLayer(importedLayer);
 		if (meta.tags) setTagsInput(meta.tags.join(', '));
 		if (parsedContent) setContent(parsedContent);
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const splitList = (v: string) =>
-			v
-				.split(',')
-				.map((s) => s.trim())
-				.filter(Boolean);
 		const data: BlueprintFormData = {
 			name,
 			description: description || undefined,
 			usage: usage || undefined,
-			technologies: splitList(technologiesInput),
-			layer: layer as BlueprintFormData['layer'],
+			technologies,
+			layer,
 			projectId: projectId || undefined,
-			tags: splitList(tagsInput),
+			tags: parseList(tagsInput),
 			content,
 		};
 		if (showChangelog && changelog) {
@@ -124,13 +128,21 @@ export function BlueprintForm({
 				<label htmlFor="bp-project" className="block text-sm font-semibold text-on-surface">
 					{m.form_project()}
 				</label>
-				<Select id="bp-project" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-					<option value="">{m.form_project_none()}</option>
-					{projects?.map((p: { id: string; name: string }) => (
-						<option key={p.id} value={p.id}>
-							{p.name}
-						</option>
-					))}
+				<Select
+					value={projectId || NO_PROJECT}
+					onValueChange={(v) => setProjectId(v === NO_PROJECT ? '' : v)}
+				>
+					<SelectTrigger id="bp-project">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value={NO_PROJECT}>{m.form_project_none()}</SelectItem>
+						{projects?.map((p: { id: string; name: string }) => (
+							<SelectItem key={p.id} value={p.id}>
+								{p.name}
+							</SelectItem>
+						))}
+					</SelectContent>
 				</Select>
 			</div>
 
@@ -139,31 +151,33 @@ export function BlueprintForm({
 					<label htmlFor="bp-layer" className="block text-sm font-semibold text-on-surface">
 						{m.form_layer()}
 					</label>
-					<Select id="bp-layer" value={layer} onChange={(e) => setLayer(e.target.value)}>
-						{BLUEPRINT_LAYERS.map((l) => (
-							<option key={l} value={l}>
-								{l}
-							</option>
-						))}
+					<Select value={layer} onValueChange={(v) => setLayer(toLayer(v) ?? layer)}>
+						<SelectTrigger id="bp-layer" aria-describedby="bp-layer-description">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{BLUEPRINT_LAYERS.map((l) => (
+								<SelectItem key={l} value={l}>
+									<LayerOption layer={l} />
+								</SelectItem>
+							))}
+						</SelectContent>
 					</Select>
+					<p id="bp-layer-description" className="text-xs text-on-surface-variant">
+						{LAYER_META[layer].description()}
+					</p>
 				</div>
 				<div className="space-y-2">
 					<label htmlFor="bp-technologies" className="block text-sm font-semibold text-on-surface">
 						{m.form_technologies()}
 					</label>
-					<Input
+					<TechnologyPicker
 						id="bp-technologies"
-						type="text"
-						list="form-technologies-datalist"
-						value={technologiesInput}
-						onChange={(e) => setTechnologiesInput(e.target.value)}
+						value={technologies}
+						onValueChange={setTechnologies}
+						creatable
 						placeholder={m.form_technologies_placeholder()}
 					/>
-					<datalist id="form-technologies-datalist">
-						{(technologies ?? []).map((t: { id: string; slug: string }) => (
-							<option key={t.id} value={t.slug} />
-						))}
-					</datalist>
 				</div>
 			</div>
 

@@ -32,7 +32,6 @@ export function registerInfoCommand(program: Command) {
 						`  Techs:     ${chalk.cyan(blueprint.technologies.map((t) => t.name).join(', '))}`,
 					);
 				}
-				console.log(`  Layer:     ${blueprint.layer}`);
 				console.log(`  Author:    ${blueprint.author?.name || 'Unknown'}`);
 				console.log(`  Downloads: ${blueprint.downloadCount}`);
 				console.log(`  Created:   ${new Date(blueprint.createdAt).toLocaleDateString()}`);
