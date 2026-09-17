@@ -14,7 +14,7 @@ export interface StackBlueprint {
 	content: string;
 }
 
-export interface LayerGroup<T> {
+interface LayerGroup<T> {
 	layer: string;
 	blueprints: T[];
 }

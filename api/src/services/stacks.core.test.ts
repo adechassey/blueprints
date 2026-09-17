@@ -93,8 +93,14 @@ describe('buildScaffoldIndex', () => {
 	});
 
 	it('omits the description line when null and the heading when absent', () => {
-		const index = buildScaffoldIndex('My Stack', null, [{ name: 'React', slug: 'react' }], []);
+		const index = buildScaffoldIndex(
+			'My Stack',
+			null,
+			[{ name: 'React', slug: 'react' }],
+			[bp({ slug: 'no-desc', name: 'No Description' })],
+		);
 		expect(index).not.toContain(' — ');
 		expect(index).toContain('**Technologies:** React');
+		expect(index).toContain('- [No Description](./blueprints/domain/no-desc.md)');
 	});
 });

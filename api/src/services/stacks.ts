@@ -13,7 +13,7 @@ import { generateSlug } from './blueprints.core.js';
 import { groupBlueprintsByLayer, type StackBlueprint } from './stacks.core.js';
 
 /** Thrown when a stack slug is already taken (HTTP 409). */
-export class StackSlugConflictError extends Error {
+class StackSlugConflictError extends Error {
 	readonly status = 409;
 
 	constructor(slug: string) {
@@ -138,7 +138,7 @@ export async function deleteStack(db: DB, id: string) {
  * All blueprints carrying at least one technology of the stack, with their
  * current version content — the feed for the scaffold command.
  */
-export async function getStackBlueprints(db: DB, stackId: string): Promise<StackBlueprint[]> {
+async function getStackBlueprints(db: DB, stackId: string): Promise<StackBlueprint[]> {
 	const rows = await db
 		.select({
 			id: blueprints.id,
