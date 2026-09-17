@@ -10,8 +10,6 @@ const E2E_DB_URL =
 	process.env.E2E_DATABASE_URL ??
 	'postgresql://blueprints:blueprints@localhost:5433/blueprints_e2e';
 
-const E2E_API_PORT = 3002;
-const E2E_API_URL = `http://localhost:${E2E_API_PORT}`;
 export const E2E_AUTH_SECRET = 'e2e-secret-for-tests-only';
 export const SESSION_COOKIE_NAME = 'blueprints.session_token';
 
@@ -90,6 +88,9 @@ export async function createTestUser(
 export async function cleanupE2eData(): Promise<void> {
 	// Ordered by FK dependencies (no ON DELETE cascade everywhere).
 	// The 'E2E ' name prefix also purges orphans left by interrupted runs.
+	await query(
+		`DELETE FROM stacks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
+	);
 	await query(
 		`DELETE FROM comments WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
 	);

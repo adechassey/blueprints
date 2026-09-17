@@ -19,18 +19,6 @@ test.describe('Blueprint CRUD', () => {
 		await cleanupE2eData();
 	});
 
-	async function deleteBlueprintRows(name: string) {
-		await query(
-			`DELETE FROM comments WHERE "blueprintId" IN (SELECT id FROM blueprints WHERE name = $1)`,
-			[name],
-		);
-		await query(
-			`DELETE FROM blueprint_versions WHERE "blueprintId" IN (SELECT id FROM blueprints WHERE name = $1)`,
-			[name],
-		);
-		await query(`DELETE FROM blueprints WHERE name = $1`, [name]);
-	}
-
 	test('create → view → edit → delete', async ({ page }) => {
 		test.setTimeout(120000);
 		await authenticate(page, user);
