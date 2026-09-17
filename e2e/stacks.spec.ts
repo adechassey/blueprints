@@ -66,12 +66,17 @@ test.describe('Stacks (API)', () => {
 		expect(feed.status()).toBe(200);
 		const body = (await feed.json()) as {
 			stack: { slug: string };
-			layers: { layer: string; blueprints: { slug: string; content: string }[] }[];
+			layers: {
+				layer: string;
+				blueprints: { slug: string; content: string; projects: string[] }[];
+			}[];
 		};
 		const apiLayer = body.layers.find((l) => l.layer === 'api');
 		const found = apiLayer?.blueprints.find((b) => b.slug.startsWith('e2e-e2e-layered'));
 		expect(found).toBeDefined();
 		expect(found?.content).toBe('# E2E layered blueprint');
+		// Project slugs let the scaffold tell apart blueprints sharing a slug
+		expect(found?.projects).toEqual([]);
 
 		// ── Duplicate slug is rejected with 409 ──
 		const duplicate = await request.post(`${API_URL}/api/stacks`, {

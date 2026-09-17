@@ -8,6 +8,7 @@ function bp(overrides: Partial<StackBlueprint>): StackBlueprint {
 		layer: 'domain',
 		description: null,
 		technologies: [],
+		projects: [],
 		content: '# content',
 		...overrides,
 	};

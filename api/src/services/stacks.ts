@@ -1,9 +1,11 @@
 import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
+	blueprintProjects,
 	blueprints,
 	blueprintTechnologies,
 	blueprintVersions,
+	projects,
 	stacks,
 	stackTechnologies,
 	technologies,
@@ -191,6 +193,25 @@ async function getStackBlueprints(db: DB, stackId: string): Promise<StackBluepri
 		techsByBlueprint.set(row.blueprintId, list);
 	}
 
+	const projectRows = rows.length
+		? await db
+				.select({ blueprintId: blueprintProjects.blueprintId, slug: projects.slug })
+				.from(blueprintProjects)
+				.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
+				.where(
+					inArray(
+						blueprintProjects.blueprintId,
+						rows.map((r) => r.id),
+					),
+				)
+		: [];
+	const projectsByBlueprint = new Map<string, string[]>();
+	for (const row of projectRows) {
+		const list = projectsByBlueprint.get(row.blueprintId) ?? [];
+		list.push(row.slug);
+		projectsByBlueprint.set(row.blueprintId, list);
+	}
+
 	return rows
 		.map((r) => ({
 			slug: r.slug,
@@ -198,6 +219,7 @@ async function getStackBlueprints(db: DB, stackId: string): Promise<StackBluepri
 			layer: r.layer,
 			description: r.description,
 			technologies: techsByBlueprint.get(r.id) ?? [],
+			projects: projectsByBlueprint.get(r.id) ?? [],
 			content: r.content,
 		}))
 		.sort((a, b) => a.name.localeCompare(b.name));

@@ -11,6 +11,8 @@ export interface StackBlueprint {
 	layer: string;
 	description: string | null;
 	technologies: string[];
+	/** Slugs of the projects the blueprint belongs to: slugs are only unique per project. */
+	projects: string[];
 	content: string;
 }
 
