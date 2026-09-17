@@ -66,7 +66,11 @@ export async function semanticSearch(db: DB, query: string, filters: SearchFilte
 	};
 
 	if (queryEmbedding) {
-		return vectorSearch(db, queryEmbedding, query, resolved);
+		const vector = await vectorSearch(db, queryEmbedding, query, resolved);
+		// Blueprints without embeddings (e.g. a failed embedding job) are invisible
+		// to the vector index: fall back to text search rather than returning an
+		// empty page for a query the text index can answer.
+		if (vector.items.length > 0) return vector;
 	}
 	return textSearch(db, query, resolved);
 }
