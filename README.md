@@ -1,9 +1,5 @@
 # <img src="webapp/public/logo.svg" width="40" align="top" alt=""/> Blueprints
 
-<p>
-<img src="webapp/public/logo-wordmark.svg" width="320" alt="Theodo Blueprints"/>
-</p>
-
 A blueprint registry and discovery platform where developers can publish, browse, search, and download annotated code patterns.
 
 ## CLI Installation
