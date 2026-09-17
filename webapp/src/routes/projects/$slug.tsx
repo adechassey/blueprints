@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { BlueprintList } from '../../components/BlueprintList.js';
+import { Blocks } from 'lucide-react';
+import { LayerSections } from '../../components/LayerSections.js';
+import { EmptyState } from '../../components/ui/empty.js';
 import { Skeleton } from '../../components/ui/skeleton.js';
 import { useProject } from '../../hooks/useProjects.js';
 import * as m from '../../paraglide/messages.js';
@@ -45,9 +47,11 @@ function ProjectDetailPage() {
 				)}
 			</div>
 			{project.blueprints?.length ? (
-				<BlueprintList blueprints={project.blueprints} />
+				<div className="space-y-8">
+					<LayerSections blueprints={project.blueprints} />
+				</div>
 			) : (
-				<p className="text-sm text-on-surface-variant">{m.empty_state()}</p>
+				<EmptyState icon={Blocks} title={m.empty_state()} />
 			)}
 		</div>
 	);
