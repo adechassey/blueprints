@@ -176,16 +176,16 @@ describe('extractExcerpt', () => {
 	].join('\n');
 
 	it('extracts the comment block plus the declaration line', () => {
-		expect(extractExcerpt(file, 1)).toBe(
+		expect(extractExcerpt(file, 1)?.code).toBe(
 			'// @Blueprint controller-create\n// @BlueprintName Create\nexport const x = 1;',
 		);
 	});
 
 	it('supports block comments and # comments', () => {
 		const jsdoc = ['/** @Blueprint ctrl */', ' * more', 'export const a;'].join('\n');
-		expect(extractExcerpt(jsdoc, 1)).toBe('/** @Blueprint ctrl */\n * more\nexport const a;');
+		expect(extractExcerpt(jsdoc, 1)?.code).toBe('/** @Blueprint ctrl */\n * more\nexport const a;');
 		const py = ['# @Blueprint ctrl', 'class A: ...', 'x = 1'].join('\n');
-		expect(extractExcerpt(py, 1)).toBe('# @Blueprint ctrl\nclass A: ...');
+		expect(extractExcerpt(py, 1)?.code).toBe('# @Blueprint ctrl\nclass A: ...');
 	});
 
 	it('returns undefined for out-of-bounds lines', () => {
@@ -196,7 +196,7 @@ describe('extractExcerpt', () => {
 
 	it('runs to end of file when only comments remain', () => {
 		const onlyComments = '// @Blueprint a\n// @BlueprintName A';
-		expect(extractExcerpt(onlyComments, 1)).toBe(onlyComments);
+		expect(extractExcerpt(onlyComments, 1)?.code).toBe(onlyComments);
 	});
 
 	it('captures the full body of a braced declaration', () => {
@@ -211,7 +211,7 @@ describe('extractExcerpt', () => {
 			'}',
 			'async update() {',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(
+		expect(extractExcerpt(src, 1)?.code).toBe(
 			[
 				'// @Blueprint service-create',
 				'async create(input: CreateArea) {',
@@ -233,12 +233,12 @@ describe('extractExcerpt', () => {
 			'\tthis.audit.emit();',
 			'}',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src);
+		expect(extractExcerpt(src, 1)?.code).toBe(src);
 	});
 
 	it('stops at the first declaration when it closes on the same line', () => {
 		const src = '// @Blueprint a\nfunction f() { return 1; }\nfunction g() { return 2; }';
-		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a\nfunction f() { return 1; }');
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\nfunction f() { return 1; }');
 	});
 
 	it('ignores brackets inside strings and comments of the body', () => {
@@ -251,7 +251,7 @@ describe('extractExcerpt', () => {
 			'}',
 			'function g() {}',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 6).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 6).join('\n'));
 	});
 
 	it('handles multi-line template literals in the body', () => {
@@ -263,7 +263,7 @@ describe('extractExcerpt', () => {
 			'\treturn 1;',
 			'}',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src);
+		expect(extractExcerpt(src, 1)?.code).toBe(src);
 	});
 
 	it('follows Python indentation blocks', () => {
@@ -275,35 +275,45 @@ describe('extractExcerpt', () => {
 			'        return self.repo.create(dto)',
 			'def helper(): ...',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 5).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 5).join('\n'));
 	});
 
 	it('trims trailing blank lines of an indented body', () => {
 		const src = ['# @Blueprint a', 'def f():', '    return 1', '', '', 'def g(): ...'].join('\n');
-		expect(extractExcerpt(src, 1)).toBe('# @Blueprint a\ndef f():\n    return 1');
+		expect(extractExcerpt(src, 1)?.code).toBe('# @Blueprint a\ndef f():\n    return 1');
 	});
 
 	it('runs the indented body to end of file', () => {
 		const src = '# @Blueprint a\ndef f():\n    return 1\n\n';
-		expect(extractExcerpt(src, 1)).toBe('# @Blueprint a\ndef f():\n    return 1');
+		expect(extractExcerpt(src, 1)?.code).toBe('# @Blueprint a\ndef f():\n    return 1');
 	});
 
 	it('truncates at MAX_EXCERPT_LINES when the body never closes', () => {
 		const body = Array.from({ length: 300 }, (_, i) => `\tif (${i}) {`).join('\n');
 		const src = `// @Blueprint a\nfunction f() {\n${body}`;
-		const excerpt = (extractExcerpt(src, 1) ?? '').split('\n');
-		expect(excerpt).toHaveLength(MAX_EXCERPT_LINES);
+		const excerpt = extractExcerpt(src, 1);
+		expect(excerpt?.code.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		expect(excerpt?.truncated).toBe(true);
 	});
 
 	it('truncates a long annotation block at MAX_EXCERPT_LINES', () => {
 		const comments = Array.from({ length: 300 }, (_, i) => `// line ${i}`).join('\n');
-		const excerpt = extractExcerpt(`${comments}\nexport const x;`, 1) ?? '';
-		expect(excerpt.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		const excerpt = extractExcerpt(`${comments}\nexport const x;`, 1);
+		expect(excerpt?.code.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		expect(excerpt?.truncated).toBe(true);
+	});
+
+	it('does not flag a declaration that fits exactly within the cap', () => {
+		const body = Array.from({ length: MAX_EXCERPT_LINES - 3 }, (_, i) => `\tcall(${i});`);
+		const src = ['// @Blueprint a', 'function f() {', ...body, '}', 'function g() {}'].join('\n');
+		const excerpt = extractExcerpt(src, 1);
+		expect(excerpt?.code.split('\n')).toHaveLength(MAX_EXCERPT_LINES);
+		expect(excerpt?.truncated).toBe(false);
 	});
 
 	it('returns only the annotation when it sits on the last line', () => {
 		const src = '// @Blueprint a';
-		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a');
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a');
 	});
 
 	it('follows a method chain that starts on the line after the declaration', () => {
@@ -318,7 +328,7 @@ describe('extractExcerpt', () => {
 			'',
 			'export type UrlParams = z.infer<typeof urlSchema>;',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 7).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 7).join('\n'));
 	});
 
 	it('follows a statement carried by a trailing operator or a leading union', () => {
@@ -328,7 +338,7 @@ describe('extractExcerpt', () => {
 			'\tnew NotFoundError({ id });',
 			'export const Other = 1;',
 		].join('\n');
-		expect(extractExcerpt(arrow, 1)).toBe(arrow.split('\n').slice(0, 3).join('\n'));
+		expect(extractExcerpt(arrow, 1)?.code).toBe(arrow.split('\n').slice(0, 3).join('\n'));
 		const union = [
 			'// @Blueprint filtre',
 			'export type Filtre =',
@@ -336,7 +346,7 @@ describe('extractExcerpt', () => {
 			'\t| { kind: "b" };',
 			'export type Other = string;',
 		].join('\n');
-		expect(extractExcerpt(union, 1)).toBe(union.split('\n').slice(0, 4).join('\n'));
+		expect(extractExcerpt(union, 1)?.code).toBe(union.split('\n').slice(0, 4).join('\n'));
 	});
 
 	it('does not continue on a trailing comma, spread, increment or commented operator', () => {
@@ -347,12 +357,12 @@ describe('extractExcerpt', () => {
 			'\t}),',
 			'\tcolumnHelper.accessor("b", {}),',
 		].join('\n');
-		expect(extractExcerpt(entries, 1)).toBe(entries.split('\n').slice(0, 4).join('\n'));
-		expect(extractExcerpt('# @Blueprint a\nclass A: ...\nx = 1', 1)).toBe(
+		expect(extractExcerpt(entries, 1)?.code).toBe(entries.split('\n').slice(0, 4).join('\n'));
+		expect(extractExcerpt('# @Blueprint a\nclass A: ...\nx = 1', 1)?.code).toBe(
 			'# @Blueprint a\nclass A: ...',
 		);
-		expect(extractExcerpt('// @Blueprint a\ni++\nj++', 1)).toBe('// @Blueprint a\ni++');
-		expect(extractExcerpt('// @Blueprint a\nrun(); // then =\nnext();', 1)).toBe(
+		expect(extractExcerpt('// @Blueprint a\ni++\nj++', 1)?.code).toBe('// @Blueprint a\ni++');
+		expect(extractExcerpt('// @Blueprint a\nrun(); // then =\nnext();', 1)?.code).toBe(
 			'// @Blueprint a\nrun(); // then =',
 		);
 	});
@@ -378,12 +388,12 @@ describe('extractExcerpt', () => {
 			'',
 			"@Get(':id')",
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 16).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 16).join('\n'));
 	});
 
 	it('does not treat a one-line decorated declaration as a decorator', () => {
 		const src = '// @Blueprint a\n@Injectable() export class A {}\n@Injectable() export class B {}';
-		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a\n@Injectable() export class A {}');
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\n@Injectable() export class A {}');
 	});
 
 	it('follows a decorated Python function with a multi-line signature', () => {
@@ -397,26 +407,26 @@ describe('extractExcerpt', () => {
 			'',
 			'def other(): ...',
 		].join('\n');
-		expect(extractExcerpt(src, 1)).toBe(src.split('\n').slice(0, 6).join('\n'));
+		expect(extractExcerpt(src, 1)?.code).toBe(src.split('\n').slice(0, 6).join('\n'));
 	});
 
 	it('keeps strings and block comments left open on a balanced line', () => {
 		const template = ['// @Blueprint a', 'export const sql = `', 'SELECT 1', '`;', 'x();'].join(
 			'\n',
 		);
-		expect(extractExcerpt(template, 1)).toBe(template.split('\n').slice(0, 4).join('\n'));
+		expect(extractExcerpt(template, 1)?.code).toBe(template.split('\n').slice(0, 4).join('\n'));
 		const comment = [
 			'// @Blueprint a',
 			'export const a = 1; /* note',
 			'still note */',
 			'x();',
 		].join('\n');
-		expect(extractExcerpt(comment, 1)).toBe(comment.split('\n').slice(0, 3).join('\n'));
+		expect(extractExcerpt(comment, 1)?.code).toBe(comment.split('\n').slice(0, 3).join('\n'));
 	});
 
 	it('stops at a blank line following the annotation block', () => {
 		const src = '// @Blueprint a\n\nexport const a = 1;';
-		expect(extractExcerpt(src, 1)).toBe('// @Blueprint a\n');
+		expect(extractExcerpt(src, 1)?.code).toBe('// @Blueprint a\n');
 	});
 });
 
@@ -444,11 +454,26 @@ describe('buildBlueprintContent', () => {
 			globs: 'src/**/*.controller.ts',
 			location: 'src/areas/area.controller.ts:42',
 		};
-		const md = buildBlueprintContent(row, 'export const x = 1;');
+		const md = buildBlueprintContent(row, { code: 'export const x = 1;', truncated: false });
 		expect(md).toContain('## Context\n\nCreates a resource');
 		expect(md).toContain('## Usage\n\nUse for POST endpoints');
 		expect(md).toContain('Exemplar: `src/areas/area.controller.ts:42`');
-		expect(md).toContain('```typescript\nexport const x = 1;\n```');
+		expect(md).toContain('```typescript\nexport const x = 1;\n```\n');
+		expect(md).not.toContain('truncated');
+	});
+
+	it('notes a truncated excerpt below its code block', () => {
+		const row = {
+			id: 'ctrl',
+			name: 'Ctrl',
+			usage: 'Use for ctrl',
+			description: 'Does ctrl',
+			globs: '',
+			location: 'src/a.ts:1',
+		};
+		expect(buildBlueprintContent(row, { code: 'x', truncated: true })).toContain(
+			`\`\`\`\n\n_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._\n`,
+		);
 	});
 
 	it('returns undefined for an extension-less or unrecognized extension', () => {
@@ -474,7 +499,7 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.foo:1',
 		};
-		expect(buildBlueprintContent(row, 'x')).toContain('```\nx');
+		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toContain('```\nx');
 	});
 
 	it('omits the language tag for paths ending with a dot', () => {
@@ -486,7 +511,7 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.',
 		};
-		expect(buildBlueprintContent(row, 'x')).toContain('```\nx');
+		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toContain('```\nx');
 	});
 
 	it('falls back to a generic description when empty', () => {

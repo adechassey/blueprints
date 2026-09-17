@@ -159,6 +159,13 @@ function continuesOnNextLine(lines: string[], from: number): boolean {
 
 const indentOf = (l: string) => l.length - l.trimStart().length;
 
+export interface Excerpt {
+	/** The annotation block plus the declaration, capped at `MAX_EXCERPT_LINES` lines. */
+	code: string;
+	/** True when the cap cut the declaration short. */
+	truncated: boolean;
+}
+
 /**
  * Extracts the exemplar excerpt: the annotation comment block starting at
  * `line`, plus the full declaration that follows it — its decorators, then
@@ -169,7 +176,7 @@ const indentOf = (l: string) => l.length - l.trimStart().length;
  * the statement. Returns undefined when the line number is out of bounds,
  * and truncates at `MAX_EXCERPT_LINES` lines.
  */
-export function extractExcerpt(content: string, line: number): string | undefined {
+export function extractExcerpt(content: string, line: number): Excerpt | undefined {
 	const lines = content.split('\n');
 	const start = line - 1;
 	if (!Number.isInteger(line) || line < 1 || start >= lines.length) return undefined;
@@ -218,7 +225,8 @@ export function extractExcerpt(content: string, line: number): string | undefine
 	}
 
 	// Clamp the excerpt to the cap (a long annotation block can overflow it), then join.
-	return lines.slice(start, Math.min(last, start + MAX_EXCERPT_LINES - 1) + 1).join('\n');
+	const end = Math.min(last, start + MAX_EXCERPT_LINES - 1);
+	return { code: lines.slice(start, end + 1).join('\n'), truncated: end < last };
 }
 
 const EXTENSION_TO_LANG: Record<string, string> = {
@@ -249,7 +257,7 @@ export function buildSource(repo: string | undefined, location: string): string 
 }
 
 /** Builds the blueprint markdown body from an index row (and optional excerpt). */
-export function buildBlueprintContent(row: BlueprintIndexRow, excerpt?: string): string {
+export function buildBlueprintContent(row: BlueprintIndexRow, excerpt?: Excerpt): string {
 	const { path, line } = splitLocation(row.location);
 	const loc = line === undefined ? `\`${path}\`` : `\`${path}:${line}\``;
 
@@ -269,7 +277,13 @@ export function buildBlueprintContent(row: BlueprintIndexRow, excerpt?: string):
 
 	if (excerpt) {
 		const lang = langFromPath(path);
-		sections.push('', `\`\`\`${lang ?? ''}`, excerpt, '```');
+		sections.push('', `\`\`\`${lang ?? ''}`, excerpt.code, '```');
+		if (excerpt.truncated) {
+			sections.push(
+				'',
+				`_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._`,
+			);
+		}
 	}
 
 	return `${sections.join('\n')}\n`;
