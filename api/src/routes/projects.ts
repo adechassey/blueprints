@@ -1,16 +1,8 @@
 import { zValidator } from '@hono/zod-validator';
-import { and, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, count, desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import {
-	blueprintProjects,
-	blueprints,
-	blueprintTechnologies,
-	projectMembers,
-	projects,
-	technologies,
-	users,
-} from '../db/schema.js';
+import { blueprintProjects, blueprints, projectMembers, projects, users } from '../db/schema.js';
 import { auth } from '../lib/auth.js';
 import {
 	addBlueprintToProjectSchema,
@@ -325,27 +317,10 @@ export const projectRoutes = new Hono()
 			.where(eq(blueprintProjects.projectId, project.id))
 			.orderBy(blueprints.layer, blueprints.name);
 
-		const techRows = projectBlueprints.length
-			? await db
-					.select({
-						blueprintId: blueprintTechnologies.blueprintId,
-						name: technologies.name,
-					})
-					.from(blueprintTechnologies)
-					.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
-					.where(
-						inArray(
-							blueprintTechnologies.blueprintId,
-							projectBlueprints.map((b) => b.id),
-						),
-					)
-			: [];
-		const techsByBlueprint = new Map<string, string[]>();
-		for (const row of techRows) {
-			const list = techsByBlueprint.get(row.blueprintId) ?? [];
-			list.push(row.name);
-			techsByBlueprint.set(row.blueprintId, list);
-		}
+		const technologiesByBlueprint = await technologiesOfMany(
+			db,
+			projectBlueprints.map((b) => b.id),
+		);
 
 		const markdown = generateBlueprintIndex(
 			project.name,
@@ -355,7 +330,7 @@ export const projectRoutes = new Hono()
 				layer: b.layer,
 				description: b.description,
 				usage: b.usage,
-				technologies: techsByBlueprint.get(b.id) ?? [],
+				technologies: technologiesByBlueprint.get(b.id)?.map((t) => t.name) ?? [],
 			})),
 		);
 
