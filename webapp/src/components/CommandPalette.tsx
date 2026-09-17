@@ -72,12 +72,12 @@ export function CommandPalette() {
 						{blueprints.map((b) => (
 							<CommandItem
 								key={b.id}
-								value={`${b.name} ${b.stack} ${b.layer} ${b.description ?? ''}`}
+								value={`${b.name} ${b.layer} ${(b.technologies ?? []).map((t: { name: string }) => t.name).join(' ')} ${b.description ?? ''}`}
 								onSelect={() => go('/blueprints/$blueprintId', { blueprintId: b.id })}
 							>
 								<Blocks className="h-4 w-4 text-outline" />
 								<span className="truncate font-medium">{b.name}</span>
-								<span className="ml-auto text-xs text-outline">{b.stack}</span>
+								<span className="ml-auto text-xs text-outline">{b.layer}</span>
 							</CommandItem>
 						))}
 					</CommandGroup>

@@ -1,10 +1,11 @@
+import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 import { ChevronDown } from 'lucide-react';
-import { useTags } from '../hooks/useTags.js';
+import { useTags, useTechnologies } from '../hooks/useTags.js';
 import * as m from '../paraglide/messages.js';
 import { Select } from './ui/select.js';
 
 interface FilterBarProps {
-	stack?: string;
+	techno?: string;
 	layer?: string;
 	tag?: string;
 	onFilterChange: (key: string, value: string | undefined) => void;
@@ -12,24 +13,23 @@ interface FilterBarProps {
 	showing?: number;
 }
 
-const STACKS = ['server', 'webapp', 'shared', 'fullstack'];
-
-export function FilterBar({ stack, layer, tag, onFilterChange, total, showing }: FilterBarProps) {
+export function FilterBar({ techno, layer, tag, onFilterChange, total, showing }: FilterBarProps) {
 	const { data: tags } = useTags();
+	const { data: technologies } = useTechnologies();
 
 	return (
 		<section className="flex flex-wrap items-center gap-3">
 			<div className="relative">
 				<Select
-					value={stack || ''}
-					onChange={(e) => onFilterChange('stack', e.target.value || undefined)}
+					value={layer || ''}
+					onChange={(e) => onFilterChange('layer', e.target.value || undefined)}
 					className="appearance-none pr-9 font-medium bg-surface-container-lowest"
-					aria-label={m.filter_all_stacks()}
+					aria-label={m.filter_all_layers()}
 				>
-					<option value="">{m.filter_all_stacks()}</option>
-					{STACKS.map((s) => (
-						<option key={s} value={s}>
-							{s}
+					<option value="">{m.filter_all_layers()}</option>
+					{BLUEPRINT_LAYERS.map((l) => (
+						<option key={l} value={l}>
+							{l}
 						</option>
 					))}
 				</Select>
@@ -38,12 +38,18 @@ export function FilterBar({ stack, layer, tag, onFilterChange, total, showing }:
 
 			<input
 				type="text"
-				placeholder={m.filter_layer_placeholder()}
-				value={layer || ''}
-				onChange={(e) => onFilterChange('layer', e.target.value || undefined)}
-				className="w-40 rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 text-sm font-medium text-on-surface placeholder:text-outline outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-				aria-label={m.filter_layer_placeholder()}
+				list="filter-technos-datalist"
+				placeholder={m.filter_techno_placeholder()}
+				value={techno || ''}
+				onChange={(e) => onFilterChange('techno', e.target.value || undefined)}
+				className="w-44 rounded-lg border border-outline-variant bg-surface-container-lowest px-3.5 py-2.5 text-sm font-medium text-on-surface placeholder:text-outline outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+				aria-label={m.filter_techno_placeholder()}
 			/>
+			<datalist id="filter-technos-datalist">
+				{(technologies ?? []).map((t) => (
+					<option key={t.id} value={t.slug} />
+				))}
+			</datalist>
 
 			<input
 				type="text"

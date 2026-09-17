@@ -7,7 +7,7 @@ import * as m from '../paraglide/messages.js';
 interface BlueprintListFilters {
 	page?: number;
 	limit?: number;
-	stack?: string;
+	techno?: string;
 	layer?: string;
 	tag?: string;
 	projectId?: string;

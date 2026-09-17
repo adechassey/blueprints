@@ -54,13 +54,7 @@ function AdminBlueprintsPage() {
 								<div className="space-y-1">
 									<p className="font-semibold text-on-surface">{bp.name}</p>
 									<div className="flex items-center gap-2">
-										<Badge
-											variant={
-												(bp.stack as 'webapp' | 'server' | 'shared' | 'fullstack') ?? 'default'
-											}
-										>
-											{bp.stack}
-										</Badge>
+										<Badge variant={(bp.layer as never) ?? 'default'}>{bp.layer}</Badge>
 										<span className="text-sm text-on-surface-variant">{bp.slug}</span>
 										<span className="text-sm text-outline">{bp.authorName || 'Unknown'}</span>
 									</div>

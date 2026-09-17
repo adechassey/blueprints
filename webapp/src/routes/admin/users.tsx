@@ -40,9 +40,9 @@ export const Route = createFileRoute('/admin/users')({
 	component: AdminUsersPage,
 });
 
-const roleBadgeVariant: Record<string, 'error' | 'shared' | 'default'> = {
+const roleBadgeVariant: Record<string, 'error' | 'tertiary' | 'default'> = {
 	admin: 'error',
-	maintainer: 'shared',
+	maintainer: 'tertiary',
 	user: 'default',
 };
 

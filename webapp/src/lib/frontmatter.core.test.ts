@@ -7,9 +7,9 @@ describe('parseBlueprintMarkdown', () => {
 name: My Blueprint
 description: A test blueprint
 usage: Use it wisely
-stack: server
+technologies: [nestjs, typescript]
 layer: service
-tags: [nestjs, typescript]
+tags: [api, auth]
 ---
 
 # Content here
@@ -21,9 +21,9 @@ Some markdown content.`;
 			name: 'My Blueprint',
 			description: 'A test blueprint',
 			usage: 'Use it wisely',
-			stack: 'server',
+			technologies: ['nestjs', 'typescript'],
 			layer: 'service',
-			tags: ['nestjs', 'typescript'],
+			tags: ['api', 'auth'],
 		});
 		expect(result.content).toBe('# Content here\n\nSome markdown content.');
 	});
@@ -48,7 +48,7 @@ Content`;
 		expect(result.content).toBe('Content');
 	});
 
-	it('handles project as alias for stack', () => {
+	it('handles project as a plain string field', () => {
 		const raw = `---
 project: webapp
 ---
@@ -56,7 +56,18 @@ project: webapp
 Content`;
 
 		const result = parseBlueprintMarkdown(raw);
-		expect(result.meta.stack).toBe('webapp');
+		expect(result.meta.project).toBe('webapp');
+	});
+
+	it('parses technologies as comma-separated list', () => {
+		const raw = `---
+technologies: react, drizzle
+---
+
+Content`;
+
+		const result = parseBlueprintMarkdown(raw);
+		expect(result.meta.technologies).toEqual(['react', 'drizzle']);
 	});
 
 	it('handles quoted values', () => {

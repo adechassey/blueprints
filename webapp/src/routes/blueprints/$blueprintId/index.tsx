@@ -36,13 +36,6 @@ function useMarkBlueprintViewed() {
 	}, []);
 }
 
-const stackVariant: Record<string, 'webapp' | 'server' | 'shared' | 'fullstack'> = {
-	webapp: 'webapp',
-	server: 'server',
-	shared: 'shared',
-	fullstack: 'fullstack',
-};
-
 function BlueprintDetailPage() {
 	useMarkBlueprintViewed();
 	const { blueprintId } = Route.useParams();
@@ -133,8 +126,12 @@ function BlueprintDetailPage() {
 
 				{/* Tags */}
 				<div className="flex flex-wrap gap-3">
-					<Badge variant={stackVariant[blueprint.stack] ?? 'default'}>{blueprint.stack}</Badge>
 					<Badge variant="secondary">{blueprint.layer}</Badge>
+					{blueprint.technologies?.map((t: { name: string; slug: string }) => (
+						<Badge key={t.slug} variant="primary">
+							{t.name}
+						</Badge>
+					))}
 					{blueprint.tags?.map((tag: { name: string }) => (
 						<Badge key={tag.name} variant="default">
 							{tag.name}

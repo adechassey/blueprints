@@ -1,6 +1,8 @@
-import type { CreateBlueprintInput, Stack } from '@blueprints/shared';
+import type { CreateBlueprintInput } from '@blueprints/shared';
+import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 import { useState } from 'react';
 import { useProjects } from '../hooks/useProjects.js';
+import { useTechnologies } from '../hooks/useTags.js';
 import type { BlueprintFrontmatter } from '../lib/frontmatter.core.js';
 import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
@@ -18,7 +20,7 @@ interface BlueprintFormProps {
 		name?: string;
 		description?: string;
 		usage?: string;
-		stack?: string;
+		technologies?: string[];
 		layer?: string;
 		tags?: string[];
 		content?: string;
@@ -29,8 +31,6 @@ interface BlueprintFormProps {
 	showChangelog?: boolean;
 }
 
-const STACKS: Stack[] = ['server', 'webapp', 'shared', 'fullstack'];
-
 export function BlueprintForm({
 	initialValues = {},
 	onSubmit,
@@ -40,19 +40,22 @@ export function BlueprintForm({
 	const [name, setName] = useState(initialValues.name || '');
 	const [description, setDescription] = useState(initialValues.description || '');
 	const [usage, setUsage] = useState(initialValues.usage || '');
-	const [stack, setStack] = useState<Stack>((initialValues.stack as Stack) || 'server');
-	const [layer, setLayer] = useState(initialValues.layer || '');
+	const [technologiesInput, setTechnologiesInput] = useState(
+		(initialValues.technologies || []).join(', '),
+	);
+	const [layer, setLayer] = useState(initialValues.layer || 'domain');
 	const [tagsInput, setTagsInput] = useState((initialValues.tags || []).join(', '));
 	const [projectId, setProjectId] = useState(initialValues.projectId || '');
 	const [content, setContent] = useState(initialValues.content || '');
 	const [changelog, setChangelog] = useState('');
 	const { data: projects } = useProjects();
+	const { data: technologies } = useTechnologies();
 
 	const handleParsed = (meta: BlueprintFrontmatter, parsedContent: string) => {
 		if (meta.name) setName(meta.name);
 		if (meta.description) setDescription(meta.description);
 		if (meta.usage) setUsage(meta.usage);
-		if (meta.stack) setStack(meta.stack as Stack);
+		if (meta.technologies) setTechnologiesInput(meta.technologies.join(', '));
 		if (meta.layer) setLayer(meta.layer);
 		if (meta.tags) setTagsInput(meta.tags.join(', '));
 		if (parsedContent) setContent(parsedContent);
@@ -60,18 +63,19 @@ export function BlueprintForm({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		const tags = tagsInput
-			.split(',')
-			.map((t) => t.trim())
-			.filter(Boolean);
+		const splitList = (v: string) =>
+			v
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean);
 		const data: BlueprintFormData = {
 			name,
 			description: description || undefined,
 			usage: usage || undefined,
-			stack,
-			layer,
+			technologies: splitList(technologiesInput),
+			layer: layer as BlueprintFormData['layer'],
 			projectId: projectId || undefined,
-			tags,
+			tags: splitList(tagsInput),
 			content,
 		};
 		if (showChangelog && changelog) {
@@ -132,28 +136,34 @@ export function BlueprintForm({
 
 			<div className="grid grid-cols-2 gap-4">
 				<div className="space-y-2">
-					<label htmlFor="bp-stack" className="block text-sm font-semibold text-on-surface">
-						{m.form_stack()}
+					<label htmlFor="bp-layer" className="block text-sm font-semibold text-on-surface">
+						{m.form_layer()}
 					</label>
-					<Select id="bp-stack" value={stack} onChange={(e) => setStack(e.target.value as Stack)}>
-						{STACKS.map((s) => (
-							<option key={s} value={s}>
-								{s}
+					<Select id="bp-layer" value={layer} onChange={(e) => setLayer(e.target.value)}>
+						{BLUEPRINT_LAYERS.map((l) => (
+							<option key={l} value={l}>
+								{l}
 							</option>
 						))}
 					</Select>
 				</div>
 				<div className="space-y-2">
-					<label htmlFor="bp-layer" className="block text-sm font-semibold text-on-surface">
-						{m.form_layer()}
+					<label htmlFor="bp-technologies" className="block text-sm font-semibold text-on-surface">
+						{m.form_technologies()}
 					</label>
 					<Input
-						id="bp-layer"
+						id="bp-technologies"
 						type="text"
-						value={layer}
-						onChange={(e) => setLayer(e.target.value)}
-						required
+						list="form-technologies-datalist"
+						value={technologiesInput}
+						onChange={(e) => setTechnologiesInput(e.target.value)}
+						placeholder={m.form_technologies_placeholder()}
 					/>
+					<datalist id="form-technologies-datalist">
+						{(technologies ?? []).map((t: { id: string; slug: string }) => (
+							<option key={t.id} value={t.slug} />
+						))}
+					</datalist>
 				</div>
 			</div>
 

@@ -10,3 +10,13 @@ export function useTags() {
 		},
 	});
 }
+
+export function useTechnologies() {
+	return useQuery({
+		queryKey: ['technologies'],
+		queryFn: async () => {
+			const res = await api.api.technologies.$get();
+			return unwrapResponse(res);
+		},
+	});
+}

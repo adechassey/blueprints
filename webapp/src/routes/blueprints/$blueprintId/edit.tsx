@@ -48,7 +48,7 @@ function EditBlueprintPage() {
 						name: blueprint.name,
 						description: blueprint.description ?? undefined,
 						usage: blueprint.usage ?? undefined,
-						stack: blueprint.stack,
+						technologies: blueprint.technologies?.map((t: { slug: string }) => t.slug),
 						layer: blueprint.layer,
 						tags: blueprint.tags?.map((t: { name: string }) => t.name),
 						content: blueprint.currentVersion?.content ?? '',

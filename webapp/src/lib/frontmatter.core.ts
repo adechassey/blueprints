@@ -7,7 +7,8 @@ export interface BlueprintFrontmatter {
 	name?: string;
 	description?: string;
 	usage?: string;
-	stack?: string;
+	technologies?: string[];
+	project?: string;
 	layer?: string;
 	tags?: string[];
 }
@@ -45,9 +46,16 @@ export function parseBlueprintMarkdown(raw: string): ParsedBlueprint {
 			case 'usage':
 				meta.usage = rawValue;
 				break;
-			case 'stack':
+			case 'technologies':
+			case 'tech':
+				meta.technologies = rawValue
+					.replace(/^\[|\]$/g, '')
+					.split(',')
+					.map((t) => t.trim().replace(/^["']|["']$/g, ''))
+					.filter(Boolean);
+				break;
 			case 'project':
-				meta.stack = rawValue;
+				meta.project = rawValue;
 				break;
 			case 'layer':
 				meta.layer = rawValue;

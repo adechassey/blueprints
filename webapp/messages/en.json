@@ -19,7 +19,6 @@
 	"form_name": "Name",
 	"form_description": "Description",
 	"form_usage": "Usage",
-	"form_stack": "Stack",
 	"form_layer": "Layer",
 	"form_tags": "Tags",
 	"form_tags_placeholder": "nestjs, typescript, hooks",
@@ -29,7 +28,6 @@
 	"form_changelog": "Changelog",
 	"form_submit": "Save",
 	"form_submitting": "Saving...",
-	"filter_all_stacks": "All stacks",
 	"filter_layer_placeholder": "Filter by layer",
 	"filter_tag_placeholder": "Filter by tag",
 	"pagination_showing": "Showing {from}–{to} of {total}",
@@ -167,5 +165,9 @@
 	"cli_cmd_update": "Update the CLI to the latest release (add --check to only look)",
 	"cli_sync_title": "Sync from the blueprint skill",
 	"cli_sync_badge": "Optional",
-	"cli_sync_description": "If your repo uses the blueprint skill (@Blueprint annotations), publish its whole catalog in one command. Each @Blueprint becomes a registry blueprint whose slug is its pattern id, so re-running sync updates in place and never duplicates."
+	"cli_sync_description": "If your repo uses the blueprint skill (@Blueprint annotations), publish its whole catalog in one command. Each @Blueprint becomes a registry blueprint whose slug is its pattern id, so re-running sync updates in place and never duplicates.",
+	"form_technologies": "Technologies",
+	"form_technologies_placeholder": "react, hono, drizzle",
+	"filter_all_layers": "All layers",
+	"filter_techno_placeholder": "Filter by technology"
 }

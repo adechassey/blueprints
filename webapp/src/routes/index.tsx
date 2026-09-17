@@ -14,7 +14,7 @@ import * as m from '../paraglide/messages.js';
 
 interface SearchParams {
 	page?: number;
-	stack?: string;
+	techno?: string;
 	layer?: string;
 	tag?: string;
 	q?: string;
@@ -23,7 +23,7 @@ interface SearchParams {
 export const Route = createFileRoute('/')({
 	validateSearch: (search: Record<string, unknown>): SearchParams => ({
 		page: Number(search.page) || undefined,
-		stack: (search.stack as string) || undefined,
+		techno: (search.techno as string) || undefined,
 		layer: (search.layer as string) || undefined,
 		tag: (search.tag as string) || undefined,
 		q: (search.q as string) || undefined,
@@ -32,16 +32,16 @@ export const Route = createFileRoute('/')({
 });
 
 function IndexPage() {
-	const { page = 1, stack, layer, tag, q } = Route.useSearch();
+	const { page = 1, techno, layer, tag, q } = Route.useSearch();
 	const navigate = useNavigate();
 
-	const browseQuery = useBlueprints({ page, stack, layer, tag });
-	const searchQuery = useSearch(q || '', { stack, layer, tag });
+	const browseQuery = useBlueprints({ page, techno, layer, tag });
+	const searchQuery = useSearch(q || '', { techno, layer, tag });
 
 	const isSearchMode = !!q;
 	const data = isSearchMode ? searchQuery.data : browseQuery.data;
 	const isLoading = isSearchMode ? searchQuery.isLoading : browseQuery.isLoading;
-	const hasFilters = !!(stack || layer || tag);
+	const hasFilters = !!(techno || layer || tag);
 
 	const handleSearch = (query: string) => {
 		navigate({
@@ -96,7 +96,7 @@ function IndexPage() {
 
 			{!isSearchMode && (
 				<FilterBar
-					stack={stack}
+					techno={techno}
 					layer={layer}
 					tag={tag}
 					onFilterChange={handleFilterChange}

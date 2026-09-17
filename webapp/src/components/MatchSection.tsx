@@ -57,7 +57,7 @@ export function MatchSection({ blueprintId }: MatchSectionProps) {
 									{match.matchedBlueprint.name}
 								</Link>
 								{match.reason === 'slug' ? (
-									<Badge variant="shared">{m.matches_reason_slug()}</Badge>
+									<Badge variant="tertiary">{m.matches_reason_slug()}</Badge>
 								) : (
 									<Badge variant="success">
 										{m.matches_reason_embedding({ score: match.score ?? 0 })}

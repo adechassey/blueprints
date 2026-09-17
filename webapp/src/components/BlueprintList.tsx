@@ -8,7 +8,7 @@ interface Blueprint {
 	slug: string;
 	description?: string | null;
 	usage?: string | null;
-	stack: string;
+	technologies?: { name: string; slug: string }[];
 	layer: string;
 	authorName?: string | null;
 	authorImage?: string | null;
@@ -17,13 +17,6 @@ interface Blueprint {
 	score?: number | null;
 	createdAt: string;
 }
-
-const stackVariant: Record<string, 'webapp' | 'server' | 'shared' | 'fullstack'> = {
-	webapp: 'webapp',
-	server: 'server',
-	shared: 'shared',
-	fullstack: 'fullstack',
-};
 
 function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 	return (
@@ -49,8 +42,12 @@ function BlueprintCard({ blueprint }: { blueprint: Blueprint }) {
 				</p>
 			)}
 			<div className="flex flex-wrap items-center gap-1.5">
-				<Badge variant={stackVariant[blueprint.stack] ?? 'default'}>{blueprint.stack}</Badge>
-				<Badge variant="default">{blueprint.layer}</Badge>
+				<Badge variant={(blueprint.layer as never) || 'default'}>{blueprint.layer}</Badge>
+				{blueprint.technologies?.map((t) => (
+					<Badge key={t.slug} variant="secondary">
+						{t.name}
+					</Badge>
+				))}
 				{blueprint.projectName && <Badge variant="tertiary">{blueprint.projectName}</Badge>}
 			</div>
 			<div className="flex items-center justify-between mt-auto pt-4 text-xs text-on-surface-variant">

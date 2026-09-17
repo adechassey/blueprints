@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, unwrapResponse } from '../lib/api.js';
 
 interface SearchFilters {
-	stack?: string;
+	techno?: string;
 	layer?: string;
 	tag?: string;
 	limit?: number;
