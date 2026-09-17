@@ -45,6 +45,10 @@ jobs:
             echo "CLI_VERSION=0.0.0-${GITHUB_SHA::7}" >> "$GITHUB_ENV"
           fi
 
+      # The CLI imports @blueprints/shared, which resolves to its built dist/.
+      - name: Build shared package
+        run: pnpm --filter @blueprints/shared build
+
       - name: Bundle CLI
         run: pnpm --filter cli bundle
 
