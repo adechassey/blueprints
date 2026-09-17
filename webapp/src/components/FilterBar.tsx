@@ -1,8 +1,17 @@
 import { BLUEPRINT_LAYERS } from '@blueprints/shared';
-import { ChevronDown } from 'lucide-react';
 import { useTags, useTechnologies } from '../hooks/useTags.js';
 import * as m from '../paraglide/messages.js';
-import { Select } from './ui/select.js';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue,
+} from './ui/select.js';
+
+/** Radix Select items cannot carry an empty value: sentinel for "no layer filter". */
+const ALL_LAYERS = 'all';
 
 interface FilterBarProps {
 	techno?: string;
@@ -19,22 +28,23 @@ export function FilterBar({ techno, layer, tag, onFilterChange, total, showing }
 
 	return (
 		<section className="flex flex-wrap items-center gap-3">
-			<div className="relative">
-				<Select
-					value={layer || ''}
-					onChange={(e) => onFilterChange('layer', e.target.value || undefined)}
-					className="appearance-none pr-9 font-medium bg-surface-container-lowest"
-					aria-label={m.filter_all_layers()}
-				>
-					<option value="">{m.filter_all_layers()}</option>
+			<Select
+				value={layer ?? ALL_LAYERS}
+				onValueChange={(v) => onFilterChange('layer', v === ALL_LAYERS ? undefined : v)}
+			>
+				<SelectTrigger className="w-44" aria-label={m.filter_layer_placeholder()}>
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					<SelectItem value={ALL_LAYERS}>{m.filter_all_layers()}</SelectItem>
+					<SelectSeparator />
 					{BLUEPRINT_LAYERS.map((l) => (
-						<option key={l} value={l}>
+						<SelectItem key={l} value={l}>
 							{l}
-						</option>
+						</SelectItem>
 					))}
-				</Select>
-				<ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
-			</div>
+				</SelectContent>
+			</Select>
 
 			<input
 				type="text"

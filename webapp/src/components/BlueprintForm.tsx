@@ -8,8 +8,11 @@ import * as m from '../paraglide/messages.js';
 import { DropZone } from './DropZone.js';
 import { Button } from './ui/button.js';
 import { Input } from './ui/input.js';
-import { Select } from './ui/select.js';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select.js';
 import { Textarea } from './ui/textarea.js';
+
+/** Radix Select items cannot carry an empty value: sentinel for "no project". */
+const NO_PROJECT = 'none';
 
 export interface BlueprintFormData extends Omit<CreateBlueprintInput, 'isPublic'> {
 	changelog?: string;
@@ -124,13 +127,21 @@ export function BlueprintForm({
 				<label htmlFor="bp-project" className="block text-sm font-semibold text-on-surface">
 					{m.form_project()}
 				</label>
-				<Select id="bp-project" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-					<option value="">{m.form_project_none()}</option>
-					{projects?.map((p: { id: string; name: string }) => (
-						<option key={p.id} value={p.id}>
-							{p.name}
-						</option>
-					))}
+				<Select
+					value={projectId || NO_PROJECT}
+					onValueChange={(v) => setProjectId(v === NO_PROJECT ? '' : v)}
+				>
+					<SelectTrigger id="bp-project">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value={NO_PROJECT}>{m.form_project_none()}</SelectItem>
+						{projects?.map((p: { id: string; name: string }) => (
+							<SelectItem key={p.id} value={p.id}>
+								{p.name}
+							</SelectItem>
+						))}
+					</SelectContent>
 				</Select>
 			</div>
 
@@ -139,12 +150,17 @@ export function BlueprintForm({
 					<label htmlFor="bp-layer" className="block text-sm font-semibold text-on-surface">
 						{m.form_layer()}
 					</label>
-					<Select id="bp-layer" value={layer} onChange={(e) => setLayer(e.target.value)}>
-						{BLUEPRINT_LAYERS.map((l) => (
-							<option key={l} value={l}>
-								{l}
-							</option>
-						))}
+					<Select value={layer} onValueChange={setLayer}>
+						<SelectTrigger id="bp-layer">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{BLUEPRINT_LAYERS.map((l) => (
+								<SelectItem key={l} value={l}>
+									{l}
+								</SelectItem>
+							))}
+						</SelectContent>
 					</Select>
 				</div>
 				<div className="space-y-2">

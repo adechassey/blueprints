@@ -21,7 +21,13 @@ import {
 	DialogTitle,
 } from '../../components/ui/dialog.js';
 import { EmptyState } from '../../components/ui/empty.js';
-import { Select } from '../../components/ui/select.js';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '../../components/ui/select.js';
 import { Skeleton } from '../../components/ui/skeleton.js';
 import {
 	Table,
@@ -168,14 +174,21 @@ function AdminUsersPage() {
 					<div className="flex justify-end">
 						<Select
 							value={row.original.role ?? 'user'}
-							onChange={(e) => handleRoleChange(row.original.id, e.target.value, row.original.name)}
+							onValueChange={(role) => handleRoleChange(row.original.id, role, row.original.name)}
 							disabled={row.original.id === session?.user?.id}
-							className="w-36"
-							aria-label={`${m.admin_role}: ${row.original.name}`}
 						>
-							<option value="user">user</option>
-							<option value="maintainer">maintainer</option>
-							<option value="admin">admin</option>
+							<SelectTrigger
+								size="sm"
+								className="w-36"
+								aria-label={`${m.admin_role()}: ${row.original.name}`}
+							>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent align="end">
+								<SelectItem value="user">user</SelectItem>
+								<SelectItem value="maintainer">maintainer</SelectItem>
+								<SelectItem value="admin">admin</SelectItem>
+							</SelectContent>
 						</Select>
 					</div>
 				),
