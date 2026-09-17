@@ -84,19 +84,28 @@ export interface ScanState {
 	inBlock: boolean;
 }
 
+export interface LineScan {
+	/** Net bracket depth delta of the line. */
+	depth: number;
+	/** The line with its comments removed (string literals kept verbatim). */
+	code: string;
+}
+
 /**
- * Bracket depth delta of one line, skipping string literals (single, double,
- * template — escaped chars and multi-line template spans via `state`), line
- * comments (`//`, `#` for Python/Ruby/Shell) and block comments. Braces inside
- * template expressions (`${...}`) are ignored with the rest of the literal.
+ * Scans one line: its bracket depth delta and its code without comments.
+ * Skips string literals (single, double, template — escaped chars and
+ * multi-line template spans via `state`), line comments (`//`, `#` for
+ * Python/Ruby/Shell) and block comments. Braces inside template expressions
+ * (`${...}`) are ignored with the rest of the literal.
  */
-export function scanLine(line: string, state: ScanState): number {
+export function scanLine(line: string, state: ScanState): LineScan {
 	let depth = 0;
+	let code = '';
 	let i = 0;
 	while (i < line.length) {
 		if (state.inBlock) {
 			const end = line.indexOf('*/', i);
-			if (end === -1) return depth;
+			if (end === -1) break;
 			i = end + 2;
 			state.inBlock = false;
 			continue;
@@ -104,39 +113,60 @@ export function scanLine(line: string, state: ScanState): number {
 		const ch = line[i] as string;
 		if (state.inStr) {
 			if (ch === '\\') {
+				code += line.slice(i, i + 2);
 				i += 2;
 				continue;
 			}
 			if (ch === state.inStr) state.inStr = null;
+			code += ch;
 			i++;
 			continue;
 		}
-		if (ch === '/' && line[i + 1] === '/') return depth;
+		if ((ch === '/' && line[i + 1] === '/') || ch === '#') break;
 		if (ch === '/' && line[i + 1] === '*') {
 			state.inBlock = true;
 			i += 2;
 			continue;
 		}
-		if (ch === '#') return depth;
-		if (ch === "'" || ch === '"' || ch === '`') {
-			state.inStr = ch;
-			i++;
-			continue;
-		}
-		if (ch === '{' || ch === '(' || ch === '[') depth++;
+		code += ch;
+		if (ch === "'" || ch === '"' || ch === '`') state.inStr = ch;
+		else if (ch === '{' || ch === '(' || ch === '[') depth++;
 		else if (ch === '}' || ch === ')' || ch === ']') depth--;
 		i++;
 	}
-	return depth;
+	return { depth, code };
 }
 
 /**
+ * A line ending mid-expression — assignment, arrow, operator, member access,
+ * backslash continuation — carries the statement onto the next line. `,` is
+ * deliberately absent: an annotated array/object entry ends with one.
+ */
+const TRAILING_CONTINUATION_RE = /(?:=>?|[|&?]|(?<!\.)\.|(?<!\+)\+|\\)\s*$/;
+
+/** A line resuming the previous one: method chain, union/intersection, ternary, `as`. */
+const LEADING_CONTINUATION_RE = /^\s*(?:[.?:|&=]|(?:as|satisfies|extends|implements)\s)/;
+
+/** The last line of a decorator/annotation (`@Injectable()`, `@property`, `})` of `@Component({…})`). */
+const DECORATOR_END_RE = /^\s*@[\w.]+\s*$|\)\s*$/;
+
+/** Whether the next code line (comment lines skipped) continues the statement. */
+function continuesOnNextLine(lines: string[], from: number): boolean {
+	let i = from;
+	while (i < lines.length && COMMENT_LINE_RE.test(lines[i] as string)) i++;
+	return i < lines.length && LEADING_CONTINUATION_RE.test(lines[i] as string);
+}
+
+const indentOf = (l: string) => l.length - l.trimStart().length;
+
+/**
  * Extracts the exemplar excerpt: the annotation comment block starting at
- * `line`, plus the full declaration body that follows it — the body is
- * bracket-balanced (braces/parens/brackets opened by the declaration must
- * close before the excerpt ends), string/comment aware. Python-style
- * indentation blocks (declaration ending with `:`) are followed by indent
- * level instead. Returns undefined when the line number is out of bounds,
+ * `line`, plus the full declaration that follows it — its decorators, then
+ * one statement, which ends once its brackets are balanced (string/comment
+ * aware) and no continuation carries it onto the next line (trailing `=`,
+ * `=>` or operator; next line starting with `.`, `|`, `?`, `:`, `as`…).
+ * A statement ending with `:` (Python) takes the block indented deeper than
+ * the statement. Returns undefined when the line number is out of bounds,
  * and truncates at `MAX_EXCERPT_LINES` lines.
  */
 export function extractExcerpt(content: string, line: number): string | undefined {
@@ -150,33 +180,41 @@ export function extractExcerpt(content: string, line: number): string | undefine
 		declIndex++;
 	}
 
-	// 2) The declaration body. Comments at EOF (no declaration) end the excerpt.
+	// 2) The declaration. Comments at EOF (no declaration) end the excerpt.
+	const state: ScanState = { inStr: null, inBlock: false };
 	let last = declIndex;
-	const decl = lines[declIndex + 1];
-	if (decl !== undefined) {
-		last = declIndex + 1;
-		const state: ScanState = { inStr: null, inBlock: false };
-		let depth = scanLine(decl, state);
-		const cap = start + MAX_EXCERPT_LINES;
-		if (depth > 0) {
-			// Braced body (TS/Java/Go/Rust/C/…): consume until brackets close.
-			for (let i = declIndex + 2; i < lines.length && i < cap; i++) {
-				last = i;
-				const d = scanLine(lines[i] as string, state);
-				if (depth + d <= 0) break;
-				depth += d;
-			}
-		} else if (/:\s*$/.test(decl)) {
-			// Indentation body (Python): consume lines indented deeper than the
-			// declaration.
-			const indent = decl.length - decl.trimStart().length;
-			for (let i = declIndex + 2; i < lines.length && i < cap; i++) {
-				const l = lines[i] as string;
-				if (l.trim() === '') continue;
-				if (l.length - l.trimStart().length <= indent) break;
-				last = i;
-			}
+	let stmtStart = declIndex + 1;
+	let depth = 0;
+	for (let i = declIndex + 1; i < lines.length; i++) {
+		const current = lines[i] as string;
+		const { depth: delta, code } = scanLine(current, state);
+		last = i;
+		depth += delta;
+		// Comments between decorators and the declaration: the statement starts after them.
+		if (stmtStart === i && code.trim() === '' && current.trim() !== '') {
+			stmtStart = i + 1;
+			continue;
 		}
+		if (depth > 0 || state.inStr || state.inBlock) continue;
+
+		// A complete decorator: the declaration it annotates starts next line.
+		if ((lines[stmtStart] as string).trimStart().startsWith('@') && DECORATOR_END_RE.test(code)) {
+			stmtStart = i + 1;
+			continue;
+		}
+		// Indentation body (Python): the lines indented deeper than the statement.
+		if (/:\s*$/.test(code)) {
+			const indent = indentOf(lines[stmtStart] as string);
+			for (let j = i + 1; j < lines.length; j++) {
+				const l = lines[j] as string;
+				if (l.trim() === '') continue;
+				if (indentOf(l) <= indent) break;
+				last = j;
+			}
+			break;
+		}
+		if (TRAILING_CONTINUATION_RE.test(code) || continuesOnNextLine(lines, i + 1)) continue;
+		break;
 	}
 
 	// Clamp the excerpt to the cap (a long annotation block can overflow it), then join.
