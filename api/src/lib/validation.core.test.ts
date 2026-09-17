@@ -1,5 +1,6 @@
+import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 import { describe, expect, it } from 'vitest';
-import { isValidSlug, isValidStack, paginationDefaults } from './validation.core.js';
+import { isValidLayer, isValidSlug, paginationDefaults } from './validation.core.js';
 
 describe('isValidSlug', () => {
 	it('accepts valid slugs', () => {
@@ -20,17 +21,17 @@ describe('isValidSlug', () => {
 	});
 });
 
-describe('isValidStack', () => {
-	it('accepts valid stacks', () => {
-		expect(isValidStack('server')).toBe(true);
-		expect(isValidStack('webapp')).toBe(true);
-		expect(isValidStack('shared')).toBe(true);
-		expect(isValidStack('fullstack')).toBe(true);
+describe('isValidLayer', () => {
+	it('accepts every defined layer', () => {
+		for (const layer of BLUEPRINT_LAYERS) {
+			expect(isValidLayer(layer)).toBe(true);
+		}
 	});
 
-	it('rejects invalid stacks', () => {
-		expect(isValidStack('invalid')).toBe(false);
-		expect(isValidStack('')).toBe(false);
+	it('rejects invalid layers', () => {
+		expect(isValidLayer('invalid')).toBe(false);
+		expect(isValidLayer('')).toBe(false);
+		expect(isValidLayer('server')).toBe(false);
 	});
 });
 

@@ -135,7 +135,6 @@ export async function getMatchesForBlueprint(db: DB, blueprintId: string) {
 				id: blueprints.id,
 				name: blueprints.name,
 				slug: blueprints.slug,
-				stack: blueprints.stack,
 				layer: blueprints.layer,
 				authorName: users.name,
 			})

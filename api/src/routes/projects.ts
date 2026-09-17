@@ -1,8 +1,16 @@
 import { zValidator } from '@hono/zod-validator';
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { blueprintProjects, blueprints, projectMembers, projects, users } from '../db/schema.js';
+import {
+	blueprintProjects,
+	blueprints,
+	blueprintTechnologies,
+	projectMembers,
+	projects,
+	technologies,
+	users,
+} from '../db/schema.js';
 import { auth } from '../lib/auth.js';
 import {
 	addBlueprintToProjectSchema,
@@ -296,9 +304,9 @@ export const projectRoutes = new Hono()
 
 		const projectBlueprints = await db
 			.select({
+				id: blueprints.id,
 				slug: blueprints.slug,
 				name: blueprints.name,
-				stack: blueprints.stack,
 				layer: blueprints.layer,
 				description: blueprints.description,
 				usage: blueprints.usage,
@@ -306,9 +314,41 @@ export const projectRoutes = new Hono()
 			.from(blueprints)
 			.innerJoin(blueprintProjects, eq(blueprints.id, blueprintProjects.blueprintId))
 			.where(eq(blueprintProjects.projectId, project.id))
-			.orderBy(blueprints.stack, blueprints.layer, blueprints.name);
+			.orderBy(blueprints.layer, blueprints.name);
 
-		const markdown = generateBlueprintIndex(project.name, projectBlueprints);
+		const techRows = projectBlueprints.length
+			? await db
+					.select({
+						blueprintId: blueprintTechnologies.blueprintId,
+						name: technologies.name,
+					})
+					.from(blueprintTechnologies)
+					.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
+					.where(
+						inArray(
+							blueprintTechnologies.blueprintId,
+							projectBlueprints.map((b) => b.id),
+						),
+					)
+			: [];
+		const techsByBlueprint = new Map<string, string[]>();
+		for (const row of techRows) {
+			const list = techsByBlueprint.get(row.blueprintId) ?? [];
+			list.push(row.name);
+			techsByBlueprint.set(row.blueprintId, list);
+		}
+
+		const markdown = generateBlueprintIndex(
+			project.name,
+			projectBlueprints.map((b) => ({
+				slug: b.slug,
+				name: b.name,
+				layer: b.layer,
+				description: b.description,
+				usage: b.usage,
+				technologies: techsByBlueprint.get(b.id) ?? [],
+			})),
+		);
 
 		return c.json({ markdown, project: project.name, count: projectBlueprints.length });
 	});

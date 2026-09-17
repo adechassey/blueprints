@@ -1,21 +1,24 @@
 import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import {
+	blueprintLayer,
 	blueprintProjects,
-	blueprintStack,
 	blueprints,
 	blueprintTags,
+	blueprintTechnologies,
 	blueprintVersions,
 	comments,
 	projectMembers,
 	projects,
 	tags,
+	technologies,
+	technologyCategory,
 	userRole,
 	users,
 } from '../schema.js';
 
 describe('schema tables', () => {
-	it('exports all 9 tables', () => {
+	it('exports all 12 tables', () => {
 		expect(users).toBeDefined();
 		expect(projects).toBeDefined();
 		expect(projectMembers).toBeDefined();
@@ -25,6 +28,8 @@ describe('schema tables', () => {
 		expect(tags).toBeDefined();
 		expect(blueprintTags).toBeDefined();
 		expect(comments).toBeDefined();
+		expect(technologies).toBeDefined();
+		expect(blueprintTechnologies).toBeDefined();
 	});
 
 	it('users table has expected columns', () => {
@@ -45,7 +50,6 @@ describe('schema tables', () => {
 				'usage',
 				'currentVersionId',
 				'authorId',
-				'stack',
 				'layer',
 				'isPublic',
 				'downloadCount',
@@ -79,7 +83,27 @@ describe('schema enums', () => {
 		expect(userRole.enumValues).toEqual(['admin', 'maintainer', 'user']);
 	});
 
-	it('blueprintStack has expected values', () => {
-		expect(blueprintStack.enumValues).toEqual(['server', 'webapp', 'shared', 'fullstack']);
+	it('blueprintLayer matches BLUEPRINT_LAYERS', () => {
+		expect(blueprintLayer.enumValues).toEqual([
+			'database',
+			'api',
+			'domain',
+			'ui',
+			'state',
+			'infra',
+			'testing',
+			'tooling',
+		]);
+	});
+
+	it('technologyCategory has expected values', () => {
+		expect(technologyCategory.enumValues).toEqual([
+			'language',
+			'framework',
+			'library',
+			'database',
+			'infra',
+			'tooling',
+		]);
 	});
 });

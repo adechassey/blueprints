@@ -13,11 +13,14 @@ import { fileURLToPath } from 'node:url';
 import { eq } from 'drizzle-orm';
 import { db } from '../src/db/index.js';
 import {
+	blueprintProjects,
 	blueprints,
 	blueprintTags,
+	blueprintTechnologies,
 	blueprintVersions,
 	projects,
 	tags,
+	technologies,
 	users,
 } from '../src/db/schema.js';
 import { generateSlug } from '../src/services/blueprints.core.js';
@@ -34,8 +37,80 @@ interface FrontmatterMeta {
 	usage?: string;
 	project?: string;
 	layer?: string;
+	technologies?: string;
 	id?: string;
 	source?: string;
+}
+
+/** Curated technology taxonomy, upserted on every seed run. */
+const TECHNOLOGY_CATALOG: Array<{
+	name: string;
+	slug: string;
+	category: 'language' | 'framework' | 'library' | 'database' | 'infra' | 'tooling';
+}> = [
+	{ name: 'TypeScript', slug: 'typescript', category: 'language' },
+	{ name: 'Python', slug: 'python', category: 'language' },
+	{ name: 'Node.js', slug: 'node', category: 'infra' },
+	{ name: 'React', slug: 'react', category: 'framework' },
+	{ name: 'Next.js', slug: 'nextjs', category: 'framework' },
+	{ name: 'Nest.js', slug: 'nestjs', category: 'framework' },
+	{ name: 'Hono', slug: 'hono', category: 'framework' },
+	{ name: 'Vite', slug: 'vite', category: 'tooling' },
+	{ name: 'TanStack Router', slug: 'tanstack-router', category: 'library' },
+	{ name: 'TanStack Query', slug: 'tanstack-query', category: 'library' },
+	{ name: 'Tailwind CSS', slug: 'tailwindcss', category: 'library' },
+	{ name: 'Drizzle ORM', slug: 'drizzle', category: 'database' },
+	{ name: 'Prisma', slug: 'prisma', category: 'database' },
+	{ name: 'PostgreSQL', slug: 'postgresql', category: 'database' },
+	{ name: 'Zod', slug: 'zod', category: 'library' },
+	{ name: 'Docker', slug: 'docker', category: 'infra' },
+];
+
+/** Fallback technologies per legacy `project` frontmatter field. */
+const STACK_TECHNOLOGIES: Record<string, string[]> = {
+	webapp: ['react', 'vite', 'tailwindcss'],
+	shared: ['typescript', 'zod'],
+	server: ['node', 'hono', 'drizzle'],
+};
+
+/** Maps legacy free-text layers onto the closed blueprint_layer enum. */
+const LAYER_MAP: Record<string, string> = {
+	adapter: 'database',
+	repository: 'database',
+	schema: 'database',
+	dto: 'database',
+	controller: 'api',
+	route: 'api',
+	middleware: 'api',
+	guard: 'api',
+	service: 'domain',
+	core: 'domain',
+	module: 'domain',
+	error: 'domain',
+	pattern: 'domain',
+	unknown: 'domain',
+	atom: 'ui',
+	molecule: 'ui',
+	organism: 'ui',
+	page: 'ui',
+	hook: 'ui',
+	component: 'ui',
+	state: 'state',
+	infra: 'infra',
+	testing: 'testing',
+	tooling: 'tooling',
+};
+
+function normalizeLayer(layer: string | undefined):
+	| 'database'
+	| 'api'
+	| 'domain'
+	| 'ui'
+	| 'state'
+	| 'infra'
+	| 'testing'
+	| 'tooling' {
+	return (LAYER_MAP[layer ?? ''] ?? 'domain') as never;
 }
 
 function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content: string } {
@@ -56,15 +131,6 @@ function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content: string
 	return { meta, content: match[2].trim() };
 }
 
-function inferStack(projectField?: string): 'server' | 'webapp' | 'shared' | 'fullstack' {
-	if (!projectField) return 'server';
-	const lower = projectField.toLowerCase();
-	if (lower === 'webapp' || lower === 'web') return 'webapp';
-	if (lower === 'shared') return 'shared';
-	if (lower === 'fullstack') return 'fullstack';
-	return 'server';
-}
-
 async function main() {
 	console.log('🌱 Starting seed...\n');
 
@@ -81,7 +147,20 @@ async function main() {
 		console.log('  ✓ System user exists');
 	}
 
-	// 2. Create or find default project
+	// 2. Seed technology taxonomy
+	for (const tech of TECHNOLOGY_CATALOG) {
+		const [existing] = await db
+			.select({ id: technologies.id })
+			.from(technologies)
+			.where(eq(technologies.slug, tech.slug))
+			.limit(1);
+		if (!existing) {
+			await db.insert(technologies).values(tech);
+		}
+	}
+	console.log(`  ✓ Technology catalog seeded (${TECHNOLOGY_CATALOG.length})`);
+
+	// 3. Create or find default project
 	const projectSlug = 'aquila-ap';
 	let [defaultProject] = await db
 		.select()
@@ -117,8 +196,15 @@ async function main() {
 
 		const name = meta.name || file.replace(/\.md$/, '');
 		const slug = generateSlug(name);
-		const stack = inferStack(meta.project);
-		const layer = meta.layer || 'unknown';
+		const layer = normalizeLayer(meta.layer);
+
+		// Frontmatter `technologies` wins; fallback to the legacy `project` field mapping
+		const techSlugs = meta.technologies
+			? meta.technologies
+					.split(',')
+					.map((t) => t.trim().toLowerCase())
+					.filter(Boolean)
+			: (STACK_TECHNOLOGIES[meta.project ?? ''] ?? STACK_TECHNOLOGIES.server);
 
 		// Check if already exists
 		const [existing] = await db.select().from(blueprints).where(eq(blueprints.slug, slug)).limit(1);
@@ -136,12 +222,15 @@ async function main() {
 				slug,
 				description: meta.description || null,
 				usage: meta.usage || null,
-				stack,
 				layer,
-				projectId: defaultProject.id,
 				authorId: systemUser.id,
 			})
 			.returning();
+
+		// Link to the default project
+		await db
+			.insert(blueprintProjects)
+			.values({ blueprintId: blueprint.id, projectId: defaultProject.id });
 
 		// Create version
 		const [version] = await db
@@ -168,6 +257,18 @@ async function main() {
 				[tag] = await db.insert(tags).values({ name: tagName, slug: tagSlug }).returning();
 			}
 			await db.insert(blueprintTags).values({ blueprintId: blueprint.id, tagId: tag.id });
+		}
+
+		// Link technologies
+		const techRecords = await db
+			.select({ id: technologies.id, slug: technologies.slug })
+			.from(technologies);
+		const techBySlug = new Map(techRecords.map((t) => [t.slug, t.id]));
+		const techIds = techSlugs.map((s) => techBySlug.get(s)).filter((id) => id !== undefined);
+		if (techIds.length > 0) {
+			await db
+				.insert(blueprintTechnologies)
+				.values(techIds.map((technologyId) => ({ blueprintId: blueprint.id, technologyId })));
 		}
 
 		// Generate embedding

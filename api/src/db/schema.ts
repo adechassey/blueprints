@@ -1,3 +1,4 @@
+import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
 	boolean,
 	index,
@@ -14,13 +15,26 @@ import {
 
 export const projectMemberRole = pgEnum('project_member_role', ['owner', 'member']);
 
-// Enums
+// Enums — values mirrored from BLUEPRINT_LAYERS / TECHNOLOGY_CATEGORIES in
+// @blueprints/shared (inlined: drizzle-kit cannot resolve workspace sources)
 export const userRole = pgEnum('user_role', ['admin', 'maintainer', 'user']);
-export const blueprintStack = pgEnum('blueprint_stack', [
-	'server',
-	'webapp',
-	'shared',
-	'fullstack',
+export const blueprintLayer = pgEnum('blueprint_layer', [
+	'database',
+	'api',
+	'domain',
+	'ui',
+	'state',
+	'infra',
+	'testing',
+	'tooling',
+]);
+export const technologyCategory = pgEnum('technology_category', [
+	'language',
+	'framework',
+	'library',
+	'database',
+	'infra',
+	'tooling',
 ]);
 
 // Users
@@ -112,8 +126,8 @@ export const blueprints = pgTable(
 		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
-		stack: blueprintStack('stack').notNull(),
-		layer: text('layer').notNull(),
+		// Architecture layer the blueprint belongs to (see BLUEPRINT_LAYERS)
+		layer: blueprintLayer('layer').notNull(),
 		// Origin of the blueprint, e.g. "owner/repo:path/to/file.ts:42" for a synced
 		// `@Blueprint` code annotation
 		source: text('source'),
@@ -184,6 +198,33 @@ export const tags = pgTable('tags', {
 	slug: text('slug').notNull().unique(),
 	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// Technologies (curated taxonomy: frameworks, languages, libraries…)
+export const technologies = pgTable('technologies', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	name: text('name').notNull().unique(),
+	slug: text('slug').notNull().unique(),
+	category: technologyCategory('category').notNull().default('library'),
+	description: text('description'),
+	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Blueprint-Technology join table (many-to-many)
+export const blueprintTechnologies = pgTable(
+	'blueprint_technologies',
+	{
+		blueprintId: uuid('blueprint_id')
+			.notNull()
+			.references(() => blueprints.id, { onDelete: 'cascade' }),
+		technologyId: uuid('technology_id')
+			.notNull()
+			.references((): AnyPgColumn => technologies.id, { onDelete: 'cascade' }),
+	},
+	(t) => [
+		primaryKey({ columns: [t.blueprintId, t.technologyId] }),
+		index('blueprint_technologies_technology_idx').on(t.technologyId),
+	],
+);
 
 // Blueprint-Tag join table
 export const blueprintTags = pgTable(

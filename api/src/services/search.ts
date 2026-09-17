@@ -1,12 +1,15 @@
-import { and, eq, ilike, or, sql } from 'drizzle-orm';
+import type { BlueprintLayer } from '@blueprints/shared';
+import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
 	blueprintProjects,
 	blueprints,
 	blueprintTags,
+	blueprintTechnologies,
 	blueprintVersions,
 	projects,
 	tags,
+	technologies,
 	users,
 } from '../db/schema.js';
 import { logger } from '../lib/logger.js';
@@ -14,7 +17,7 @@ import { cosineSimilarityToScore } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
 
 interface SearchFilters {
-	stack?: string;
+	technologies?: string[];
 	layer?: string;
 	tag?: string;
 	projectId?: string;
@@ -24,7 +27,7 @@ interface SearchFilters {
 }
 
 interface ResolvedFilters {
-	stack?: string;
+	technologies?: string[];
 	layer?: string;
 	tag?: string;
 	resolvedProjectId?: string;
@@ -33,7 +36,7 @@ interface ResolvedFilters {
 }
 
 export async function semanticSearch(db: DB, query: string, filters: SearchFilters = {}) {
-	const { stack, layer, tag, projectId, project, limit = 20, offset = 0 } = filters;
+	const { layer, tag, projectId, project, limit = 20, offset = 0 } = filters;
 
 	// Resolve project slug to UUID if needed
 	let resolvedProjectId = projectId;
@@ -53,7 +56,14 @@ export async function semanticSearch(db: DB, query: string, filters: SearchFilte
 		logger.error({ err }, 'Failed to generate query embedding, falling back to text search');
 	}
 
-	const resolved: ResolvedFilters = { stack, layer, tag, resolvedProjectId, limit, offset };
+	const resolved: ResolvedFilters = {
+		technologies: filters.technologies,
+		layer,
+		tag,
+		resolvedProjectId,
+		limit,
+		offset,
+	};
 
 	if (queryEmbedding) {
 		return vectorSearch(db, queryEmbedding, query, resolved);
@@ -67,13 +77,24 @@ async function vectorSearch(
 	query: string,
 	filters: ResolvedFilters,
 ) {
-	const { stack, layer, tag, resolvedProjectId, limit, offset } = filters;
+	const { layer, tag, resolvedProjectId, limit, offset } = filters;
 	const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
 	const conditions = [sql`${blueprintVersions.embedding} IS NOT NULL`];
-	if (stack)
-		conditions.push(eq(blueprints.stack, stack as 'server' | 'webapp' | 'shared' | 'fullstack'));
-	if (layer) conditions.push(eq(blueprints.layer, layer));
+	if (filters.technologies && filters.technologies.length > 0) {
+		// Any-match: blueprints carrying at least one of the requested technologies
+		conditions.push(
+			inArray(
+				blueprints.id,
+				db
+					.select({ id: blueprintTechnologies.blueprintId })
+					.from(blueprintTechnologies)
+					.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
+					.where(inArray(technologies.slug, filters.technologies)),
+			),
+		);
+	}
+	if (layer) conditions.push(eq(blueprints.layer, layer as BlueprintLayer));
 
 	let baseQuery = db
 		.select({
@@ -82,7 +103,6 @@ async function vectorSearch(
 			slug: blueprints.slug,
 			description: blueprints.description,
 			usage: blueprints.usage,
-			stack: blueprints.stack,
 			layer: blueprints.layer,
 			isPublic: blueprints.isPublic,
 			downloadCount: blueprints.downloadCount,
@@ -130,13 +150,24 @@ async function vectorSearch(
 }
 
 async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
-	const { stack, layer, tag, resolvedProjectId, limit, offset } = filters;
+	const { layer, tag, resolvedProjectId, limit, offset } = filters;
 	const pattern = `%${query}%`;
 
 	const conditions = [or(ilike(blueprints.name, pattern), ilike(blueprints.description, pattern))];
-	if (stack)
-		conditions.push(eq(blueprints.stack, stack as 'server' | 'webapp' | 'shared' | 'fullstack'));
-	if (layer) conditions.push(eq(blueprints.layer, layer));
+	if (filters.technologies && filters.technologies.length > 0) {
+		// Any-match: blueprints carrying at least one of the requested technologies
+		conditions.push(
+			inArray(
+				blueprints.id,
+				db
+					.select({ id: blueprintTechnologies.blueprintId })
+					.from(blueprintTechnologies)
+					.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
+					.where(inArray(technologies.slug, filters.technologies)),
+			),
+		);
+	}
+	if (layer) conditions.push(eq(blueprints.layer, layer as BlueprintLayer));
 
 	let baseQuery = db
 		.select({
@@ -145,7 +176,6 @@ async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
 			slug: blueprints.slug,
 			description: blueprints.description,
 			usage: blueprints.usage,
-			stack: blueprints.stack,
 			layer: blueprints.layer,
 			isPublic: blueprints.isPublic,
 			downloadCount: blueprints.downloadCount,

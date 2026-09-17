@@ -3,10 +3,12 @@ import { resolve } from 'node:path';
 import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
 
-// Load .env from monorepo root (drizzle-kit runs from api/)
+// Load .env from monorepo root and api/ (drizzle-kit runs from api/)
 const rootEnv = resolve(process.cwd(), '..', '.env');
 if (existsSync(rootEnv)) config({ path: rootEnv });
-config(); // also check cwd
+config(); // cwd .env
+const localEnv = resolve(process.cwd(), '.env.local');
+if (existsSync(localEnv)) config({ path: localEnv });
 
 export default defineConfig({
 	schema: './src/db/schema.ts',

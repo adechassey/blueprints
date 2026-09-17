@@ -15,6 +15,7 @@ import { mcpRoute } from './routes/mcp.js';
 import { previewAuthRoutes } from './routes/preview-auth.js';
 import { projectRoutes } from './routes/projects.js';
 import { tagRoutes } from './routes/tags.js';
+import { technologyRoutes } from './routes/technologies.js';
 import { userRoutes } from './routes/users.js';
 
 const baseApp = new Hono();
@@ -41,6 +42,7 @@ export const app = baseApp
 	.route('/api', healthRoute)
 	.route('/api', blueprintRoutes)
 	.route('/api', tagRoutes)
+	.route('/api', technologyRoutes)
 	.route('/api', projectRoutes)
 	.route('/api', embeddingsRoute)
 	.route('/api', commentRoutes)

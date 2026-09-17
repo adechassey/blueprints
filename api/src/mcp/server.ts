@@ -2,6 +2,7 @@ import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/index.js';
 import { blueprints, projects } from '../db/schema.js';
+import { blueprintLayerSchema, technoFilterSchema } from '../lib/validation.js';
 import {
 	createBlueprint,
 	getBlueprintById,
@@ -26,20 +27,25 @@ const searchBlueprintsTool: ToolDefinition = {
 	description: 'Search for blueprints using natural language',
 	inputSchema: z.object({
 		query: z.string().describe('Natural language search query'),
-		stack: z.enum(['server', 'webapp', 'shared', 'fullstack']).optional(),
-		layer: z.string().optional(),
+		techno: z.string().optional().describe('Comma-separated technology slugs (any-match)'),
+		layer: blueprintLayerSchema.optional(),
 		tag: z.string().optional(),
 		limit: z.number().int().min(1).max(50).default(10),
 	}),
 	handler: async (args) => {
-		const { query, stack, layer, tag, limit } = args as {
+		const { query, techno, layer, tag, limit } = args as {
 			query: string;
-			stack?: string;
+			techno?: string;
 			layer?: string;
 			tag?: string;
 			limit?: number;
 		};
-		const result = await semanticSearch(db, query, { stack, layer, tag, limit });
+		const result = await semanticSearch(db, query, {
+			technologies: technoFilterSchema.parse(techno),
+			layer: layer as never,
+			tag,
+			limit,
+		});
 		return { content: [{ type: 'text' as const, text: JSON.stringify(result.items, null, 2) }] };
 	},
 };
@@ -68,15 +74,30 @@ const listBlueprintsTool: ToolDefinition = {
 	name: 'list_blueprints',
 	description: 'List blueprints with optional filters',
 	inputSchema: z.object({
-		stack: z.enum(['server', 'webapp', 'shared', 'fullstack']).optional(),
-		layer: z.string().optional(),
+		techno: z.string().optional().describe('Comma-separated technology slugs (any-match)'),
+		layer: blueprintLayerSchema.optional(),
 		tag: z.string().optional(),
 		projectId: z.string().optional(),
 		limit: z.number().int().min(1).max(100).default(20),
 		page: z.number().int().min(1).default(1),
 	}),
 	handler: async (args) => {
-		const result = await listBlueprints(db, args as Parameters<typeof listBlueprints>[1]);
+		const parsed = args as {
+			techno?: string;
+			layer?: string;
+			tag?: string;
+			projectId?: string;
+			limit?: number;
+			page?: number;
+		};
+		const result = await listBlueprints(db, {
+			techno: technoFilterSchema.parse(parsed.techno),
+			layer: parsed.layer as never,
+			tag: parsed.tag,
+			projectId: parsed.projectId,
+			limit: parsed.limit ?? 20,
+			page: parsed.page ?? 1,
+		});
 		return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
 	},
 };
@@ -99,26 +120,34 @@ const publishBlueprintTool: ToolDefinition = {
 		name: z.string(),
 		description: z.string().optional(),
 		usage: z.string().optional(),
-		stack: z.enum(['server', 'webapp', 'shared', 'fullstack']),
-		layer: z.string(),
+		technologies: z.array(z.string()).optional(),
+		layer: blueprintLayerSchema,
 		content: z.string(),
 		tags: z.array(z.string()).optional(),
 		projectId: z.string().optional(),
 	}),
 	handler: async (input, authorId) => {
+		const { name, description, usage, technologies, layer, content, tags, projectId } = input as {
+			name: string;
+			description?: string;
+			usage?: string;
+			technologies?: string[];
+			layer: string;
+			content: string;
+			tags?: string[];
+			projectId?: string;
+		};
 		const blueprint = await createBlueprint(
 			db,
 			{
-				...(input as {
-					name: string;
-					stack: 'server' | 'webapp' | 'shared' | 'fullstack';
-					layer: string;
-					content: string;
-					description?: string;
-					usage?: string;
-					tags?: string[];
-					projectId?: string;
-				}),
+				name,
+				description,
+				usage,
+				technologies,
+				layer: blueprintLayerSchema.parse(layer),
+				content,
+				tags,
+				projectId,
 				isPublic: true,
 			},
 			authorId,

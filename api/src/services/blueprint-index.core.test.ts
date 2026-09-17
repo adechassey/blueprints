@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { generateBlueprintIndex, type IndexBlueprint } from './blueprint-index.core.js';
 
+function bp(overrides: Partial<IndexBlueprint>): IndexBlueprint {
+	return {
+		slug: 'test',
+		name: 'Test',
+		technologies: [],
+		layer: 'domain',
+		description: null,
+		usage: null,
+		...overrides,
+	};
+}
+
 describe('generateBlueprintIndex', () => {
 	it('generates empty index', () => {
 		const result = generateBlueprintIndex('My Project', []);
@@ -8,29 +20,29 @@ describe('generateBlueprintIndex', () => {
 		expect(result).toContain('No blueprints in this project.');
 	});
 
-	it('generates index with blueprints grouped by stack', () => {
+	it('generates index with blueprints grouped by layer', () => {
 		const blueprints: IndexBlueprint[] = [
 			{
 				slug: 'auth-middleware',
 				name: 'Auth Middleware',
-				stack: 'server',
-				layer: 'middleware',
+				technologies: ['hono'],
+				layer: 'api',
 				description: 'JWT auth',
 				usage: 'Use for protected routes',
 			},
 			{
 				slug: 'login-form',
 				name: 'Login Form',
-				stack: 'webapp',
-				layer: 'page',
+				technologies: ['react'],
+				layer: 'ui',
 				description: 'Login page',
 				usage: 'Use for auth pages',
 			},
 			{
-				slug: 'user-schema',
-				name: 'User Schema',
-				stack: 'shared',
-				layer: 'schema',
+				slug: 'user-repository',
+				name: 'User Repository',
+				technologies: ['drizzle'],
+				layer: 'database',
 				description: 'User model',
 				usage: null,
 			},
@@ -39,81 +51,66 @@ describe('generateBlueprintIndex', () => {
 		const result = generateBlueprintIndex('Test Project', blueprints);
 
 		expect(result).toContain('# Blueprint Index — Test Project');
-		expect(result).toContain('## Server');
-		expect(result).toContain('## Webapp');
-		expect(result).toContain('## Shared');
+		expect(result).toContain('## Database');
+		expect(result).toContain('## Api');
+		expect(result).toContain('## Ui');
 		expect(result).toContain(
-			'| auth-middleware | middleware | Auth Middleware | Use for protected routes | JWT auth |',
+			'| auth-middleware | hono | Auth Middleware | Use for protected routes | JWT auth |',
 		);
 		expect(result).toContain(
-			'| login-form | page | Login Form | Use for auth pages | Login page |',
+			'| login-form | react | Login Form | Use for auth pages | Login page |',
 		);
-		expect(result).toContain('| user-schema | schema | User Schema |  | User model |');
+		expect(result).toContain('| user-repository | drizzle | User Repository |  | User model |');
 	});
 
-	it('sorts stacks in canonical order (server, webapp, shared, fullstack)', () => {
+	it('sorts layers in canonical order', () => {
 		const blueprints: IndexBlueprint[] = [
-			{ slug: 'b', name: 'B', stack: 'shared', layer: 'x', description: null, usage: null },
-			{ slug: 'a', name: 'A', stack: 'server', layer: 'x', description: null, usage: null },
-			{ slug: 'c', name: 'C', stack: 'webapp', layer: 'x', description: null, usage: null },
+			bp({ slug: 'b', name: 'B', layer: 'ui' }),
+			bp({ slug: 'a', name: 'A', layer: 'database' }),
+			bp({ slug: 'c', name: 'C', layer: 'api' }),
 		];
 
 		const result = generateBlueprintIndex('P', blueprints);
-		const serverIdx = result.indexOf('## Server');
-		const webappIdx = result.indexOf('## Webapp');
-		const sharedIdx = result.indexOf('## Shared');
+		const databaseIdx = result.indexOf('## Database');
+		const apiIdx = result.indexOf('## Api');
+		const uiIdx = result.indexOf('## Ui');
 
-		expect(serverIdx).toBeLessThan(webappIdx);
-		expect(webappIdx).toBeLessThan(sharedIdx);
+		expect(databaseIdx).toBeLessThan(apiIdx);
+		expect(apiIdx).toBeLessThan(uiIdx);
 	});
 
-	it('sorts blueprints within a stack by layer then name', () => {
+	it('sorts blueprints within a layer by name', () => {
 		const blueprints: IndexBlueprint[] = [
-			{
-				slug: 'z-service',
-				name: 'Z Service',
-				stack: 'server',
-				layer: 'service',
-				description: null,
-				usage: null,
-			},
-			{
-				slug: 'a-controller',
-				name: 'A Controller',
-				stack: 'server',
-				layer: 'controller',
-				description: null,
-				usage: null,
-			},
-			{
-				slug: 'b-service',
-				name: 'B Service',
-				stack: 'server',
-				layer: 'service',
-				description: null,
-				usage: null,
-			},
+			bp({ slug: 'z-service', name: 'Z Service', layer: 'domain' }),
+			bp({ slug: 'a-handler', name: 'A Handler', layer: 'domain' }),
+			bp({ slug: 'b-handler', name: 'B Handler', layer: 'domain' }),
 		];
 
 		const result = generateBlueprintIndex('P', blueprints);
-		const controllerIdx = result.indexOf('a-controller');
-		const bServiceIdx = result.indexOf('b-service');
+		const aHandlerIdx = result.indexOf('a-handler');
+		const bHandlerIdx = result.indexOf('b-handler');
 		const zServiceIdx = result.indexOf('z-service');
 
-		expect(controllerIdx).toBeLessThan(bServiceIdx);
-		expect(bServiceIdx).toBeLessThan(zServiceIdx);
+		expect(aHandlerIdx).toBeLessThan(bHandlerIdx);
+		expect(bHandlerIdx).toBeLessThan(zServiceIdx);
+	});
+
+	it('joins multiple technologies with commas', () => {
+		const result = generateBlueprintIndex('P', [
+			bp({ slug: 'test', name: 'Test', technologies: ['react', 'drizzle'] }),
+		]);
+		expect(result).toContain('| test | react, drizzle | Test |  |  |');
 	});
 
 	it('escapes pipe characters in description and usage', () => {
 		const blueprints: IndexBlueprint[] = [
-			{
+			bp({
 				slug: 'test',
 				name: 'Test',
-				stack: 'server',
 				layer: 'x',
 				description: 'has | pipe',
 				usage: 'use | this',
-			},
+			}),
 		];
 
 		const result = generateBlueprintIndex('P', blueprints);
@@ -122,38 +119,25 @@ describe('generateBlueprintIndex', () => {
 	});
 
 	it('handles null description and usage', () => {
-		const blueprints: IndexBlueprint[] = [
-			{ slug: 'test', name: 'Test', stack: 'server', layer: 'x', description: null, usage: null },
-		];
-
-		const result = generateBlueprintIndex('P', blueprints);
-		expect(result).toContain('| test | x | Test |  |  |');
+		const result = generateBlueprintIndex('P', [bp({ slug: 'test', name: 'Test' })]);
+		expect(result).toContain('| test |  | Test |  |  |');
 	});
 
-	it('puts unknown stacks after known ones', () => {
+	it('puts unknown layers after known ones', () => {
 		const blueprints: IndexBlueprint[] = [
-			{ slug: 'a', name: 'A', stack: 'custom', layer: 'x', description: null, usage: null },
-			{ slug: 'b', name: 'B', stack: 'server', layer: 'x', description: null, usage: null },
+			bp({ slug: 'a', name: 'A', layer: 'custom' }),
+			bp({ slug: 'b', name: 'B', layer: 'domain' }),
 		];
 
 		const result = generateBlueprintIndex('P', blueprints);
-		const serverIdx = result.indexOf('## Server');
+		const domainIdx = result.indexOf('## Domain');
 		const customIdx = result.indexOf('## Custom');
 
-		expect(serverIdx).toBeLessThan(customIdx);
+		expect(domainIdx).toBeLessThan(customIdx);
 	});
 
 	it('replaces newlines in description with spaces', () => {
-		const blueprints: IndexBlueprint[] = [
-			{
-				slug: 'test',
-				name: 'Test',
-				stack: 'server',
-				layer: 'x',
-				description: 'line1\nline2',
-				usage: null,
-			},
-		];
+		const blueprints: IndexBlueprint[] = [bp({ description: 'line1\nline2' })];
 
 		const result = generateBlueprintIndex('P', blueprints);
 		expect(result).toContain('line1 line2');

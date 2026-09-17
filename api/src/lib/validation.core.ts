@@ -7,8 +7,10 @@ export function isValidSlug(slug: string): boolean {
 	return /^[a-z0-9-]+$/.test(slug) && slug.length >= 1 && slug.length <= 100;
 }
 
-export function isValidStack(stack: string): boolean {
-	return ['server', 'webapp', 'shared', 'fullstack'].includes(stack);
+export function isValidLayer(layer: string): boolean {
+	return (
+		['database', 'api', 'domain', 'ui', 'state', 'infra', 'testing', 'tooling'] as const
+	).includes(layer as never);
 }
 
 export function paginationDefaults(

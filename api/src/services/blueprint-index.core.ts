@@ -2,18 +2,21 @@
  * Pure blueprint index generation.
  * No I/O — 100% test coverage required.
  */
+import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 
 export interface IndexBlueprint {
 	slug: string;
 	name: string;
-	stack: string;
+	technologies: string[];
 	layer: string;
 	description: string | null;
 	usage: string | null;
 }
 
-const STACK_ORDER = ['server', 'webapp', 'shared', 'fullstack'] as const;
-
+/**
+ * Groups blueprints by architecture layer (canonical order, unknown layers
+ * last) and renders a markdown index table.
+ */
 export function generateBlueprintIndex(projectName: string, blueprints: IndexBlueprint[]): string {
 	const lines: string[] = [];
 	lines.push(`# Blueprint Index — ${projectName}`);
@@ -24,37 +27,37 @@ export function generateBlueprintIndex(projectName: string, blueprints: IndexBlu
 		return lines.join('\n');
 	}
 
-	// Group by stack
-	const byStack = new Map<string, IndexBlueprint[]>();
+	const byLayer = new Map<string, IndexBlueprint[]>();
 	for (const bp of blueprints) {
-		const group = byStack.get(bp.stack) ?? [];
+		const group = byLayer.get(bp.layer) ?? [];
 		group.push(bp);
-		byStack.set(bp.stack, group);
+		byLayer.set(bp.layer, group);
 	}
 
-	// Sort stacks in canonical order
-	const stackIndex = (s: string) => {
-		const idx = STACK_ORDER.indexOf(s as (typeof STACK_ORDER)[number]);
-		return idx === -1 ? 99 : idx;
+	// Sort layers in canonical order, unknown layers last
+	const layerIndex = (l: string) => {
+		const idx = BLUEPRINT_LAYERS.indexOf(l as (typeof BLUEPRINT_LAYERS)[number]);
+		return idx === -1 ? BLUEPRINT_LAYERS.length : idx;
 	};
-	const orderedStacks = [...byStack.keys()].sort((a, b) => stackIndex(a) - stackIndex(b));
+	const orderedLayers = [...byLayer.keys()].sort((a, b) => layerIndex(a) - layerIndex(b));
 
-	for (const stack of orderedStacks) {
+	for (const layer of orderedLayers) {
 		// biome-ignore lint/style/noNonNullAssertion: iterating keys guarantees existence
-		const group = byStack.get(stack)!;
+		const group = byLayer.get(layer)!;
 
-		// Sort by layer then name
-		group.sort((a, b) => a.layer.localeCompare(b.layer) || a.name.localeCompare(b.name));
+		// Sort by name
+		group.sort((a, b) => a.name.localeCompare(b.name));
 
-		lines.push(`## ${capitalize(stack)}`);
+		lines.push(`## ${capitalize(layer)}`);
 		lines.push('');
-		lines.push('| Slug | Layer | Name | Usage | Description |');
-		lines.push('|------|-------|------|-------|-------------|');
+		lines.push('| Slug | Technologies | Name | Usage | Description |');
+		lines.push('|------|--------------|------|-------|-------------|');
 
 		for (const bp of group) {
+			const techs = escapeCell(bp.technologies.join(', '));
 			const usage = escapeCell(bp.usage ?? '');
 			const desc = escapeCell(bp.description ?? '');
-			lines.push(`| ${bp.slug} | ${bp.layer} | ${bp.name} | ${usage} | ${desc} |`);
+			lines.push(`| ${bp.slug} | ${techs} | ${bp.name} | ${usage} | ${desc} |`);
 		}
 
 		lines.push('');

@@ -1,12 +1,14 @@
-import { and, count, desc, eq, notExists, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, notExists, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
 	blueprintProjects,
 	blueprints,
 	blueprintTags,
+	blueprintTechnologies,
 	blueprintVersions,
 	projects,
 	tags,
+	technologies,
 	users,
 } from '../db/schema.js';
 import { logger } from '../lib/logger.js';
@@ -40,6 +42,30 @@ async function upsertTags(db: DB, tagNames: string[]) {
 		} else {
 			const [created] = await db.insert(tags).values({ name, slug }).returning();
 			if (!created) throw new Error('Insert tag failed');
+			result.push(created);
+		}
+	}
+	return result;
+}
+
+async function upsertTechnologies(db: DB, technologyNames: string[]) {
+	const normalized = technologyNames.map(normalizeTagName).filter(Boolean);
+	if (normalized.length === 0) return [];
+
+	const result = [];
+	for (const name of normalized) {
+		const slug = generateSlug(name);
+		const existing = await db
+			.select()
+			.from(technologies)
+			.where(eq(technologies.name, name))
+			.limit(1);
+		const first = existing[0];
+		if (first) {
+			result.push(first);
+		} else {
+			const [created] = await db.insert(technologies).values({ name, slug }).returning();
+			if (!created) throw new Error('Insert technology failed');
 			result.push(created);
 		}
 	}
@@ -84,6 +110,27 @@ async function namespaceLabel(db: DB, namespace: SlugNamespace): Promise<string 
 		.where(eq(projects.id, namespace))
 		.limit(1);
 	return p?.slug ?? namespace;
+}
+
+/** Technologies attached to blueprints, keyed by blueprint id. */
+async function technologiesOfMany(db: DB, blueprintIds: string[]) {
+	if (blueprintIds.length === 0) return new Map<string, { name: string; slug: string }[]>();
+	const rows = await db
+		.select({
+			blueprintId: blueprintTechnologies.blueprintId,
+			name: technologies.name,
+			slug: technologies.slug,
+		})
+		.from(blueprintTechnologies)
+		.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
+		.where(inArray(blueprintTechnologies.blueprintId, blueprintIds));
+	const map = new Map<string, { name: string; slug: string }[]>();
+	for (const row of rows) {
+		const list = map.get(row.blueprintId) ?? [];
+		list.push({ name: row.name, slug: row.slug });
+		map.set(row.blueprintId, list);
+	}
+	return map;
 }
 
 function selectIdsBySlugInNamespace(db: DB, slug: string, namespace: SlugNamespace) {
@@ -138,7 +185,6 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			slug,
 			description: input.description,
 			usage: input.usage,
-			stack: input.stack,
 			layer: input.layer,
 			source: input.source,
 			authorId,
@@ -198,6 +244,16 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		);
 	}
 
+	if (input.technologies && input.technologies.length > 0) {
+		const technologyRecords = await upsertTechnologies(db, input.technologies);
+		await db.insert(blueprintTechnologies).values(
+			technologyRecords.map((t) => ({
+				blueprintId: blueprint.id,
+				technologyId: t.id,
+			})),
+		);
+	}
+
 	return { ...blueprint, currentVersionId: version.id };
 }
 
@@ -243,7 +299,6 @@ export async function updateBlueprint(
 	}
 	if (input.description !== undefined) metadataUpdate.description = input.description;
 	if (input.usage !== undefined) metadataUpdate.usage = input.usage;
-	if (input.stack !== undefined) metadataUpdate.stack = input.stack;
 	if (input.layer !== undefined) metadataUpdate.layer = input.layer;
 	if (input.source !== undefined) metadataUpdate.source = input.source;
 	if (input.isPublic !== undefined) metadataUpdate.isPublic = input.isPublic;
@@ -306,12 +361,25 @@ export async function updateBlueprint(
 		}
 	}
 
+	if (input.technologies !== undefined) {
+		await db.delete(blueprintTechnologies).where(eq(blueprintTechnologies.blueprintId, id));
+		if (input.technologies.length > 0) {
+			const technologyRecords = await upsertTechnologies(db, input.technologies);
+			await db.insert(blueprintTechnologies).values(
+				technologyRecords.map((t) => ({
+					blueprintId: id,
+					technologyId: t.id,
+				})),
+			);
+		}
+	}
+
 	const [updated] = await db.select().from(blueprints).where(eq(blueprints.id, id)).limit(1);
 	return updated;
 }
 
 export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
-	const { page, limit, stack, layer, tag, projectId, project, authorId } = input;
+	const { page, limit, layer, tag, projectId, project, authorId } = input;
 	const offset = (page - 1) * limit;
 
 	// Resolve project slug to UUID if needed
@@ -326,9 +394,21 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	}
 
 	const conditions = [];
-	if (stack) conditions.push(eq(blueprints.stack, stack));
 	if (layer) conditions.push(eq(blueprints.layer, layer));
 	if (authorId) conditions.push(eq(blueprints.authorId, authorId));
+	if (input.techno && input.techno.length > 0) {
+		// Any-match: blueprints carrying at least one of the requested technologies
+		conditions.push(
+			inArray(
+				blueprints.id,
+				db
+					.select({ id: blueprintTechnologies.blueprintId })
+					.from(blueprintTechnologies)
+					.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
+					.where(inArray(technologies.slug, input.techno)),
+			),
+		);
+	}
 
 	let query = db
 		.select({
@@ -337,7 +417,6 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 			slug: blueprints.slug,
 			description: blueprints.description,
 			usage: blueprints.usage,
-			stack: blueprints.stack,
 			layer: blueprints.layer,
 			isPublic: blueprints.isPublic,
 			downloadCount: blueprints.downloadCount,
@@ -372,6 +451,16 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 
 	const items = await query.orderBy(desc(blueprints.createdAt)).limit(limit).offset(offset);
 
+	// Attach technologies for the page's blueprints (avoids a join in the main query)
+	const technologiesByBlueprint = await technologiesOfMany(
+		db,
+		items.map((i) => i.id),
+	);
+	const itemsWithTechnologies = items.map((item) => ({
+		...item,
+		technologies: technologiesByBlueprint.get(item.id) ?? [],
+	}));
+
 	const countQuery = db.select({ total: count() }).from(blueprints).$dynamic();
 
 	let countQ = countQuery;
@@ -394,7 +483,7 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	const [countResult] = await countQ;
 	const total = countResult?.total ?? 0;
 
-	return { items, total, page, limit };
+	return { items: itemsWithTechnologies, total, page, limit };
 }
 
 /**
@@ -462,11 +551,18 @@ export async function getBlueprintById(db: DB, id: string, project?: string) {
 
 	const blueprintProjectRows = await projectRowsOf(db, blueprint.id);
 
+	const blueprintTechnologyRows = await db
+		.select({ name: technologies.name, slug: technologies.slug })
+		.from(blueprintTechnologies)
+		.innerJoin(technologies, eq(blueprintTechnologies.technologyId, technologies.id))
+		.where(eq(blueprintTechnologies.blueprintId, blueprint.id));
+
 	return {
 		...blueprint,
 		author: author ?? null,
 		currentVersion,
 		tags: blueprintTagRows,
+		technologies: blueprintTechnologyRows,
 		projects: blueprintProjectRows,
 	};
 }
