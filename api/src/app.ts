@@ -14,6 +14,7 @@ import { matchRoutes } from './routes/matches.js';
 import { mcpRoute } from './routes/mcp.js';
 import { previewAuthRoutes } from './routes/preview-auth.js';
 import { projectRoutes } from './routes/projects.js';
+import { stackRoutes } from './routes/stacks.js';
 import { tagRoutes } from './routes/tags.js';
 import { technologyRoutes } from './routes/technologies.js';
 import { userRoutes } from './routes/users.js';
@@ -43,6 +44,7 @@ export const app = baseApp
 	.route('/api', blueprintRoutes)
 	.route('/api', tagRoutes)
 	.route('/api', technologyRoutes)
+	.route('/api', stackRoutes)
 	.route('/api', projectRoutes)
 	.route('/api', embeddingsRoute)
 	.route('/api', commentRoutes)

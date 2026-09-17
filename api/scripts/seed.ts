@@ -10,7 +10,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '../src/db/index.js';
 import {
 	blueprintProjects,
@@ -19,6 +19,8 @@ import {
 	blueprintTechnologies,
 	blueprintVersions,
 	projects,
+	stacks,
+	stackTechnologies,
 	tags,
 	technologies,
 	users,
@@ -154,7 +156,57 @@ async function main() {
 	}
 	console.log(`  ✓ Technology catalog seeded (${TECHNOLOGY_CATALOG.length})`);
 
-	// 3. Create or find default project
+	// 3. Seed the default stack (preset of technologies used by the scaffold command)
+	const defaultStackSlug = 'theodo-node-react';
+	const [existingStack] = await db
+		.select({ id: stacks.id })
+		.from(stacks)
+		.where(eq(stacks.slug, defaultStackSlug))
+		.limit(1);
+	if (!existingStack) {
+		const [stack] = await db
+			.insert(stacks)
+			.values({
+				name: 'Theodo Node/React',
+				slug: defaultStackSlug,
+				description:
+					'Reference fullstack stack: Node.js + Hono + Drizzle on the server, React + Vite + Tailwind on the webapp.',
+				createdBy: systemUser.id,
+			})
+			.returning();
+		const stackTechSlugs = [
+			'typescript',
+			'node',
+			'hono',
+			'drizzle',
+			'postgresql',
+			'zod',
+			'react',
+			'vite',
+			'tailwindcss',
+			'tanstack-router',
+			'tanstack-query',
+		];
+		const stackTechs = await db
+			.select({ id: technologies.id, slug: technologies.slug })
+			.from(technologies)
+			.where(inArray(technologies.slug, stackTechSlugs));
+		if (stackTechs.length > 0) {
+			await db.insert(stackTechnologies).values(
+				stackTechs.map((t) => ({
+					stackId: stack.id,
+					technologyId: t.id,
+				})),
+			);
+		}
+		console.log(
+			`  ✓ Created default stack "${defaultStackSlug}" (${stackTechs.length} technologies)`,
+		);
+	} else {
+		console.log('  ✓ Default stack exists');
+	}
+
+	// 4. Create or find default project
 	const projectSlug = 'aquila-ap';
 	let [defaultProject] = await db
 		.select()
@@ -176,7 +228,7 @@ async function main() {
 		console.log('  ✓ Default project exists');
 	}
 
-	// 3. Read all markdown files
+	// 4. Read all markdown files
 	const files = readdirSync(BLUEPRINTS_DIR).filter((f) => f.endsWith('.md'));
 	console.log(`\n  Found ${files.length} blueprint files\n`);
 

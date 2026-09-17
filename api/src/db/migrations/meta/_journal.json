@@ -57,6 +57,13 @@
       "when": 1789649211289,
       "tag": "0007_bent_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789653326459,
+      "tag": "0008_many_psylocke",
+      "breakpoints": true
     }
   ]
 }

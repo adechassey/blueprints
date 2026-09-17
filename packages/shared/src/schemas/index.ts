@@ -6,8 +6,8 @@ export {
 	createBlueprintSchema,
 	type ListBlueprintsInput,
 	listBlueprintsSchema,
-	TECHNOLOGY_CATEGORIES,
 	type TechnologyCategory,
+	TECHNOLOGY_CATEGORIES,
 	technoFilterSchema,
 	type UpdateBlueprintInput,
 	updateBlueprintSchema,
@@ -21,3 +21,10 @@ export {
 	type UpdateProjectInput,
 	updateProjectSchema,
 } from './project.js';
+
+export {
+	type CreateStackInput,
+	createStackSchema,
+	type UpdateStackInput,
+	updateStackSchema,
+} from './stack.js';

@@ -10,6 +10,8 @@ import {
 	comments,
 	projectMembers,
 	projects,
+	stacks,
+	stackTechnologies,
 	tags,
 	technologies,
 	technologyCategory,
@@ -18,7 +20,7 @@ import {
 } from '../schema.js';
 
 describe('schema tables', () => {
-	it('exports all 12 tables', () => {
+	it('exports all 14 tables', () => {
 		expect(users).toBeDefined();
 		expect(projects).toBeDefined();
 		expect(projectMembers).toBeDefined();
@@ -30,6 +32,8 @@ describe('schema tables', () => {
 		expect(comments).toBeDefined();
 		expect(technologies).toBeDefined();
 		expect(blueprintTechnologies).toBeDefined();
+		expect(stacks).toBeDefined();
+		expect(stackTechnologies).toBeDefined();
 	});
 
 	it('users table has expected columns', () => {
