@@ -22,7 +22,8 @@ theodo-blueprints sync --repo owner/repo --project my-project --dry-run
 # 3. Publish the catalog (re-run any time: blueprints update in place)
 theodo-blueprints sync --repo owner/repo --project my-project
 
-# Optional: --techno <slugs> to attach technologies, --layer <layer> fallback`;
+# Layers and technologies are inferred from each exemplar file
+# Optional: --techno <names> adds technologies, --layer <layer> sets the fallback layer`;
 
 const COMMANDS = [
 	{
