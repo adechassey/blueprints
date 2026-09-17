@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-	blueprintFilePath,
+	blueprintFilePaths,
 	buildIndex,
 	buildManifest,
 	buildScaffoldFiles,
+	findSlugCollisions,
 	groupByLayer,
 	type ScaffoldBlueprint,
 } from './scaffold.core.js';
@@ -53,11 +54,43 @@ describe('groupByLayer', () => {
 	});
 });
 
-describe('blueprintFilePath', () => {
-	it('puts the blueprint under its layer directory', () => {
-		expect(blueprintFilePath({ layer: 'api', slug: 'auth-middleware' })).toBe(
+describe('blueprintFilePaths', () => {
+	it('puts each blueprint under its layer directory', () => {
+		expect(blueprintFilePaths([bp({ layer: 'api', slug: 'auth-middleware' })])).toEqual([
 			'blueprints/api/auth-middleware.md',
-		);
+		]);
+	});
+
+	it('suffixes blueprints sharing a layer and a slug with their project', () => {
+		expect(
+			blueprintFilePaths([
+				bp({ layer: 'ui', slug: 'form-field', projects: ['lefebvre-dalloz'] }),
+				bp({ layer: 'ui', slug: 'form-field', projects: ['zeta', 'aquila'] }),
+				bp({ layer: 'ui', slug: 'form-field' }),
+				bp({ layer: 'domain', slug: 'form-field', projects: ['aquila'] }),
+			]),
+		).toEqual([
+			'blueprints/ui/form-field.lefebvre-dalloz.md',
+			'blueprints/ui/form-field.aquila.md',
+			'blueprints/ui/form-field.global.md',
+			'blueprints/domain/form-field.md',
+		]);
+	});
+});
+
+describe('findSlugCollisions', () => {
+	it('lists each colliding layer and slug with the namespaces involved', () => {
+		expect(
+			findSlugCollisions([
+				bp({ layer: 'ui', slug: 'form-field', projects: ['lefebvre-dalloz'] }),
+				bp({ layer: 'ui', slug: 'data-table', projects: ['aquila'] }),
+				bp({ layer: 'ui', slug: 'form-field', projects: ['aquila'] }),
+			]),
+		).toEqual([{ layer: 'ui', slug: 'form-field', namespaces: ['lefebvre-dalloz', 'aquila'] }]);
+	});
+
+	it('is empty when every slug is unique within its layer', () => {
+		expect(findSlugCollisions([bp({ slug: 'a' }), bp({ slug: 'b' })])).toEqual([]);
 	});
 });
 
@@ -73,7 +106,12 @@ describe('buildManifest', () => {
 		expect(manifest.stack).toBe('theodo-node-react');
 		expect(manifest.name).toBe('Theodo Node/React');
 		expect(manifest.technologies).toEqual(TECHS);
-		expect(manifest.layers).toEqual([{ layer: 'ui', blueprints: ['login-form'] }]);
+		expect(manifest.layers).toEqual([
+			{
+				layer: 'ui',
+				blueprints: [{ slug: 'login-form', projects: [], file: 'blueprints/ui/login-form.md' }],
+			},
+		]);
 		expect(manifest.generatedAt).toEqual(expect.any(String));
 	});
 });
@@ -116,5 +154,20 @@ describe('buildScaffoldFiles', () => {
 		expect(files.get('index.md')).toContain('# My Stack');
 		expect(JSON.parse(files.get('stack.json') ?? '{}').stack).toBe('stack');
 		expect(files.size).toBe(4);
+	});
+
+	it('keeps both files when two projects publish the same slug in a layer', () => {
+		const files = buildScaffoldFiles(
+			{ slug: 'stack', name: 'My Stack', description: null },
+			TECHS,
+			[
+				bp({ slug: 'form-field', layer: 'ui', projects: ['aquila'], content: '# aquila' }),
+				bp({ slug: 'form-field', layer: 'ui', projects: ['lefebvre-dalloz'], content: '# ld' }),
+			],
+		);
+
+		expect(files.get('blueprints/ui/form-field.aquila.md')).toBe('# aquila');
+		expect(files.get('blueprints/ui/form-field.lefebvre-dalloz.md')).toBe('# ld');
+		expect(files.get('index.md')).toContain('(./blueprints/ui/form-field.aquila.md)');
 	});
 });
