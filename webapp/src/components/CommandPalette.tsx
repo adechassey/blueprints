@@ -60,7 +60,7 @@ export function CommandPalette() {
 			<Command className="w-full max-w-xl" loop>
 				<CommandInput placeholder={m.search_placeholder()} autoFocus />
 				<CommandList>
-					<CommandEmpty>{m.search_no_results({ query: '' })}</CommandEmpty>
+					<CommandEmpty>{m.search_no_results_generic()}</CommandEmpty>
 					<CommandGroup heading="Actions">
 						<CommandItem onSelect={() => go('/blueprints/new')}>
 							<Plus className="h-4 w-4 text-primary" />

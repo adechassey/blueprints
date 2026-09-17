@@ -58,6 +58,8 @@
 	"search_clear": "Clear search",
 	"search_results_title": "Search results",
 	"search_no_results": "No blueprints found for \"{query}\"",
+	"search_no_results_generic": "No blueprints found",
+	"filter_no_results": "No blueprints match these filters",
 	"comments_title": "Comments",
 	"comments_empty": "No comments yet. Be the first to comment!",
 	"comment_placeholder": "Write a comment...",

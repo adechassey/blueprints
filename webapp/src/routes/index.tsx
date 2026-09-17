@@ -126,7 +126,7 @@ function IndexPage() {
 			) : isSearchMode || hasFilters ? (
 				<EmptyState
 					icon={SearchX}
-					title={m.search_no_results({ query: q || tag || '' })}
+					title={q ? m.search_no_results({ query: q }) : m.filter_no_results()}
 					action={
 						<Button variant="secondary" size="sm" onClick={clearAll}>
 							{m.search_empty_clear()}
