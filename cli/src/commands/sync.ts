@@ -188,7 +188,7 @@ export function registerSyncCommand(program: Command) {
 					}
 
 					if (existing && !('error' in existing)) {
-						await client.api.blueprints[':id'].$put({
+						const res = await client.api.blueprints[':id'].$put({
 							param: { id: existing.id },
 							query: {},
 							json: {
@@ -203,6 +203,8 @@ export function registerSyncCommand(program: Command) {
 								source,
 							},
 						});
+						// A rejected update throws: it must count as failed, not as updated
+						await unwrapResponse(res);
 						updated++;
 						console.log(chalk.blue(`↻ Updated: ${label}`));
 					} else {
