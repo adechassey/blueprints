@@ -29,3 +29,10 @@
 - Concept de **stacks** (presets nommés de technologies, tables `stacks` / `stack_technologies`)
   + commande CLI `blueprint stack scaffold <stack>` : fetch des blueprints des technos du stack,
   groupés par layer, génération du boilerplate.
+
+## Prod outage healing (2026-09-16) — resolved
+- Cause: migrations 0005-0008 (stacks/technologies WIP, drop `blueprints.stack`, layer→enum) were applied to the PROD Neon DB while the deployed API (origin/main, 22h old) still queried `stack` → every blueprints query failed fast (500 "Failed query"); projects/tags/users kept working (only the blueprints table was touched).
+- Heal = DB rollback to the deployed schema: re-created `blueprint_stack` enum + `stack` column, cast `layer` back to text, restored the original (stack, layer) per blueprint **from the API data captured earlier in the session** (id→(stack,layer) mapping — capture API list responses before migrating!). Purged the 4 new `drizzle.__drizzle_migrations` rows and dropped the empty WIP tables/types so `drizzle-kit migrate` replays 0005-0008 cleanly when the stacks code ships.
+- Roll forward was NOT viable: HEAD at that time failed turbo (api coverage <100%, webapp check-types) — validate a commit in a `git worktree` before pushing to heal.
+- LD blueprints then re-synced with the full-body extract CLI (worktree at the fix commit, since current main's CLI no longer has `--stack`): 1 created (atomic-permission) + 43 updated, extracts now median ~29 code lines.
+- Vercel CLI notes: global install was broken (`npx -y vercel` works); `vercel env pull` on a project with the Neon integration exposes DATABASE_URL; the root `.vercel/repo.json` pointed at a stale project (`api`) — the real one is `blueprints-api` (`vercel projects ls` shows which project owns the prod domain).
