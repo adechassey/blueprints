@@ -43,7 +43,10 @@ export function registerSearchCommand(program: Command) {
 					for (const item of result.items) {
 						const score = item.score ? chalk.gray(` (${Math.round(item.score * 100)}%)`) : '';
 						console.log(`${chalk.bold(item.name)}${score}`);
-						console.log(`  ${chalk.cyan(item.layer)} · ${item.slug}`);
+						const technos = item.technologies.map((t) => t.slug).join(', ');
+						console.log(
+							`  ${chalk.cyan(item.layer)} · ${item.slug}${technos ? chalk.gray(` [${technos}]`) : ''}`,
+						);
 						if (item.description) console.log(`  ${chalk.gray(item.description)}`);
 						console.log();
 					}
