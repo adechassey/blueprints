@@ -23,6 +23,11 @@ declare module 'react-syntax-highlighter/dist/esm/styles/prism/one-dark.js' {
 	export default style;
 }
 
+declare module 'react-syntax-highlighter/dist/esm/styles/prism/one-light.js' {
+	const style: Record<string, React.CSSProperties>;
+	export default style;
+}
+
 declare module 'react-syntax-highlighter/dist/esm/languages/prism/*.js' {
 	const language: { displayName: string; aliases?: string[] };
 	export default language;

@@ -2,6 +2,7 @@ import { Check, Copy } from 'lucide-react';
 import { lazy, Suspense, useCallback, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTheme } from '../lib/theme.js';
 
 /**
  * Lazy-loaded Prism (light build) with only the languages blueprints
@@ -18,6 +19,7 @@ const LazyCodeBlock = lazy(async () => {
 	const [
 		{ default: PrismLight },
 		{ default: oneDark },
+		{ default: oneLight },
 		{ default: tsx },
 		{ default: ts },
 		{ default: js },
@@ -30,6 +32,7 @@ const LazyCodeBlock = lazy(async () => {
 	] = await Promise.all([
 		import('react-syntax-highlighter/dist/esm/prism-light.js'),
 		import('react-syntax-highlighter/dist/esm/styles/prism/one-dark.js'),
+		import('react-syntax-highlighter/dist/esm/styles/prism/one-light.js'),
 		import('react-syntax-highlighter/dist/esm/languages/prism/tsx.js'),
 		import('react-syntax-highlighter/dist/esm/languages/prism/typescript.js'),
 		import('react-syntax-highlighter/dist/esm/languages/prism/javascript.js'),
@@ -57,18 +60,26 @@ const LazyCodeBlock = lazy(async () => {
 	PrismLight.registerLanguage('css', css);
 	PrismLight.registerLanguage('markdown', md);
 
-	function LazyPrismBlock({ language, code }: { language: string; code: string }) {
+	function LazyPrismBlock({
+		language,
+		code,
+		dark,
+	}: {
+		language: string;
+		code: string;
+		dark: boolean;
+	}) {
 		return (
 			<PrismLight
 				language={language}
-				style={oneDark as Record<string, React.CSSProperties>}
+				style={(dark ? oneDark : oneLight) as Record<string, React.CSSProperties>}
 				PreTag="div"
 				customStyle={{
 					margin: '1.25rem 0',
 					padding: '1.25rem',
 					borderRadius: '0.75rem',
-					fontSize: '0.8125rem',
-					border: '1px solid rgba(255,255,255,0.08)',
+					fontSize: '0.875rem',
+					border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid var(--outline-variant)',
 				}}
 				codeTagProps={{ style: { fontFamily: 'var(--font-mono)' } }}
 			>
@@ -91,6 +102,7 @@ interface LazyCodeBlockProps {
 
 function CodeBlock({ language, code }: LazyCodeBlockProps) {
 	const [copied, setCopied] = useState(false);
+	const { theme } = useTheme();
 
 	const handleCopy = useCallback(async () => {
 		await navigator.clipboard.writeText(code);
@@ -100,16 +112,17 @@ function CodeBlock({ language, code }: LazyCodeBlockProps) {
 
 	return (
 		<div className="group/code relative">
+			{/* Always visible (touch screens have no hover), brighter on hover */}
 			<button
 				type="button"
 				onClick={handleCopy}
 				aria-label="Copy code"
-				className="absolute top-3 right-3 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-white/10 text-zinc-300 opacity-0 backdrop-blur-sm transition-all group-hover/code:opacity-100 hover:bg-white/20 hover:text-white focus-visible:opacity-100"
+				className="absolute top-3 right-3 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-on-surface/10 text-on-surface-variant opacity-70 backdrop-blur-sm transition-all group-hover/code:opacity-100 hover:bg-on-surface/20 hover:text-on-surface focus-visible:opacity-100"
 			>
 				{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
 			</button>
 			<Suspense fallback={<CodeBlockSkeleton />}>
-				<LazyCodeBlock language={language} code={code} />
+				<LazyCodeBlock language={language} code={code} dark={theme === 'dark'} />
 			</Suspense>
 		</div>
 	);
