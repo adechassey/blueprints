@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { ChevronDown, ChevronUp, MessageSquare, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { authClient } from '../lib/auth-client.js';
+import { formatDate } from '../lib/format-date.js';
 import * as m from '../paraglide/messages.js';
 import { CommentForm } from './CommentForm.js';
 import { Avatar } from './ui/avatar.js';
@@ -67,9 +68,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 						>
 							{comment.authorName || m.comment_anonymous()}
 						</Link>
-						<span className="text-[10px] text-outline">
-							{new Date(comment.createdAt).toLocaleDateString()}
-						</span>
+						<span className="text-[10px] text-outline">{formatDate(comment.createdAt)}</span>
 						<div className="flex gap-1 ml-auto">
 							{session?.user && (
 								<Button
@@ -158,9 +157,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 										>
 											{reply.authorName || m.comment_anonymous()}
 										</Link>
-										<span className="text-[10px] text-outline">
-											{new Date(reply.createdAt).toLocaleDateString()}
-										</span>
+										<span className="text-[10px] text-outline">{formatDate(reply.createdAt)}</span>
 										<div className="flex gap-1 ml-auto">
 											{session?.user?.id === reply.authorId && (
 												<Button

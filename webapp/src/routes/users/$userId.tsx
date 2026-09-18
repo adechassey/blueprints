@@ -4,6 +4,7 @@ import { Avatar } from '../../components/ui/avatar.js';
 import { Badge } from '../../components/ui/badge.js';
 import { Skeleton } from '../../components/ui/skeleton.js';
 import { useUser, useUserBlueprints } from '../../hooks/useUsers.js';
+import { formatDate } from '../../lib/format-date.js';
 import * as m from '../../paraglide/messages.js';
 
 export const Route = createFileRoute('/users/$userId')({
@@ -55,7 +56,7 @@ function UserProfilePage() {
 						<Badge variant={roleBadgeVariant[user.role ?? 'user'] ?? 'default'}>{user.role}</Badge>
 						<span className="text-sm text-on-surface-variant">
 							{m.profile_joined({
-								date: new Date(user.createdAt).toLocaleDateString(),
+								date: formatDate(user.createdAt),
 							})}
 						</span>
 					</div>

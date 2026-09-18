@@ -33,6 +33,7 @@ import {
 import { useProjects } from '../../../hooks/useProjects.js';
 import { api } from '../../../lib/api.js';
 import { authClient } from '../../../lib/auth-client.js';
+import { formatDate } from '../../../lib/format-date.js';
 import { cn } from '../../../lib/utils.js';
 import * as m from '../../../paraglide/messages.js';
 
@@ -261,9 +262,7 @@ function BlueprintDetailPage() {
 												</span>
 											)}
 										</div>
-										<span className="text-[10px]">
-											{new Date(v.createdAt).toLocaleDateString()}
-										</span>
+										<span className="text-[10px]">{formatDate(v.createdAt)}</span>
 									</div>
 								),
 							)}

@@ -12,6 +12,7 @@ import {
 } from '../../components/ui/dialog.js';
 import { Skeleton } from '../../components/ui/skeleton.js';
 import { useAdminComments, useAdminDeleteComment } from '../../hooks/useAdmin.js';
+import { formatDate } from '../../lib/format-date.js';
 import * as m from '../../paraglide/messages.js';
 
 export const Route = createFileRoute('/admin/comments')({
@@ -56,8 +57,7 @@ function AdminCommentsPage() {
 									<div className="min-w-0 flex-1">
 										<p className="text-sm text-on-surface truncate">{c.content}</p>
 										<p className="text-xs text-outline mt-1">
-											{c.authorName || m.comment_anonymous()} &middot;{' '}
-											{new Date(c.createdAt).toLocaleDateString()}
+											{c.authorName || m.comment_anonymous()} &middot; {formatDate(c.createdAt)}
 										</p>
 									</div>
 								</div>
