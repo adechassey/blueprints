@@ -4,6 +4,8 @@
 	"nav_projects": "Projects",
 	"nav_tags": "Tags",
 	"nav_cli": "CLI",
+	"nav_browse": "Browse",
+	"nav_docs": "Docs",
 	"nav_new_blueprint": "New Blueprint",
 	"page_all_title": "All Blueprints",
 	"blueprint_count_one": "{count} blueprint",

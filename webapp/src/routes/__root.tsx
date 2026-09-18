@@ -1,10 +1,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRootRoute, Link, Navigate, Outlet, useLocation } from '@tanstack/react-router';
-import { Menu, Moon, Plus, Search, Sun, X } from 'lucide-react';
+import { ChevronDown, Menu, Moon, Plus, Search, Sun, X } from 'lucide-react';
 import { useState } from 'react';
 import { AuthButton } from '../components/AuthButton.js';
 import { CommandPalette } from '../components/CommandPalette.js';
 import { Button } from '../components/ui/button.js';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu.js';
 import { Skeleton } from '../components/ui/skeleton.js';
 import { Toaster } from '../components/ui/sonner.js';
 import { authClient } from '../lib/auth-client.js';
@@ -15,6 +21,59 @@ const queryClient = new QueryClient();
 
 const navLinkClass =
 	'rounded-lg px-3 py-1.5 text-sm font-medium text-on-surface-variant no-underline transition-colors hover:bg-surface-container-high hover:text-on-surface [&.active]:bg-surface-container-high [&.active]:text-on-surface';
+
+/**
+ * The nav groups everything but the catalogue into two menus, so the bar stays
+ * short enough to show from `lg` up instead of collapsing to the burger below
+ * `xl`. `to` is a literal union the router checks, hence the shared type.
+ */
+type NavTo = '/stacks' | '/technologies' | '/projects' | '/tags' | '/cli' | '/skill';
+type NavGroup = { label: () => string; items: { to: NavTo; label: () => string }[] };
+
+const NAV_GROUPS: NavGroup[] = [
+	{
+		label: m.nav_browse,
+		items: [
+			{ to: '/stacks', label: m.nav_stacks },
+			{ to: '/technologies', label: m.nav_technologies },
+			{ to: '/projects', label: m.nav_projects },
+			{ to: '/tags', label: m.nav_tags },
+		],
+	},
+	{
+		label: m.nav_docs,
+		items: [
+			{ to: '/cli', label: m.nav_cli },
+			{ to: '/skill', label: m.nav_skill },
+		],
+	},
+];
+
+/** A nav menu whose trigger reads as active while one of its pages is open. */
+function NavGroupMenu({ group, pathname }: { group: NavGroup; pathname: string }) {
+	const isActive = group.items.some((item) => pathname.startsWith(item.to));
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger
+				className={`${navLinkClass} flex items-center gap-1 ${
+					isActive ? 'bg-surface-container-high text-on-surface' : ''
+				}`}
+			>
+				{group.label()}
+				<ChevronDown className="h-3.5 w-3.5" />
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="start">
+				{group.items.map((item) => (
+					<DropdownMenuItem key={item.to} asChild>
+						<Link to={item.to} className="no-underline text-on-surface">
+							{item.label()}
+						</Link>
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
 
 function ThemeToggle() {
 	const { theme, toggleTheme } = useTheme();
@@ -63,28 +122,13 @@ function RootLayout() {
 								{/* The wordmark collides with the icon buttons on phones */}
 								<span className="hidden sm:inline">{m.app_title()}</span>
 							</Link>
-							<nav className="hidden xl:flex gap-1 items-center">
+							<nav className="hidden lg:flex gap-1 items-center">
 								<Link to="/" className={navLinkClass} activeOptions={{ exact: true }}>
 									{m.nav_all()}
 								</Link>
-								<Link to="/stacks" className={navLinkClass}>
-									{m.nav_stacks()}
-								</Link>
-								<Link to="/technologies" className={navLinkClass}>
-									{m.nav_technologies()}
-								</Link>
-								<Link to="/projects" className={navLinkClass}>
-									{m.nav_projects()}
-								</Link>
-								<Link to="/tags" className={navLinkClass}>
-									{m.nav_tags()}
-								</Link>
-								<Link to="/cli" className={navLinkClass}>
-									{m.nav_cli()}
-								</Link>
-								<Link to="/skill" className={navLinkClass}>
-									{m.nav_skill()}
-								</Link>
+								{NAV_GROUPS.map((group) => (
+									<NavGroupMenu key={group.label()} group={group} pathname={location.pathname} />
+								))}
 								{isAdmin && (
 									<Link to="/admin" className={navLinkClass}>
 										{m.nav_admin()}
@@ -112,7 +156,7 @@ function RootLayout() {
 							<Button
 								variant="ghost"
 								size="icon"
-								className="xl:hidden"
+								className="lg:hidden"
 								aria-label="Menu"
 								onClick={() => setMobileOpen((prev) => !prev)}
 							>
@@ -121,7 +165,7 @@ function RootLayout() {
 						</div>
 					</div>
 					{mobileOpen && (
-						<nav className="flex flex-col gap-1 border-t border-outline-variant/50 px-4 py-3 xl:hidden">
+						<nav className="flex flex-col gap-1 border-t border-outline-variant/50 px-4 py-3 lg:hidden">
 							<Link
 								to="/"
 								onClick={closeMobile}
@@ -130,24 +174,19 @@ function RootLayout() {
 							>
 								{m.nav_all()}
 							</Link>
-							<Link to="/stacks" onClick={closeMobile} className={navLinkClass}>
-								{m.nav_stacks()}
-							</Link>
-							<Link to="/technologies" onClick={closeMobile} className={navLinkClass}>
-								{m.nav_technologies()}
-							</Link>
-							<Link to="/projects" onClick={closeMobile} className={navLinkClass}>
-								{m.nav_projects()}
-							</Link>
-							<Link to="/tags" onClick={closeMobile} className={navLinkClass}>
-								{m.nav_tags()}
-							</Link>
-							<Link to="/cli" onClick={closeMobile} className={navLinkClass}>
-								{m.nav_cli()}
-							</Link>
-							<Link to="/skill" onClick={closeMobile} className={navLinkClass}>
-								{m.nav_skill()}
-							</Link>
+							{/* Flat on mobile: the sheet has the room the top bar lacks. */}
+							{NAV_GROUPS.map((group) => (
+								<div key={group.label()} className="flex flex-col gap-1">
+									<span className="px-3 pt-2 font-medium text-on-surface-variant text-xs uppercase tracking-wide">
+										{group.label()}
+									</span>
+									{group.items.map((item) => (
+										<Link key={item.to} to={item.to} onClick={closeMobile} className={navLinkClass}>
+											{item.label()}
+										</Link>
+									))}
+								</div>
+							))}
 							{isAdmin && (
 								<Link to="/admin" onClick={closeMobile} className={navLinkClass}>
 									{m.nav_admin()}
