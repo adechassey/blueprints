@@ -4,6 +4,8 @@
 	"nav_projects": "Projects",
 	"nav_tags": "Tags",
 	"nav_cli": "CLI",
+	"nav_browse": "Browse",
+	"nav_docs": "Docs",
 	"nav_new_blueprint": "New Blueprint",
 	"page_all_title": "All Blueprints",
 	"blueprint_count_one": "{count} blueprint",
@@ -249,8 +251,8 @@
 	"skill_source_link": "Source and full reference on GitHub",
 	"skill_install_title": "Install the skill",
 	"skill_install_description": "The installer copies the skill into .claude/skills/blueprint/ and records where it came from in a lockfile. It needs gh authenticated against an account with access to the repository; the skill itself is pure POSIX shell, with nothing to install at runtime.",
-	"skill_install_gotcha_pin_label": "It installs from main, unpinned.",
-	"skill_install_gotcha_pin": "A bare bundle name resolves to that bundle's latest release tag, but an explicit resource path does not. Set FOS_REF to pin a tag, or install the quality bundle, which contains the skill.",
+	"skill_install_latest_label": "It always installs the latest.",
+	"skill_install_latest": "The command tracks the main branch, so you get the current version of the skill every time — re-run it to update.",
 	"skill_install_gotcha_readme_label": "The installer strips README.md from the installed copy.",
 	"skill_install_gotcha_readme": "SKILL.md ships with the normative annotation rules; the long-form reference stays",
 	"skill_install_gotcha_readme_link": "in the source repository",
@@ -287,7 +289,7 @@
 	"skill_publish_cli_cta": "CLI guide",
 	"skill_update_title": "Keeping the skill up to date",
 	"skill_update_description": "Re-run the install command.",
-	"skill_update_body": "It prompts before overwriting .claude/skills/blueprint/ and refreshes the entry in the lockfile. The lockfile stores a hash of the installed files, so a diff against a release tells you whether the project has drifted locally.",
+	"skill_update_body": "It pulls the latest version, prompts before overwriting .claude/skills/blueprint/ and refreshes the entry in the lockfile. The lockfile stores a hash of the installed files, so a diff tells you whether the project has drifted locally.",
 	"cli_sync_skill_hint": "Don't have the blueprint skill in your repo yet?",
 	"cli_sync_skill_cta": "Install the skill"
 }

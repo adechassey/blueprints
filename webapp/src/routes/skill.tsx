@@ -17,10 +17,6 @@ const INSTALL = `# From your project root
 gh api repos/theodo-group/future-of-software/contents/install.sh \\
   -H Accept:application/vnd.github.raw | bash -s -- skills/blueprint
 
-# Pin a release instead of tracking main
-FOS_REF=<tag> gh api repos/theodo-group/future-of-software/contents/install.sh \\
-  -H Accept:application/vnd.github.raw | bash -s -- skills/blueprint
-
 # No arguments opens an fzf picker over every skill, agent and bundle`;
 
 const ANNOTATE = `// @Blueprint controller-create
@@ -148,9 +144,7 @@ function SkillPage() {
 				<CodeBlock code={INSTALL} header={<BlockLabel>Terminal</BlockLabel>} />
 				<Callout>
 					<ul className="space-y-1.5">
-						<Gotcha label={m.skill_install_gotcha_pin_label()}>
-							{m.skill_install_gotcha_pin()}
-						</Gotcha>
+						<Gotcha label={m.skill_install_latest_label()}>{m.skill_install_latest()}</Gotcha>
 						<Gotcha label={m.skill_install_gotcha_readme_label()}>
 							{m.skill_install_gotcha_readme()}{' '}
 							<a href={SKILL_SOURCE_URL} target="_blank" rel="noreferrer" className="text-primary">
