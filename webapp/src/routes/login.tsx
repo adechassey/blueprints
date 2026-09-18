@@ -14,6 +14,9 @@ export const Route = createFileRoute('/login')({
 	component: LoginPage,
 });
 
+/** Placeholder the search hint is split on, so the shortcut renders as a key cap. */
+const SHORTCUT_SLOT = '\u0000';
+
 /**
  * Returns true if running on a Vercel preview deployment (not production, not local dev).
  */
@@ -30,6 +33,10 @@ function LoginPage() {
 			window.location.href = `${PRODUCTION_URL}/login?returnTo=${encodeURIComponent(window.location.origin)}`;
 		}
 	}, [returnTo]);
+
+	const [hintBefore, hintAfter] = m
+		.auth_login_search_hint({ shortcut: SHORTCUT_SLOT })
+		.split(SHORTCUT_SLOT);
 
 	const handleSignIn = () => {
 		// If returnTo is present, route OAuth callback through the transfer endpoint
@@ -74,6 +81,15 @@ function LoginPage() {
 						{m.auth_sign_in_google()}
 					</Button>
 					<p className="text-center text-xs text-outline">{m.auth_login_access()}</p>
+					{/* The palette works before sign-in, so this is a real teaser. One sentence for
+					    translators, split around the key cap at render time. */}
+					<p className="text-center text-xs text-outline">
+						{hintBefore}
+						<kbd className="rounded border border-outline-variant bg-surface-container-high px-1.5 py-0.5 font-mono">
+							⌘K
+						</kbd>
+						{hintAfter}
+					</p>
 				</CardContent>
 			</Card>
 		</div>

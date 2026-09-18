@@ -12,6 +12,7 @@
 	"auth_sign_out": "Sign out",
 	"auth_login_tagline": "Proven code patterns from Theodo projects, searchable in plain language and ready to pull into your codebase.",
 	"auth_login_access": "Sign in with your Theodo Google account.",
+	"auth_login_search_hint": "Press {shortcut} to search the catalogue before signing in.",
 	"form_name": "Name",
 	"form_description": "Description",
 	"form_usage": "Usage",
