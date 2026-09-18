@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Copy, Download, FolderOpen, GitFork, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Download, FolderOpen, GitFork, History, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../../components/CommentSection.js';
@@ -64,6 +64,8 @@ function BlueprintDetailPage() {
 	const navigate = useNavigate();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [showForkDialog, setShowForkDialog] = useState(false);
+	// An older version picked from the history, shown in place of the current one
+	const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
 	if (isLoading) {
 		return (
@@ -87,10 +89,15 @@ function BlueprintDetailPage() {
 	const isAdmin = session?.user?.role === 'admin';
 	const canEdit = isOwner || isAdmin;
 
+	const versionList = versions && !('error' in versions) ? versions : [];
+	const currentId = blueprint.currentVersion?.id;
+	const olderVersion =
+		selectedVersion === null
+			? undefined
+			: versionList.find((v) => v.version === selectedVersion && v.id !== currentId);
+	const shownVersion = olderVersion ?? blueprint.currentVersion;
 	// Older synced content repeats the fields the page already renders
-	const content = blueprint.currentVersion
-		? stripSyncedPreamble(blueprint.currentVersion.content, blueprint)
-		: '';
+	const content = shownVersion ? stripSyncedPreamble(shownVersion.content, blueprint) : '';
 
 	const handleDelete = async () => {
 		await deleteMutation.mutateAsync(blueprintId);
@@ -247,6 +254,24 @@ function BlueprintDetailPage() {
 							<code className="font-mono text-xs text-on-surface-variant">{blueprint.source}</code>
 						)}
 					</div>
+					{olderVersion && (
+						<div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-xs text-on-surface-variant">
+							<span className="inline-flex items-center gap-1.5">
+								<History className="h-3.5 w-3.5" />
+								{m.blueprint_detail_viewing_version({ version: olderVersion.version })}
+								{olderVersion.changelog && (
+									<span className="text-outline">· {olderVersion.changelog}</span>
+								)}
+							</span>
+							<button
+								type="button"
+								onClick={() => setSelectedVersion(null)}
+								className="cursor-pointer font-medium text-primary hover:underline"
+							>
+								{m.blueprint_detail_back_to_current()}
+							</button>
+						</div>
+					)}
 					{content && <MarkdownRenderer content={content} />}
 				</section>
 			)}
@@ -259,43 +284,43 @@ function BlueprintDetailPage() {
 				{/* Version History */}
 				<div className="md:col-span-1 space-y-4">
 					<h2 className={sectionTitleClass}>{m.blueprint_detail_versions()}</h2>
-					{versions && !('error' in versions) && versions.length > 0 && (
+					{versionList.length > 0 && (
 						<div className="bg-surface-container-lowest rounded-xl p-1 space-y-1 border border-outline-variant/15">
-							{versions.map(
-								(
-									v: {
-										id: string;
-										version: number;
-										createdAt: string;
-										changelog?: string | null;
-									},
-									index: number,
-								) => (
-									<div
+							{versionList.map((v) => {
+								const isCurrent = v.id === currentId;
+								const shown = v.id === shownVersion?.id;
+								return (
+									<button
 										key={v.id}
+										type="button"
+										aria-current={shown ? 'true' : undefined}
+										onClick={() => setSelectedVersion(isCurrent ? null : v.version)}
 										className={cn(
-											'w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all',
-											index === 0
-												? 'bg-surface-container-low text-primary font-bold'
-												: 'text-on-surface-variant font-medium hover:bg-surface-container-low',
+											'w-full flex items-start justify-between gap-3 px-4 py-3 rounded-lg text-left transition-colors cursor-pointer',
+											shown
+												? 'bg-surface-container-low text-primary'
+												: 'text-on-surface-variant hover:bg-surface-container-low',
 										)}
 									>
-										<div className="flex items-center gap-3">
-											<span className="text-xs font-mono">
-												{m.blueprint_detail_version({
-													version: v.version,
-												})}
-											</span>
-											{index === 0 && (
-												<span className="text-xs text-on-surface-variant font-normal">
-													{m.blueprint_detail_active()}
+										<span className="min-w-0 space-y-0.5">
+											<span className="flex items-center gap-2">
+												<span className="text-xs font-mono font-bold">
+													{m.blueprint_detail_version({ version: v.version })}
 												</span>
+												{isCurrent && (
+													<span className="text-xs text-on-surface-variant">
+														{m.blueprint_detail_active()}
+													</span>
+												)}
+											</span>
+											{v.changelog && (
+												<span className="block truncate text-xs text-outline">{v.changelog}</span>
 											)}
-										</div>
-										<span className="text-xs">{formatDate(v.createdAt)}</span>
-									</div>
-								),
-							)}
+										</span>
+										<span className="shrink-0 text-xs">{formatDate(v.createdAt)}</span>
+									</button>
+								);
+							})}
 						</div>
 					)}
 				</div>

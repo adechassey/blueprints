@@ -73,6 +73,8 @@
 	"blueprint_detail_implementation": "Implementation",
 	"toast_code_copied": "Code copied",
 	"blueprint_detail_updated": "Updated {date}",
+	"blueprint_detail_viewing_version": "Viewing v{version}",
+	"blueprint_detail_back_to_current": "Back to the current version",
 	"profile_joined": "Joined {date}",
 	"profile_blueprints": "Published Blueprints",
 	"profile_no_blueprints": "No blueprints published yet",
