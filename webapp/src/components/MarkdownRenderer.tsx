@@ -1,8 +1,10 @@
-import { Check, Copy } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import { lazy, Suspense, useCallback, useState } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { splitAnnotationHeader } from '../lib/annotation.core.js';
 import { useTheme } from '../lib/theme.js';
+import * as m from '../paraglide/messages.js';
 
 /**
  * Lazy-loaded Prism (light build) with only the languages blueprints
@@ -102,7 +104,11 @@ interface LazyCodeBlockProps {
 
 function CodeBlock({ language, code }: LazyCodeBlockProps) {
 	const [copied, setCopied] = useState(false);
+	const [showAnnotation, setShowAnnotation] = useState(false);
 	const { theme } = useTheme();
+	// The @Blueprint marker repeats the fields shown above: folded by default, copied in full
+	const { annotation, code: declaration } = splitAnnotationHeader(code);
+	const shown = annotation && !showAnnotation ? declaration : code;
 
 	const handleCopy = useCallback(async () => {
 		await navigator.clipboard.writeText(code);
@@ -111,19 +117,38 @@ function CodeBlock({ language, code }: LazyCodeBlockProps) {
 	}, [code]);
 
 	return (
-		<div className="group/code relative">
-			{/* Always visible (touch screens have no hover), brighter on hover */}
-			<button
-				type="button"
-				onClick={handleCopy}
-				aria-label="Copy code"
-				className="absolute top-3 right-3 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-on-surface/10 text-on-surface-variant opacity-70 backdrop-blur-sm transition-all group-hover/code:opacity-100 hover:bg-on-surface/20 hover:text-on-surface focus-visible:opacity-100"
-			>
-				{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-			</button>
-			<Suspense fallback={<CodeBlockSkeleton />}>
-				<LazyCodeBlock language={language} code={code} dark={theme === 'dark'} />
-			</Suspense>
+		<div className="group/code">
+			{annotation && (
+				<button
+					type="button"
+					onClick={() => setShowAnnotation((value) => !value)}
+					aria-expanded={showAnnotation}
+					className="mt-5 -mb-3 inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-on-surface-variant transition-colors hover:text-on-surface"
+				>
+					{showAnnotation ? (
+						<ChevronDown className="h-3.5 w-3.5" />
+					) : (
+						<ChevronRight className="h-3.5 w-3.5" />
+					)}
+					{showAnnotation
+						? m.code_annotation_hide()
+						: m.code_annotation_show({ count: annotation.split('\n').length })}
+				</button>
+			)}
+			<div className="relative">
+				{/* Always visible (touch screens have no hover), brighter on hover */}
+				<button
+					type="button"
+					onClick={handleCopy}
+					aria-label={m.code_copy()}
+					className="absolute top-3 right-3 z-10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-on-surface/10 text-on-surface-variant opacity-70 backdrop-blur-sm transition-all group-hover/code:opacity-100 hover:bg-on-surface/20 hover:text-on-surface focus-visible:opacity-100"
+				>
+					{copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+				</button>
+				<Suspense fallback={<CodeBlockSkeleton />}>
+					<LazyCodeBlock language={language} code={shown} dark={theme === 'dark'} />
+				</Suspense>
+			</div>
 		</div>
 	);
 }
