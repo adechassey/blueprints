@@ -134,7 +134,7 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 	return (
-		<div className="prose max-w-none dark:prose-invert">
+		<div className="prose max-w-none dark:prose-invert [&_p]:max-w-3xl [&_li]:max-w-3xl">
 			<Markdown
 				remarkPlugins={[remarkGfm]}
 				components={{

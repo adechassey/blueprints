@@ -63,7 +63,7 @@ function BlueprintDetailPage() {
 
 	if (isLoading) {
 		return (
-			<div className="max-w-[1000px] mx-auto space-y-8">
+			<div className="space-y-8">
 				<Skeleton className="h-16 w-3/4" />
 				<Skeleton className="h-6 w-1/2" />
 				<Skeleton className="h-64 w-full" />
@@ -73,7 +73,7 @@ function BlueprintDetailPage() {
 
 	if (!blueprint || 'error' in blueprint) {
 		return (
-			<div className="max-w-[1000px] mx-auto">
+			<div>
 				<p className="text-sm text-on-surface-variant">{m.empty_state()}</p>
 			</div>
 		);
@@ -103,7 +103,7 @@ function BlueprintDetailPage() {
 	};
 
 	return (
-		<div className="max-w-[1000px] mx-auto space-y-12">
+		<div className="space-y-12">
 			{/* Header Section */}
 			<section className="space-y-6">
 				<div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
