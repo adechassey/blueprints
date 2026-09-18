@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ExternalLink, Terminal } from 'lucide-react';
-import { CopyButton } from '../components/CopyButton.js';
+import { BlockLabel, CodeBlock, Section } from '../components/Guide.js';
 import { Badge } from '../components/ui/badge.js';
 import { Button } from '../components/ui/button.js';
 import { Card, CardContent } from '../components/ui/card.js';
@@ -72,102 +72,6 @@ const COMMANDS = [
 		code: 'theodo-blueprints update',
 	},
 ];
-
-/** Splits a snippet into lines with stable keys (content + occurrence, not index). */
-function keyedLines(code: string): { key: string; line: string }[] {
-	const seen = new Map<string, number>();
-	return code.split('\n').map((line) => {
-		const occurrence = (seen.get(line) ?? 0) + 1;
-		seen.set(line, occurrence);
-		return { key: `${line}#${occurrence}`, line };
-	});
-}
-
-/** Renders shell lines: comments muted, commands prefixed with a non-selectable prompt. */
-function CodeLines({ code }: { code: string }) {
-	return keyedLines(code).map(({ key, line }) => {
-		if (line.trim() === '') {
-			return (
-				<span key={key} className="block">
-					{' '}
-				</span>
-			);
-		}
-		if (line.startsWith('#')) {
-			return (
-				<span key={key} className="block text-on-surface-variant/80">
-					{line}
-				</span>
-			);
-		}
-		return (
-			<span key={key} className="block">
-				<span aria-hidden="true" className="select-none text-primary/70">
-					${' '}
-				</span>
-				{line}
-			</span>
-		);
-	});
-}
-
-function CodeBlock({ code, header }: { code: string; header: React.ReactNode }) {
-	return (
-		<div className="overflow-hidden rounded-xl border border-outline-variant/50 bg-surface-container-low">
-			<div className="flex items-center justify-between gap-3 border-b border-outline-variant/50 bg-surface-container/60 py-1.5 pr-1.5 pl-4">
-				<div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
-					{header}
-				</div>
-				<CopyButton code={code} />
-			</div>
-			<pre className="overflow-x-auto p-4 text-sm leading-relaxed">
-				<code>
-					<CodeLines code={code} />
-				</code>
-			</pre>
-		</div>
-	);
-}
-
-function BlockLabel({ children }: { children: React.ReactNode }) {
-	return (
-		<span className="font-medium text-on-surface-variant uppercase tracking-wide">{children}</span>
-	);
-}
-
-function Section({
-	step,
-	title,
-	description,
-	badge,
-	children,
-}: {
-	step?: number;
-	title: string;
-	description: string;
-	badge?: React.ReactNode;
-	children: React.ReactNode;
-}) {
-	return (
-		<section className="space-y-4">
-			<div className="space-y-1.5">
-				<div className="flex items-center gap-3">
-					{step !== undefined && (
-						<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary text-sm">
-							{step}
-						</span>
-					)}
-					<h2 className="font-semibold text-xl">{title}</h2>
-					{badge}
-				</div>
-				<p className={`text-on-surface-variant text-sm ${step !== undefined ? 'sm:pl-10' : ''}`}>
-					{description}
-				</p>
-			</div>
-			{children}
-		</section>
-	);
-}
 
 function CliPage() {
 	return (
@@ -253,6 +157,16 @@ function CliPage() {
 				badge={<Badge>{m.cli_sync_badge()}</Badge>}
 			>
 				<CodeBlock code={SYNC} header={<BlockLabel>Terminal</BlockLabel>} />
+				<Card>
+					<CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-on-surface-variant text-sm">{m.cli_sync_skill_hint()}</p>
+						<Link to="/skill" className="shrink-0 no-underline">
+							<Button variant="secondary" size="sm" className="w-full sm:w-auto">
+								{m.cli_sync_skill_cta()}
+							</Button>
+						</Link>
+					</CardContent>
+				</Card>
 			</Section>
 		</div>
 	);
