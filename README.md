@@ -107,7 +107,7 @@ theodo-blueprints sync [docs/blueprints.tsv] --repo owner/repo [--project my-pro
 - The layer is inferred from the declared globs (`*.controller.ts` → `controller`, `/hooks/` → `hook`, `.tsx` → `component`, …); `--layer` overrides the fallback.
 - The exemplar excerpt is embedded in the content, and `source` records `--repo:path:line` for traceability.
 
-Setting the skill up in a project from scratch — install, annotations, index, hooks, first sync — is covered in [How to install the `blueprint` skill](./docs/how-to/install-the-blueprint-skill.md).
+Setting the skill up in a project from scratch — install, annotations, index, hooks, first sync — is covered by the **Skill** page in the app (`/skill`).
 
 ## Development
 
