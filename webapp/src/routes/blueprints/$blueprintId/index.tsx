@@ -257,7 +257,9 @@ function BlueprintDetailPage() {
 												})}
 											</span>
 											{index === 0 && (
-												<span className="text-xs text-on-surface-variant font-normal">Active</span>
+												<span className="text-xs text-on-surface-variant font-normal">
+													{m.blueprint_detail_active()}
+												</span>
 											)}
 										</div>
 										<span className="text-xs">{formatDate(v.createdAt)}</span>
@@ -287,7 +289,7 @@ function BlueprintDetailPage() {
 				<DialogDescription>{m.blueprint_detail_confirm_delete()}</DialogDescription>
 				<DialogFooter>
 					<Button variant="secondary" size="sm" onClick={() => setShowDeleteDialog(false)}>
-						Cancel
+						{m.dialog_cancel()}
 					</Button>
 					<Button variant="destructive" size="sm" onClick={handleDelete}>
 						<Trash2 className="h-4 w-4" />
