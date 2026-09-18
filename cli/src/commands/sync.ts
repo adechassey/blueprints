@@ -9,7 +9,6 @@ import {
 	buildBlueprintContent,
 	buildSource,
 	extractExcerpt,
-	foreignProjects,
 	parseIndexTsv,
 	splitLocation,
 } from '../lib/sync.core.js';
@@ -113,19 +112,27 @@ export function registerSyncCommand(program: Command) {
 			const client = createApiClient();
 			const config = getConfig();
 
+			// A blueprint belongs to exactly one project: the sync always targets one
+			const projectSlug = opts.project ?? config.defaultProject;
+			if (!projectSlug) {
+				console.error(
+					chalk.red(
+						'✗ No project: pass --project <slug> or set a default project in the config — blueprints belong to a project',
+					),
+				);
+				process.exit(1);
+			}
 			let projectId: string | undefined;
-			if (opts.project) {
-				try {
-					const res = await client.api.projects[':slug'].$get({ param: { slug: opts.project } });
-					const project = await unwrapResponse(res);
-					projectId = 'error' in project ? undefined : project.id;
-				} catch {
-					projectId = undefined;
-				}
-				if (!projectId) {
-					console.error(chalk.red(`✗ Project not found: ${opts.project}`));
-					process.exit(1);
-				}
+			try {
+				const res = await client.api.projects[':slug'].$get({ param: { slug: projectSlug } });
+				const project = await unwrapResponse(res);
+				projectId = 'error' in project ? undefined : project.id;
+			} catch {
+				projectId = undefined;
+			}
+			if (!projectId) {
+				console.error(chalk.red(`✗ Project not found: ${projectSlug}`));
+				process.exit(1);
 			}
 
 			console.log(chalk.bold(`Syncing ${rows.length} blueprint(s) from ${indexPath}\n`));
@@ -160,21 +167,7 @@ export function registerSyncCommand(program: Command) {
 								: undefined
 							: mergeTechnologies(detectTechnologies(path, exemplar), explicitTechnologies);
 
-					const existing = await fetchExistingBySlug(client, row.id, opts.project);
-
-					// Never overwrite another project's blueprint from an unscoped sync:
-					// the same pattern-id legitimately exists in several projects.
-					const owners = existing && !('error' in existing) ? existing.projects : [];
-					const foreign = foreignProjects(owners, projectId);
-					if (foreign.length > 0) {
-						failed++;
-						console.error(
-							chalk.red(
-								`✗ Skipped ${label}: belongs to project ${foreign.join(', ')} — pass --project to sync into a namespace`,
-							),
-						);
-						continue;
-					}
+					const existing = await fetchExistingBySlug(client, row.id, projectSlug);
 
 					if (opts.dryRun) {
 						const action = existing ? 'update' : 'create';

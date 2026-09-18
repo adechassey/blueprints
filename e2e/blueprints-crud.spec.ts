@@ -5,6 +5,7 @@ import {
 	createTestUser,
 	query,
 	seedBlueprint,
+	seedProject,
 	type TestUser,
 } from './helpers/db.js';
 
@@ -13,6 +14,8 @@ test.describe('Blueprint CRUD', () => {
 
 	test.beforeEach(async () => {
 		user = await createTestUser('CRUD Tester', 'user');
+		// Every blueprint belongs to a project, and publishing requires membership
+		await seedProject(user.id);
 	});
 
 	test.afterEach(async () => {
@@ -32,6 +35,8 @@ test.describe('Blueprint CRUD', () => {
 		await page.goto('/blueprints/new');
 		await page.getByLabel('Name', { exact: false }).fill(name);
 		await page.getByLabel('Description', { exact: false }).first().fill(description);
+		await page.getByLabel('Project', { exact: false }).click();
+		await page.getByRole('option', { name: /^E2E Project/ }).click();
 		await page.getByLabel('Layer', { exact: false }).click();
 		await page.getByRole('option', { name: /^domain/i }).click();
 		// Technologies: type a name absent from the catalog and add it

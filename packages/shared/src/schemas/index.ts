@@ -4,6 +4,8 @@ export {
 	blueprintLayerSchema,
 	type CreateBlueprintInput,
 	createBlueprintSchema,
+	type ForkBlueprintInput,
+	forkBlueprintSchema,
 	type ListBlueprintsInput,
 	listBlueprintsSchema,
 	TECHNOLOGY_CATEGORIES,
@@ -14,8 +16,6 @@ export {
 } from './blueprint.js';
 
 export {
-	type AddBlueprintToProjectInput,
-	addBlueprintToProjectSchema,
 	type CreateProjectInput,
 	createProjectSchema,
 	type UpdateProjectInput,

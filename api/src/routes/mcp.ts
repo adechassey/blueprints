@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { blueprintProjects, projects } from '../db/schema.js';
+import { blueprints, projects } from '../db/schema.js';
 import { dispatchTool, getToolDefinitions } from '../mcp/server.js';
 import { getUser, requireAuth } from '../middleware/auth.js';
 import { getBlueprintById } from '../services/blueprints.js';
@@ -50,8 +50,8 @@ async function readResource(uri: string) {
 		if (!project) throw new Error(`Project not found: ${slug}`);
 		const countRows = await db
 			.select({ count: sql<number>`count(*)::int` })
-			.from(blueprintProjects)
-			.where(eq(blueprintProjects.projectId, project.id));
+			.from(blueprints)
+			.where(eq(blueprints.projectId, project.id));
 		const count = countRows.at(0)?.count ?? 0;
 		return {
 			contents: [

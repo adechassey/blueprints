@@ -1,6 +1,4 @@
 export {
-	type AddBlueprintToProjectInput,
-	addBlueprintToProjectSchema,
 	BLUEPRINT_LAYERS,
 	type BlueprintLayer,
 	blueprintLayerSchema,
@@ -10,6 +8,8 @@ export {
 	createBlueprintSchema,
 	createProjectSchema,
 	createStackSchema,
+	type ForkBlueprintInput,
+	forkBlueprintSchema,
 	type ListBlueprintsInput,
 	listBlueprintsSchema,
 	TECHNOLOGY_CATEGORIES,

@@ -25,7 +25,10 @@ export function registerPushCommand(program: Command) {
 	program
 		.command('push [file]')
 		.description('Push a blueprint markdown file to the registry')
-		.option('--project <slug>', 'Publish under a project namespace (must be a member)')
+		.option(
+			'--project <slug>',
+			'Project that owns the blueprints (must be a member; defaults to the frontmatter project or the config default)',
+		)
 		.option('--dir <path>', 'Push all .md files in directory')
 		.action(async (file: string | undefined, opts: { project?: string; dir?: string }) => {
 			const files: string[] = [];
@@ -46,9 +49,9 @@ export function registerPushCommand(program: Command) {
 			const client = createApiClient();
 			const config = getConfig();
 
-			// Resolve project UUID once (if --project flag was given)
+			// Resolve project UUID once (if --project or a config default was given)
 			let projectId: string | undefined;
-			const projectSlug = opts.project;
+			const projectSlug = opts.project ?? config.defaultProject;
 			if (projectSlug) {
 				projectId = await resolveProjectId(client, projectSlug);
 				if (!projectId) {
@@ -67,10 +70,18 @@ export function registerPushCommand(program: Command) {
 					if (!resolvedProjectId && meta.project) {
 						resolvedProjectId = await resolveProjectId(client, meta.project);
 						if (!resolvedProjectId) {
-							console.warn(
-								chalk.yellow(`  ⚠ Project "${meta.project}" not found, pushing without project`),
-							);
+							console.error(chalk.red(`✗ Project not found: ${meta.project}`));
+							continue;
 						}
+					}
+					// A blueprint belongs to exactly one project
+					if (!resolvedProjectId) {
+						console.error(
+							chalk.red(
+								`✗ No project for ${filePath}: pass --project <slug>, add "project:" to the frontmatter, or set a default project in the config`,
+							),
+						);
+						continue;
 					}
 
 					if (!meta.layer || !BLUEPRINT_LAYERS.includes(meta.layer as never)) {
@@ -103,9 +114,7 @@ export function registerPushCommand(program: Command) {
 					}
 
 					const url = `${config.server}/blueprints/${result.id}`;
-					const projectTag = resolvedProjectId
-						? chalk.gray(` [${projectSlug ?? meta.project}]`)
-						: '';
+					const projectTag = chalk.gray(` [${projectSlug ?? meta.project}]`);
 					console.log(chalk.green(`✓ Created: ${result.name} (${result.slug}) v1${projectTag}`));
 					console.log(chalk.gray(`  ${url}`));
 				} catch (err) {

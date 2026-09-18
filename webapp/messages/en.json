@@ -19,7 +19,6 @@
 	"form_tags": "Tags",
 	"form_tags_placeholder": "nestjs, typescript, hooks",
 	"form_project": "Project",
-	"form_project_none": "No project",
 	"form_content": "Content (Markdown)",
 	"form_changelog": "Changelog",
 	"form_submit": "Save",
@@ -220,5 +219,7 @@
 	"technologies_title": "Technologies",
 	"technologies_intro": "The technology catalog, by category. Pick one to list the blueprints that use it.",
 	"technologies_empty": "No technologies yet",
-	"cli_cmd_stack": "List stacks, or scaffold every blueprint of a stack into a directory, grouped by layer"
+	"cli_cmd_stack": "List stacks, or scaffold every blueprint of a stack into a directory, grouped by layer",
+	"form_project_placeholder": "Pick a project",
+	"form_project_hint": "The project that owns this blueprint. Another project reuses it by forking it."
 }

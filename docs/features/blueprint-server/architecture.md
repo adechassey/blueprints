@@ -210,7 +210,7 @@ users
 ├── createdAt
 └── updatedAt
 
-projects (loose namespace — no membership model)
+projects (owns its blueprints; membership via project_members)
 ├── id (uuid, PK)
 ├── name (unique)
 ├── slug (unique)
@@ -222,12 +222,13 @@ projects (loose namespace — no membership model)
 blueprints
 ├── id (uuid, PK)
 ├── name
-├── slug (unique within each project it belongs to, or among project-less blueprints — never globally)
+├── slug (unique per owning project — never globally)
 ├── description (short summary)
 ├── usage (when/how to use)
 ├── currentVersionId (FK → blueprint_versions, nullable)
-├── projects (many-to-many via blueprint_projects — a blueprint may be shared into several projects)
-├── authorId (FK → users)
+├── projectId (FK → projects, NOT NULL — the owning project)
+├── forkedFromId (FK → blueprints, nullable — the blueprint this one was copied from)
+├── authorId (FK → users, the publisher)
 ├── technologies (many-to-many via blueprint_technologies — curated taxonomy)
 ├── layer (enum: database, api, domain, ui, state, infra, testing, tooling)
 ├── isPublic (boolean, default true)
@@ -280,10 +281,11 @@ Better Auth creates and manages its own tables:
 - **UUID primary keys** — consistent with both reference projects
 - **Versions are immutable** — editing creates a new version, never mutates
 - **Embedding on version, not blueprint** — each version has its own vector since content changes
-- **Projects are loose namespaces** — anyone can create a project, no membership model. Like npm scopes.
+- **A blueprint belongs to exactly one project** — `blueprints.project_id` is NOT NULL. Blueprints are how a team records *its own* patterns, so ownership is singular: a project's members own, edit and delete its blueprints. Reuse across projects is a **fork**, not a shared link (see below). A project that still owns blueprints cannot be deleted.
+- **Forking, not sharing** — to start from another project's blueprint, you fork it: the content, metadata, technologies and tags are copied into your project as a new blueprint with its own version history, which you then edit freely. `forked_from_id` records the origin (nullable, `ON DELETE SET NULL`), so a blueprint can show where it came from and how many projects picked it up. The same pattern therefore legitimately exists once per project — which is what `blueprint_matches` surfaces, and why `stack scaffold` writes `<slug>.<project>.md` on a collision.
 - **Tags are shared globally** — normalized tag table, many-to-many with blueprints
 - **Comments support threading** — `parentId` enables nested replies
-- **Slug uniqueness** — blueprint slugs are unique within a namespace: each project a blueprint belongs to, or the project-less pool. Never globally, so `aquila-ap` and `lefebvre-dalloz-sig-web` each own a `form-field`. Enforced by the blueprints service (the many-to-many link rules out a DB constraint): an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
+- **Slug uniqueness** — blueprint slugs are unique per owning project, never globally, so `aquila-ap` and `lefebvre-dalloz-sig-web` each own a `form-field`. Enforced by a `UNIQUE (project_id, slug)` constraint now that ownership is singular: an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
 
 ## 4. API Design
 
@@ -295,9 +297,10 @@ Better Auth creates and manages its own tables:
 - `GET /api/blueprints/:id` — Get blueprint with current version (`:id` is a UUID or a slug; `?project=<slug|uuid>` scopes a slug lookup, also on `PUT`/`DELETE`)
 - `GET /api/blueprints/:id/versions` — List all versions
 - `GET /api/blueprints/:id/versions/:version` — Get specific version
-- `POST /api/blueprints` — Create blueprint (with initial version)
+- `POST /api/blueprints` — Create blueprint in a project (with initial version; `projectId` required)
+- `POST /api/blueprints/:id/fork` — Copy a blueprint into another project as a new blueprint
 - `PUT /api/blueprints/:id` — Update metadata (creates new version if content changed)
-- `DELETE /api/blueprints/:id` — Delete blueprint (admin/author only)
+- `DELETE /api/blueprints/:id` — Delete blueprint (members of the owning project, or admin)
 
 **Comments**:
 - `GET /api/blueprints/:id/comments` — List comments for a blueprint

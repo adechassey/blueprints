@@ -117,12 +117,18 @@ export const blueprints = pgTable(
 	{
 		id: uuid('id').primaryKey().defaultRandom(),
 		name: text('name').notNull(),
-		// Unique within each project the blueprint belongs to (and among project-less
-		// blueprints), enforced by the blueprints service — not globally.
+		// Unique within the owning project, never globally.
 		slug: text('slug').notNull(),
 		description: text('description'),
 		usage: text('usage'),
 		currentVersionId: uuid('current_version_id'),
+		// The owning project: a blueprint records one team's pattern. Reuse across
+		// projects is a fork (a copy), never a shared link.
+		projectId: uuid('project_id').references((): AnyPgColumn => projects.id),
+		// Set when the blueprint was forked from another project's blueprint
+		forkedFromId: uuid('forked_from_id').references((): AnyPgColumn => blueprints.id, {
+			onDelete: 'set null',
+		}),
 		authorId: text('author_id')
 			.notNull()
 			.references(() => users.id),
@@ -139,7 +145,7 @@ export const blueprints = pgTable(
 			.defaultNow()
 			.$onUpdate(() => new Date()),
 	},
-	(t) => [index('blueprints_slug_idx').on(t.slug)],
+	(t) => [index('blueprints_slug_idx').on(t.slug), index('blueprints_project_idx').on(t.projectId)],
 );
 
 // Blueprint versions

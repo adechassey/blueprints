@@ -2,7 +2,6 @@ import type { BlueprintLayer } from '@blueprints/shared';
 import { and, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
-	blueprintProjects,
 	blueprints,
 	blueprintTags,
 	blueprintTechnologies,
@@ -129,6 +128,8 @@ async function vectorSearch(
 		);
 	}
 	if (layer) conditions.push(eq(blueprints.layer, layer as BlueprintLayer));
+	// A dynamic query's .where() replaces the previous one: every filter goes through conditions
+	if (resolvedProjectId) conditions.push(eq(blueprints.projectId, resolvedProjectId));
 
 	let baseQuery = db
 		.select({
@@ -150,16 +151,6 @@ async function vectorSearch(
 		.innerJoin(blueprintVersions, eq(blueprints.currentVersionId, blueprintVersions.id))
 		.leftJoin(users, eq(blueprints.authorId, users.id))
 		.$dynamic();
-
-	if (resolvedProjectId) {
-		baseQuery = baseQuery.innerJoin(
-			blueprintProjects,
-			and(
-				eq(blueprints.id, blueprintProjects.blueprintId),
-				eq(blueprintProjects.projectId, resolvedProjectId),
-			),
-		);
-	}
 
 	if (tag) {
 		baseQuery = baseQuery
@@ -202,6 +193,8 @@ async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
 		);
 	}
 	if (layer) conditions.push(eq(blueprints.layer, layer as BlueprintLayer));
+	// A dynamic query's .where() replaces the previous one: every filter goes through conditions
+	if (resolvedProjectId) conditions.push(eq(blueprints.projectId, resolvedProjectId));
 
 	let baseQuery = db
 		.select({
@@ -221,16 +214,6 @@ async function textSearch(db: DB, query: string, filters: ResolvedFilters) {
 		.from(blueprints)
 		.leftJoin(users, eq(blueprints.authorId, users.id))
 		.$dynamic();
-
-	if (resolvedProjectId) {
-		baseQuery = baseQuery.innerJoin(
-			blueprintProjects,
-			and(
-				eq(blueprints.id, blueprintProjects.blueprintId),
-				eq(blueprintProjects.projectId, resolvedProjectId),
-			),
-		);
-	}
 
 	if (tag) {
 		baseQuery = baseQuery

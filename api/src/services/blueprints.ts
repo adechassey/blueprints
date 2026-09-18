@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, notExists, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
 	blueprintProjects,
@@ -6,6 +6,7 @@ import {
 	blueprintTags,
 	blueprintTechnologies,
 	blueprintVersions,
+	projectMembers,
 	projects,
 	tags,
 	technologies,
@@ -24,6 +25,7 @@ import {
 	pickSlugCandidate,
 	SlugConflictError,
 	shouldCreateNewVersion,
+	UnknownProjectError,
 } from './blueprints.core.js';
 import { prepareEmbeddingText } from './embeddings.core.js';
 import { generateEmbedding } from './embeddings.js';
@@ -51,12 +53,6 @@ async function upsertTags(db: DB, tagNames: string[]) {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * A slug namespace: the id of a project, or null for the project-less pool.
- * Slugs are unique within a namespace, never across them.
- */
-type SlugNamespace = string | null;
-
 /** Resolves a project given as a UUID or a slug to its id (null when unknown). */
 async function resolveProjectId(db: DB, project: string): Promise<string | null> {
 	const condition = UUID_RE.test(project) ? eq(projects.id, project) : eq(projects.slug, project);
@@ -64,74 +60,49 @@ async function resolveProjectId(db: DB, project: string): Promise<string | null>
 	return p?.id ?? null;
 }
 
-async function projectRowsOf(db: DB, blueprintId: string) {
-	return db
-		.select({ id: projects.id, name: projects.name, slug: projects.slug })
-		.from(blueprintProjects)
-		.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
-		.where(eq(blueprintProjects.blueprintId, blueprintId));
-}
-
-/** The namespaces a blueprint's slug lives in: each of its projects, or the global pool. */
-async function namespacesOf(db: DB, blueprintId: string): Promise<SlugNamespace[]> {
-	const rows = await projectRowsOf(db, blueprintId);
-	return rows.length === 0 ? [null] : rows.map((r) => r.id);
-}
-
-/** Human label for conflict messages: the project slug, or null for the global pool. */
-async function namespaceLabel(db: DB, namespace: SlugNamespace): Promise<string | null> {
-	if (namespace === null) return null;
+/** The project owning a blueprint (id, name, slug). */
+async function projectOf(db: DB, projectId: string) {
 	const [p] = await db
-		.select({ slug: projects.slug })
+		.select({ id: projects.id, name: projects.name, slug: projects.slug })
 		.from(projects)
-		.where(eq(projects.id, namespace))
+		.where(eq(projects.id, projectId))
 		.limit(1);
-	return p?.slug ?? namespace;
+	return p ?? null;
 }
 
-function selectIdsBySlugInNamespace(db: DB, slug: string, namespace: SlugNamespace) {
-	if (namespace === null) {
-		const linked = db
-			.select({ one: sql`1` })
-			.from(blueprintProjects)
-			.where(eq(blueprintProjects.blueprintId, blueprints.id));
-		return db
-			.select({ id: blueprints.id })
-			.from(blueprints)
-			.where(and(eq(blueprints.slug, slug), notExists(linked)));
-	}
-	return db
-		.select({ id: blueprints.id })
-		.from(blueprints)
-		.innerJoin(
-			blueprintProjects,
-			and(
-				eq(blueprintProjects.blueprintId, blueprints.id),
-				eq(blueprintProjects.projectId, namespace),
-			),
-		)
-		.where(eq(blueprints.slug, slug));
-}
-
-/** True when a blueprint other than `excludeId` already uses `slug` in the namespace. */
-export async function isSlugTaken(
+/** True when a blueprint other than `excludeId` already uses `slug` in the project. */
+async function isSlugTaken(
 	db: DB,
 	slug: string,
-	namespace: SlugNamespace,
+	projectId: string,
 	excludeId?: string,
 ): Promise<boolean> {
-	const rows = await selectIdsBySlugInNamespace(db, slug, namespace);
+	const rows = await db
+		.select({ id: blueprints.id })
+		.from(blueprints)
+		.where(and(eq(blueprints.slug, slug), eq(blueprints.projectId, projectId)));
 	return rows.some((r) => r.id !== excludeId);
 }
 
+/** True when the user belongs to the project (admins bypass this check at the route). */
+export async function isProjectMember(db: DB, projectId: string, userId: string): Promise<boolean> {
+	const [membership] = await db
+		.select({ id: projectMembers.id })
+		.from(projectMembers)
+		.where(and(eq(projectMembers.projectId, projectId), eq(projectMembers.userId, userId)))
+		.limit(1);
+	return !!membership;
+}
+
 export async function createBlueprint(db: DB, input: CreateBlueprintInput, authorId: string) {
-	const namespace: SlugNamespace = input.projectId ?? null;
+	const project = await projectOf(db, input.projectId);
+	if (!project) throw new UnknownProjectError(input.projectId);
 	const requested = input.slug ?? generateSlug(input.name);
 	const slug = pickSlug({
 		requested,
 		explicit: input.slug !== undefined,
-		taken: await isSlugTaken(db, requested, namespace),
-		projectLabel: await namespaceLabel(db, namespace),
+		taken: await isSlugTaken(db, requested, project.id),
+		projectLabel: project.slug,
 	});
 	// Resolved before any write: an invalid reference must not leave a half-created blueprint
 	const technologyRecords = await resolveTechnologies(db, input.technologies ?? []);
@@ -146,6 +117,8 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 			layer: input.layer,
 			source: input.source,
 			authorId,
+			projectId: project.id,
+			forkedFromId: input.forkedFromId,
 			isPublic: input.isPublic ?? true,
 		})
 		.returning();
@@ -167,14 +140,12 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		.set({ currentVersionId: version.id })
 		.where(eq(blueprints.id, blueprint.id));
 
-	// Link to project if provided
-	if (input.projectId) {
-		await db.insert(blueprintProjects).values({
-			blueprintId: blueprint.id,
-			projectId: input.projectId,
-			addedBy: authorId,
-		});
-	}
+	// Dual-written until blueprint_projects is dropped: the previous release still reads it
+	await db.insert(blueprintProjects).values({
+		blueprintId: blueprint.id,
+		projectId: project.id,
+		addedBy: authorId,
+	});
 
 	// Generate embedding asynchronously — don't block create
 	try {
@@ -248,10 +219,9 @@ export async function updateBlueprint(
 	}
 	if (metadataUpdate.slug !== undefined && metadataUpdate.slug !== existing.slug) {
 		const nextSlug = metadataUpdate.slug as string;
-		for (const namespace of await namespacesOf(db, id)) {
-			if (await isSlugTaken(db, nextSlug, namespace, id)) {
-				throw new SlugConflictError(nextSlug, await namespaceLabel(db, namespace));
-			}
+		const project = existing.projectId ? await projectOf(db, existing.projectId) : null;
+		if (project && (await isSlugTaken(db, nextSlug, project.id, id))) {
+			throw new SlugConflictError(nextSlug, project.slug);
 		}
 	}
 	if (input.description !== undefined) metadataUpdate.description = input.description;
@@ -343,15 +313,11 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	// Resolve project slug to UUID if needed
 	let resolvedProjectId = projectId;
 	if (!resolvedProjectId && project) {
-		const [p] = await db
-			.select({ id: projects.id })
-			.from(projects)
-			.where(eq(projects.slug, project))
-			.limit(1);
-		resolvedProjectId = p?.id;
+		resolvedProjectId = (await resolveProjectId(db, project)) ?? undefined;
 	}
 
 	const conditions = [];
+	if (resolvedProjectId) conditions.push(eq(blueprints.projectId, resolvedProjectId));
 	if (layer) conditions.push(eq(blueprints.layer, layer));
 	if (authorId) conditions.push(eq(blueprints.authorId, authorId));
 	if (input.techno && input.techno.length > 0) {
@@ -383,20 +349,14 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 			authorId: blueprints.authorId,
 			authorName: users.name,
 			authorImage: users.image,
+			projectId: blueprints.projectId,
+			projectName: projects.name,
+			projectSlug: projects.slug,
 		})
 		.from(blueprints)
 		.leftJoin(users, eq(blueprints.authorId, users.id))
+		.leftJoin(projects, eq(blueprints.projectId, projects.id))
 		.$dynamic();
-
-	if (resolvedProjectId) {
-		query = query.innerJoin(
-			blueprintProjects,
-			and(
-				eq(blueprints.id, blueprintProjects.blueprintId),
-				eq(blueprintProjects.projectId, resolvedProjectId),
-			),
-		);
-	}
 
 	if (tag) {
 		query = query
@@ -422,15 +382,6 @@ export async function listBlueprints(db: DB, input: ListBlueprintsInput) {
 	const countQuery = db.select({ total: count() }).from(blueprints).$dynamic();
 
 	let countQ = countQuery;
-	if (resolvedProjectId) {
-		countQ = countQ.innerJoin(
-			blueprintProjects,
-			and(
-				eq(blueprints.id, blueprintProjects.blueprintId),
-				eq(blueprintProjects.projectId, resolvedProjectId),
-			),
-		);
-	}
 	if (tag) {
 		countQ = countQ
 			.innerJoin(blueprintTags, eq(blueprints.id, blueprintTags.blueprintId))
@@ -459,26 +410,19 @@ async function findBlueprint(db: DB, id: string, project?: string) {
 	if (project !== undefined) {
 		const projectId = await resolveProjectId(db, project);
 		if (!projectId) return null;
-		const [row] = await db
-			.select({ blueprint: blueprints })
+		const [bp] = await db
+			.select()
 			.from(blueprints)
-			.innerJoin(
-				blueprintProjects,
-				and(
-					eq(blueprintProjects.blueprintId, blueprints.id),
-					eq(blueprintProjects.projectId, projectId),
-				),
-			)
-			.where(eq(blueprints.slug, id))
+			.where(and(eq(blueprints.slug, id), eq(blueprints.projectId, projectId)))
 			.limit(1);
-		return row?.blueprint ?? null;
+		return bp ?? null;
 	}
 
 	const rows = await db.select().from(blueprints).where(eq(blueprints.slug, id));
 	const candidates = await Promise.all(
 		rows.map(async (bp) => ({
 			id: bp.id,
-			projectSlugs: (await projectRowsOf(db, bp.id)).map((p) => p.slug),
+			projectSlugs: bp.projectId ? [(await projectOf(db, bp.projectId))?.slug ?? ''] : [],
 		})),
 	);
 	const picked = pickSlugCandidate(id, candidates);
@@ -507,7 +451,26 @@ export async function getBlueprintById(db: DB, id: string, project?: string) {
 		.innerJoin(tags, eq(blueprintTags.tagId, tags.id))
 		.where(eq(blueprintTags.blueprintId, blueprint.id));
 
-	const blueprintProjectRows = await projectRowsOf(db, blueprint.id);
+	const owningProject = blueprint.projectId ? await projectOf(db, blueprint.projectId) : null;
+
+	const [forkedFrom] = blueprint.forkedFromId
+		? await db
+				.select({
+					id: blueprints.id,
+					slug: blueprints.slug,
+					name: blueprints.name,
+					projectSlug: projects.slug,
+				})
+				.from(blueprints)
+				.leftJoin(projects, eq(blueprints.projectId, projects.id))
+				.where(eq(blueprints.id, blueprint.forkedFromId))
+				.limit(1)
+		: [];
+
+	const [forks] = await db
+		.select({ total: count() })
+		.from(blueprints)
+		.where(eq(blueprints.forkedFromId, blueprint.id));
 
 	const blueprintTechnologyRows = await db
 		.select({ name: technologies.name, slug: technologies.slug })
@@ -521,7 +484,11 @@ export async function getBlueprintById(db: DB, id: string, project?: string) {
 		currentVersion,
 		tags: blueprintTagRows,
 		technologies: blueprintTechnologyRows,
-		projects: blueprintProjectRows,
+		project: owningProject,
+		forkedFrom: forkedFrom ?? null,
+		forkCount: forks?.total ?? 0,
+		// Compatibility with the previous release's clients; drop with blueprint_projects
+		projects: owningProject ? [owningProject] : [],
 	};
 }
 
@@ -549,4 +516,38 @@ export async function getVersion(db: DB, blueprintId: string, version: number) {
 		)
 		.limit(1);
 	return ver ?? null;
+}
+
+/**
+ * Copies a blueprint into another project: same content, metadata, technologies
+ * and tags, as a new blueprint with its own version history and a link back to
+ * the original. Reuse across projects is a fork, never a shared blueprint.
+ */
+export async function forkBlueprint(
+	db: DB,
+	source: { id: string; projectId: string | null },
+	targetProjectId: string,
+	userId: string,
+) {
+	const full = await getBlueprintById(db, source.id);
+	if (!full) return null;
+
+	return createBlueprint(
+		db,
+		{
+			name: full.name,
+			slug: full.slug,
+			description: full.description ?? undefined,
+			usage: full.usage ?? undefined,
+			source: full.source ?? undefined,
+			layer: full.layer,
+			technologies: full.technologies.map((t) => t.slug),
+			tags: full.tags.map((t) => t.name),
+			content: full.currentVersion?.content ?? '',
+			projectId: targetProjectId,
+			forkedFromId: full.id,
+			isPublic: true,
+		},
+		userId,
+	);
 }

@@ -71,6 +71,13 @@
       "when": 1789661270391,
       "tag": "0009_technology_catalog",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789716757955,
+      "tag": "0010_blueprint_project_ownership",
+      "breakpoints": true
     }
   ]
 }

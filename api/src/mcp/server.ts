@@ -124,7 +124,7 @@ const publishBlueprintTool: ToolDefinition = {
 		layer: blueprintLayerSchema,
 		content: z.string(),
 		tags: z.array(z.string()).optional(),
-		projectId: z.string().optional(),
+		projectId: z.string().describe('UUID of the project that owns the blueprint'),
 	}),
 	handler: async (input, authorId) => {
 		const { name, description, usage, technologies, layer, content, tags, projectId } = input as {
@@ -135,7 +135,7 @@ const publishBlueprintTool: ToolDefinition = {
 			layer: string;
 			content: string;
 			tags?: string[];
-			projectId?: string;
+			projectId: string;
 		};
 		const blueprint = await createBlueprint(
 			db,

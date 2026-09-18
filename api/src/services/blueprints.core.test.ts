@@ -9,6 +9,7 @@ import {
 	type SlugCandidate,
 	SlugConflictError,
 	shouldCreateNewVersion,
+	UnknownProjectError,
 } from './blueprints.core.js';
 
 describe('generateSlug', () => {
@@ -100,7 +101,12 @@ describe('pickSlug', () => {
 
 	it('suffixes a generated slug on collision', () => {
 		expect(
-			pickSlug({ requested: 'form-field', explicit: false, taken: true, projectLabel: null }),
+			pickSlug({
+				requested: 'form-field',
+				explicit: false,
+				taken: true,
+				projectLabel: 'aquila-ap',
+			}),
 		).toMatch(/^form-field-[a-z0-9]+$/);
 	});
 
@@ -110,9 +116,16 @@ describe('pickSlug', () => {
 		).toThrow(new SlugConflictError('form-field', 'aquila-ap'));
 	});
 
-	it('names the global namespace when there is no project', () => {
-		const err = new SlugConflictError('form-field', null);
-		expect(err.message).toBe('Slug "form-field" already exists in the global namespace');
+	it('reports an unknown target project as a 404', () => {
+		const err = new UnknownProjectError('aquila-ap');
+		expect(err.message).toBe('Project "aquila-ap" not found');
+		expect(err.status).toBe(404);
+		expect(err.name).toBe('UnknownProjectError');
+	});
+
+	it('names the owning project in the conflict message', () => {
+		const err = new SlugConflictError('form-field', 'aquila-ap');
+		expect(err.message).toBe('Slug "form-field" already exists in project aquila-ap');
 		expect(err.status).toBe(409);
 		expect(err.name).toBe('SlugConflictError');
 	});

@@ -35,14 +35,14 @@ test.describe('Project-scoped slugs (API)', () => {
 		const projectA = await createProject('a');
 		const projectB = await createProject('b');
 
-		const blueprintPayload = (projectId: string | undefined) => ({
+		const blueprintPayload = (projectId: string) => ({
 			name: `E2E Form Field ${stamp}`,
 			slug,
 			layer: 'ui',
 			content: '# Form field',
 			projectId,
 		});
-		const publish = (projectId: string | undefined) =>
+		const publish = (projectId: string) =>
 			request.post(`${API_URL}/api/blueprints`, { headers, data: blueprintPayload(projectId) });
 
 		// ── Same slug in two projects: both keep it verbatim ──
@@ -79,13 +79,6 @@ test.describe('Project-scoped slugs (API)', () => {
 		);
 		expect(elsewhere.status()).toBe(404);
 
-		// ── The project-less pool is its own namespace ──
-		const globalOne = await publish(undefined);
-		expect(globalOne.status()).toBe(201);
-		const globalTwo = await publish(undefined);
-		expect(globalTwo.status()).toBe(409);
-		expect(((await globalTwo.json()) as { error: string }).error).toContain('global namespace');
-
 		// ── A generated slug (no explicit slug) gets a suffix instead of failing ──
 		const { slug: _explicit, ...withoutSlug } = blueprintPayload(projectA.id);
 		const generated = await request.post(`${API_URL}/api/blueprints`, {
@@ -97,11 +90,12 @@ test.describe('Project-scoped slugs (API)', () => {
 			new RegExp(`^e2e-form-field-${stamp}-[a-z0-9]+$`),
 		);
 
-		// ── Joining a project that already holds the slug is refused ──
-		const join = await request.post(`${API_URL}/api/projects/${projectA.slug}/blueprints`, {
+		// ── A blueprint without a project is rejected: ownership is mandatory ──
+		const { projectId: _projectId, ...orphan } = blueprintPayload(projectA.id);
+		const noProject = await request.post(`${API_URL}/api/blueprints`, {
 			headers,
-			data: { blueprintId: blueprintB.id },
+			data: { ...orphan, slug: `${slug}-orphan` },
 		});
-		expect(join.status()).toBe(409);
+		expect(noProject.status()).toBe(400);
 	});
 });

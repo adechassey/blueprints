@@ -43,7 +43,7 @@ describe('schema tables', () => {
 		);
 	});
 
-	it('blueprints table has expected columns (no projectId)', () => {
+	it('blueprints table is owned by a project and can link to its origin', () => {
 		const cols = Object.keys(getTableColumns(blueprints));
 		expect(cols).toEqual(
 			expect.arrayContaining([
@@ -53,6 +53,8 @@ describe('schema tables', () => {
 				'description',
 				'usage',
 				'currentVersionId',
+				'projectId',
+				'forkedFromId',
 				'authorId',
 				'layer',
 				'isPublic',
@@ -61,7 +63,6 @@ describe('schema tables', () => {
 				'updatedAt',
 			]),
 		);
-		expect(cols).not.toContain('projectId');
 	});
 
 	it('blueprint_versions table has embedding column', () => {

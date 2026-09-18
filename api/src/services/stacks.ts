@@ -1,7 +1,6 @@
 import { and, eq, inArray, ne, or } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
-	blueprintProjects,
 	blueprints,
 	blueprintTechnologies,
 	blueprintVersions,
@@ -195,12 +194,12 @@ async function getStackBlueprints(db: DB, stackId: string): Promise<StackBluepri
 
 	const projectRows = rows.length
 		? await db
-				.select({ blueprintId: blueprintProjects.blueprintId, slug: projects.slug })
-				.from(blueprintProjects)
-				.innerJoin(projects, eq(blueprintProjects.projectId, projects.id))
+				.select({ blueprintId: blueprints.id, slug: projects.slug })
+				.from(blueprints)
+				.innerJoin(projects, eq(blueprints.projectId, projects.id))
 				.where(
 					inArray(
-						blueprintProjects.blueprintId,
+						blueprints.id,
 						rows.map((r) => r.id),
 					),
 				)

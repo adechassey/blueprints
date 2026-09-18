@@ -2,16 +2,11 @@ import { zValidator } from '@hono/zod-validator';
 import { and, count, desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { db } from '../db/index.js';
-import { blueprintProjects, blueprints, projectMembers, projects, users } from '../db/schema.js';
+import { blueprints, projectMembers, projects, users } from '../db/schema.js';
 import { auth } from '../lib/auth.js';
-import {
-	addBlueprintToProjectSchema,
-	createProjectSchema,
-	updateProjectSchema,
-} from '../lib/validation.js';
+import { createProjectSchema, updateProjectSchema } from '../lib/validation.js';
 import { getUser, requireAuth } from '../middleware/auth.js';
 import { generateBlueprintIndex } from '../services/blueprint-index.core.js';
-import { isSlugTaken } from '../services/blueprints.js';
 import { technologiesOfMany } from '../services/technologies.js';
 
 export const projectRoutes = new Hono()
@@ -29,8 +24,7 @@ export const projectRoutes = new Hono()
 		const projectBlueprints = await db
 			.select()
 			.from(blueprints)
-			.innerJoin(blueprintProjects, eq(blueprints.id, blueprintProjects.blueprintId))
-			.where(eq(blueprintProjects.projectId, project.id))
+			.where(eq(blueprints.projectId, project.id))
 			.orderBy(desc(blueprints.createdAt));
 
 		const [memberCountResult] = await db
@@ -54,14 +48,14 @@ export const projectRoutes = new Hono()
 
 		const technologiesByBlueprint = await technologiesOfMany(
 			db,
-			projectBlueprints.map((row) => row.blueprints.id),
+			projectBlueprints.map((row) => row.id),
 		);
 
 		return c.json({
 			...project,
 			blueprints: projectBlueprints.map((row) => ({
-				...row.blueprints,
-				technologies: technologiesByBlueprint.get(row.blueprints.id) ?? [],
+				...row,
+				technologies: technologiesByBlueprint.get(row.id) ?? [],
 			})),
 			memberCount: memberCountResult?.count ?? 0,
 			isMember,
@@ -189,112 +183,6 @@ export const projectRoutes = new Hono()
 
 		return c.json(members);
 	})
-	.post(
-		'/projects/:slug/blueprints',
-		requireAuth,
-		zValidator('json', addBlueprintToProjectSchema),
-		async (c) => {
-			const slug = c.req.param('slug');
-			const { blueprintId } = c.req.valid('json');
-			const user = getUser(c);
-
-			const [project] = await db.select().from(projects).where(eq(projects.slug, slug)).limit(1);
-			if (!project) {
-				return c.json({ error: 'Project not found' }, 404);
-			}
-
-			// Must be a project member (or admin)
-			if (user.role !== 'admin') {
-				const [membership] = await db
-					.select({ id: projectMembers.id })
-					.from(projectMembers)
-					.where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, user.id)))
-					.limit(1);
-				if (!membership) {
-					return c.json({ error: 'You must be a member of this project' }, 403);
-				}
-			}
-
-			const [blueprint] = await db
-				.select({ id: blueprints.id, slug: blueprints.slug, authorId: blueprints.authorId })
-				.from(blueprints)
-				.where(eq(blueprints.id, blueprintId))
-				.limit(1);
-			if (!blueprint) {
-				return c.json({ error: 'Blueprint not found' }, 404);
-			}
-
-			// Only the blueprint author or admin can add it to a project
-			if (blueprint.authorId !== user.id && user.role !== 'admin') {
-				return c.json({ error: 'Only the blueprint author can add it to a project' }, 403);
-			}
-
-			// Idempotent — no error if already linked
-			const existing = await db
-				.select({ blueprintId: blueprintProjects.blueprintId })
-				.from(blueprintProjects)
-				.where(
-					and(
-						eq(blueprintProjects.blueprintId, blueprintId),
-						eq(blueprintProjects.projectId, project.id),
-					),
-				)
-				.limit(1);
-
-			if (existing.length > 0) {
-				return c.json({ message: 'Blueprint already in project' });
-			}
-
-			// Slugs are unique within a project: joining must not create a duplicate
-			if (await isSlugTaken(db, blueprint.slug, project.id, blueprint.id)) {
-				return c.json(
-					{ error: `Slug "${blueprint.slug}" already exists in project ${project.slug}` },
-					409,
-				);
-			}
-
-			await db.insert(blueprintProjects).values({
-				blueprintId,
-				projectId: project.id,
-				addedBy: user.id,
-			});
-
-			return c.json({ message: 'Blueprint added to project' }, 201);
-		},
-	)
-	.delete('/projects/:slug/blueprints/:blueprintId', requireAuth, async (c) => {
-		const slug = c.req.param('slug');
-		const blueprintId = c.req.param('blueprintId');
-		const user = getUser(c);
-
-		const [project] = await db.select().from(projects).where(eq(projects.slug, slug)).limit(1);
-		if (!project) {
-			return c.json({ error: 'Project not found' }, 404);
-		}
-
-		// Must be a project member (or admin)
-		if (user.role !== 'admin') {
-			const [membership] = await db
-				.select({ id: projectMembers.id })
-				.from(projectMembers)
-				.where(and(eq(projectMembers.projectId, project.id), eq(projectMembers.userId, user.id)))
-				.limit(1);
-			if (!membership) {
-				return c.json({ error: 'You must be a member of this project' }, 403);
-			}
-		}
-
-		await db
-			.delete(blueprintProjects)
-			.where(
-				and(
-					eq(blueprintProjects.blueprintId, blueprintId),
-					eq(blueprintProjects.projectId, project.id),
-				),
-			);
-
-		return c.json({ message: 'Blueprint removed from project' });
-	})
 	.get('/projects/:slug/index', async (c) => {
 		const slug = c.req.param('slug');
 
@@ -313,8 +201,7 @@ export const projectRoutes = new Hono()
 				usage: blueprints.usage,
 			})
 			.from(blueprints)
-			.innerJoin(blueprintProjects, eq(blueprints.id, blueprintProjects.blueprintId))
-			.where(eq(blueprintProjects.projectId, project.id))
+			.where(eq(blueprints.projectId, project.id))
 			.orderBy(blueprints.layer, blueprints.name);
 
 		const technologiesByBlueprint = await technologiesOfMany(
