@@ -466,7 +466,7 @@ describe('buildSource', () => {
 });
 
 describe('buildBlueprintContent', () => {
-	it('builds markdown with an excerpt', () => {
+	it('holds the excerpt only: description, usage and source live in their fields', () => {
 		const row = {
 			id: 'controller-create',
 			name: 'Controller Create',
@@ -476,11 +476,7 @@ describe('buildBlueprintContent', () => {
 			location: 'src/areas/area.controller.ts:42',
 		};
 		const md = buildBlueprintContent(row, { code: 'export const x = 1;', truncated: false });
-		expect(md).toContain('## Context\n\nCreates a resource');
-		expect(md).toContain('## Usage\n\nUse for POST endpoints');
-		expect(md).toContain('Exemplar: `src/areas/area.controller.ts:42`');
-		expect(md).toContain('```typescript\nexport const x = 1;\n```\n');
-		expect(md).not.toContain('truncated');
+		expect(md).toBe('```typescript\nexport const x = 1;\n```\n');
 	});
 
 	it('notes a truncated excerpt below its code block', () => {
@@ -492,12 +488,24 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.ts:1',
 		};
-		expect(buildBlueprintContent(row, { code: 'x', truncated: true })).toContain(
-			`\`\`\`\n\n_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._\n`,
+		expect(buildBlueprintContent(row, { code: 'x', truncated: true })).toBe(
+			`\`\`\`typescript\nx\n\`\`\`\n\n_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._\n`,
 		);
 	});
 
-	it('returns undefined for an extension-less or unrecognized extension', () => {
+	it('points to the exemplar when there is no excerpt', () => {
+		const row = {
+			id: 'ctrl',
+			name: 'Ctrl',
+			usage: 'Use for ctrl',
+			description: 'Does ctrl',
+			globs: '',
+			location: 'src/a.ts:12',
+		};
+		expect(buildBlueprintContent(row)).toBe('Exemplar: `src/a.ts:12`\n');
+	});
+
+	it('points to the whole file when the location has no line', () => {
 		const row = {
 			id: 'ctrl',
 			name: 'Ctrl',
@@ -506,9 +514,7 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.unknownext',
 		};
-		const md = buildBlueprintContent(row);
-		expect(md).not.toContain('```');
-		expect(md).toContain('Exemplar: `src/a.unknownext`');
+		expect(buildBlueprintContent(row)).toBe('Exemplar: `src/a.unknownext`\n');
 	});
 
 	it('omits the language tag for unrecognized extensions when an excerpt is present', () => {
@@ -520,7 +526,7 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.foo:1',
 		};
-		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toContain('```\nx');
+		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toBe('```\nx\n```\n');
 	});
 
 	it('omits the language tag for paths ending with a dot', () => {
@@ -532,18 +538,6 @@ describe('buildBlueprintContent', () => {
 			globs: '',
 			location: 'src/a.',
 		};
-		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toContain('```\nx');
-	});
-
-	it('falls back to a generic description when empty', () => {
-		const row = {
-			id: 'my-pattern',
-			name: 'My Pattern',
-			usage: 'Use for things',
-			description: '',
-			globs: '',
-			location: 'src/a.ts',
-		};
-		expect(buildBlueprintContent(row)).toContain('Pattern `my-pattern` — canonical exemplar');
+		expect(buildBlueprintContent(row, { code: 'x', truncated: false })).toBe('```\nx\n```\n');
 	});
 });

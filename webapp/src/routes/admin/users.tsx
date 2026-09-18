@@ -39,6 +39,7 @@ import {
 } from '../../components/ui/table.js';
 import { useAdminUsers, useChangeRole } from '../../hooks/useAdmin.js';
 import { authClient } from '../../lib/auth-client.js';
+import { formatDate } from '../../lib/format-date.js';
 import { cn } from '../../lib/utils.js';
 import * as m from '../../paraglide/messages.js';
 
@@ -151,7 +152,7 @@ function AdminUsersPage() {
 				),
 				cell: ({ row }) => (
 					<span className="whitespace-nowrap text-on-surface-variant">
-						{new Date(row.original.createdAt).toLocaleDateString()}
+						{formatDate(row.original.createdAt)}
 					</span>
 				),
 			},

@@ -242,3 +242,9 @@ h4 {
 	--tw-prose-th-borders: var(--outline-variant);
 	--tw-prose-td-borders: var(--outline-variant);
 }
+
+/* The typography plugin wraps inline code in literal backticks; the code chip already marks it. */
+.prose :where(code)::before,
+.prose :where(code)::after {
+	content: none;
+}

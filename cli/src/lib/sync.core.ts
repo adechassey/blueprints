@@ -251,35 +251,27 @@ export function buildSource(repo: string | undefined, location: string): string 
 	return repo ? `${repo}:${loc}` : loc;
 }
 
-/** Builds the blueprint markdown body from an index row (and optional excerpt). */
+/**
+ * Builds the blueprint markdown body from an index row (and optional excerpt).
+ * Description, usage and source live in their own fields (the page renders
+ * them once), so the body holds the implementation only: the excerpt when the
+ * exemplar could be read, otherwise a pointer to it.
+ */
 export function buildBlueprintContent(row: BlueprintIndexRow, excerpt?: Excerpt): string {
 	const { path, line } = splitLocation(row.location);
-	const loc = line === undefined ? `\`${path}\`` : `\`${path}:${line}\``;
 
-	const sections = [
-		'## Context',
-		'',
-		row.description || `Pattern \`${row.id}\` — canonical exemplar in the source codebase.`,
-		'',
-		'## Usage',
-		'',
-		row.usage,
-		'',
-		'## Implementation',
-		'',
-		`Exemplar: ${loc}`,
-	];
-
-	if (excerpt) {
-		const lang = langFromPath(path);
-		sections.push('', `\`\`\`${lang ?? ''}`, excerpt.code, '```');
-		if (excerpt.truncated) {
-			sections.push(
-				'',
-				`_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._`,
-			);
-		}
+	if (!excerpt) {
+		const loc = line === undefined ? `\`${path}\`` : `\`${path}:${line}\``;
+		return `Exemplar: ${loc}\n`;
 	}
 
+	const lang = langFromPath(path);
+	const sections = [`\`\`\`${lang ?? ''}`, excerpt.code, '```'];
+	if (excerpt.truncated) {
+		sections.push(
+			'',
+			`_Excerpt truncated to its first ${MAX_EXCERPT_LINES} lines — the full declaration is in the exemplar._`,
+		);
+	}
 	return `${sections.join('\n')}\n`;
 }

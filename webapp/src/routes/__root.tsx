@@ -56,10 +56,12 @@ function RootLayout() {
 						<div className="flex items-center gap-6">
 							<Link
 								to="/"
+								aria-label={m.app_title()}
 								className="flex items-center gap-2 text-lg font-extrabold whitespace-nowrap text-on-surface tracking-tight font-headline no-underline"
 							>
 								<img src="/logo.svg" alt="" className="h-8 w-8 rounded-lg shadow-xs" />
-								{m.app_title()}
+								{/* The wordmark collides with the icon buttons on phones */}
+								<span className="hidden sm:inline">{m.app_title()}</span>
 							</Link>
 							<nav className="hidden xl:flex gap-1 items-center">
 								<Link to="/" className={navLinkClass} activeOptions={{ exact: true }}>

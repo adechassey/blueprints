@@ -1,15 +1,16 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Copy, FolderOpen, GitFork, Info, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Download, FolderOpen, GitFork, History, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../../components/CommentSection.js';
+import { InlineCodeText } from '../../../components/InlineCodeText.js';
 import { LayerBadge } from '../../../components/LayerBadge.js';
 import { MarkdownRenderer } from '../../../components/MarkdownRenderer.js';
 import { MatchSection } from '../../../components/MatchSection.js';
 import { markBlueprintViewed } from '../../../components/Onboarding.js';
+import { Avatar } from '../../../components/ui/avatar.js';
 import { Badge } from '../../../components/ui/badge.js';
 import { Button } from '../../../components/ui/button.js';
-import { Card, CardContent } from '../../../components/ui/card.js';
 import {
 	Dialog,
 	DialogDescription,
@@ -33,11 +34,15 @@ import {
 import { useProjects } from '../../../hooks/useProjects.js';
 import { api } from '../../../lib/api.js';
 import { authClient } from '../../../lib/auth-client.js';
+import { formatDate } from '../../../lib/format-date.js';
+import { stripSyncedPreamble } from '../../../lib/synced-preamble.core.js';
 import { cn } from '../../../lib/utils.js';
 import * as m from '../../../paraglide/messages.js';
 
 const filterLinkClass =
 	'inline-flex no-underline rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
+
+const sectionTitleClass = 'font-headline text-xl font-extrabold text-on-surface';
 
 export const Route = createFileRoute('/blueprints/$blueprintId/')({
 	component: BlueprintDetailPage,
@@ -59,10 +64,12 @@ function BlueprintDetailPage() {
 	const navigate = useNavigate();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [showForkDialog, setShowForkDialog] = useState(false);
+	// An older version picked from the history, shown in place of the current one
+	const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
 
 	if (isLoading) {
 		return (
-			<div className="max-w-[1000px] mx-auto space-y-8">
+			<div className="space-y-8">
 				<Skeleton className="h-16 w-3/4" />
 				<Skeleton className="h-6 w-1/2" />
 				<Skeleton className="h-64 w-full" />
@@ -72,7 +79,7 @@ function BlueprintDetailPage() {
 
 	if (!blueprint || 'error' in blueprint) {
 		return (
-			<div className="max-w-[1000px] mx-auto">
+			<div>
 				<p className="text-sm text-on-surface-variant">{m.empty_state()}</p>
 			</div>
 		);
@@ -82,15 +89,25 @@ function BlueprintDetailPage() {
 	const isAdmin = session?.user?.role === 'admin';
 	const canEdit = isOwner || isAdmin;
 
+	const versionList = versions && !('error' in versions) ? versions : [];
+	const currentId = blueprint.currentVersion?.id;
+	const olderVersion =
+		selectedVersion === null
+			? undefined
+			: versionList.find((v) => v.version === selectedVersion && v.id !== currentId);
+	const shownVersion = olderVersion ?? blueprint.currentVersion;
+	// Older synced content repeats the fields the page already renders
+	const content = shownVersion ? stripSyncedPreamble(shownVersion.content, blueprint) : '';
+
 	const handleDelete = async () => {
 		await deleteMutation.mutateAsync(blueprintId);
 		navigate({ to: '/' });
 	};
 
 	const handleCopy = async () => {
-		if (blueprint.currentVersion?.content) {
-			await navigator.clipboard.writeText(blueprint.currentVersion.content);
-			toast.success(m.blueprint_detail_copy(), {
+		if (content) {
+			await navigator.clipboard.writeText(content);
+			toast.success(m.toast_code_copied(), {
 				description: blueprint.name,
 			});
 			api.api.blueprints[':id'].download
@@ -102,22 +119,22 @@ function BlueprintDetailPage() {
 	};
 
 	return (
-		<div className="max-w-[1000px] mx-auto space-y-12">
-			{/* Header Section */}
-			<section className="space-y-6">
+		<div className="space-y-10">
+			{/* Header: the name, what the pattern is for, and the actions */}
+			<section className="space-y-5">
 				<div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-					<div className="space-y-2">
+					<div className="space-y-3">
 						<h1 className="text-4xl md:text-5xl font-black font-headline text-on-surface tracking-tight">
 							{blueprint.name}
 						</h1>
-						{blueprint.description && (
-							<p className="text-lg text-on-surface-variant max-w-2xl leading-relaxed">
-								{blueprint.description}
+						{blueprint.usage && (
+							<p className="text-base text-on-surface-variant max-w-2xl leading-relaxed">
+								<InlineCodeText text={blueprint.usage} />
 							</p>
 						)}
 					</div>
-					<div className="flex gap-2 shrink-0">
-						<Button variant="secondary" size="sm" onClick={handleCopy}>
+					<div className="flex flex-wrap gap-2 shrink-0">
+						<Button variant="primary" size="sm" onClick={handleCopy}>
 							<Copy className="h-4 w-4" />
 							{m.blueprint_detail_copy()}
 						</Button>
@@ -158,7 +175,7 @@ function BlueprintDetailPage() {
 					</p>
 				)}
 
-				{/* Layer, technologies and tags — each opens the matching filtered listing */}
+				{/* Layer, technologies, tags and project — each opens the matching listing */}
 				<div className="flex flex-wrap items-center gap-2">
 					<Link to="/" search={{ layer: blueprint.layer }} className={filterLinkClass}>
 						<LayerBadge layer={blueprint.layer} />
@@ -185,7 +202,8 @@ function BlueprintDetailPage() {
 							</Badge>
 						</Link>
 					)}
-					<span className="flex items-center text-xs text-on-surface-variant font-medium">
+					<span className="flex items-center gap-1 text-xs text-on-surface-variant font-medium">
+						<Download className="h-3 w-3" />
 						{m.blueprint_detail_downloads({ count: blueprint.downloadCount ?? 0 })}
 					</span>
 					{blueprint.forkCount > 0 && (
@@ -197,26 +215,64 @@ function BlueprintDetailPage() {
 						</span>
 					)}
 				</div>
+
+				{/* Who maintains it, and how fresh it is */}
+				<div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-on-surface-variant">
+					{blueprint.author && (
+						<>
+							<Link
+								to="/users/$userId"
+								params={{ userId: blueprint.author.id }}
+								className="inline-flex items-center gap-1.5 font-medium text-on-surface no-underline transition-colors hover:text-primary"
+							>
+								<Avatar src={blueprint.author.image} fallback={blueprint.author.name} size="sm" />
+								{blueprint.author.name}
+							</Link>
+							<span aria-hidden="true">·</span>
+						</>
+					)}
+					<span>{m.blueprint_detail_updated({ date: formatDate(blueprint.updatedAt) })}</span>
+				</div>
 			</section>
 
-			{/* When to use */}
-			{blueprint.usage && (
-				<Card className="border border-outline-variant/15">
-					<CardContent>
-						<h3 className="font-headline text-xl font-extrabold mb-4 flex items-center gap-2">
-							<Info className="h-5 w-5 text-primary" />
-							When to use
-						</h3>
-						<p className="text-on-surface-variant leading-relaxed">{blueprint.usage}</p>
-					</CardContent>
-				</Card>
+			{/* Context: what the pattern is, once */}
+			{blueprint.description && (
+				<section className="space-y-3">
+					<h2 className={sectionTitleClass}>{m.blueprint_detail_context()}</h2>
+					<p className="max-w-3xl text-base text-on-surface leading-relaxed">
+						<InlineCodeText text={blueprint.description} />
+					</p>
+				</section>
 			)}
 
-			{/* Reference implementation */}
-			{blueprint.currentVersion && (
-				<section className="space-y-6">
-					<h3 className="font-headline text-2xl font-extrabold">Reference implementation</h3>
-					<MarkdownRenderer content={blueprint.currentVersion.content} />
+			{/* Implementation: where the exemplar lives, then its excerpt */}
+			{(content || blueprint.source) && (
+				<section className="space-y-3">
+					<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+						<h2 className={sectionTitleClass}>{m.blueprint_detail_implementation()}</h2>
+						{blueprint.source && (
+							<code className="font-mono text-xs text-on-surface-variant">{blueprint.source}</code>
+						)}
+					</div>
+					{olderVersion && (
+						<div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-xs text-on-surface-variant">
+							<span className="inline-flex items-center gap-1.5">
+								<History className="h-3.5 w-3.5" />
+								{m.blueprint_detail_viewing_version({ version: olderVersion.version })}
+								{olderVersion.changelog && (
+									<span className="text-outline">· {olderVersion.changelog}</span>
+								)}
+							</span>
+							<button
+								type="button"
+								onClick={() => setSelectedVersion(null)}
+								className="cursor-pointer font-medium text-primary hover:underline"
+							>
+								{m.blueprint_detail_back_to_current()}
+							</button>
+						</div>
+					)}
+					{content && <MarkdownRenderer content={content} />}
 				</section>
 			)}
 
@@ -227,46 +283,44 @@ function BlueprintDetailPage() {
 			<div className="grid md:grid-cols-3 gap-6">
 				{/* Version History */}
 				<div className="md:col-span-1 space-y-4">
-					<h3 className="font-headline text-xl font-extrabold">{m.blueprint_detail_versions()}</h3>
-					{versions && !('error' in versions) && versions.length > 0 && (
+					<h2 className={sectionTitleClass}>{m.blueprint_detail_versions()}</h2>
+					{versionList.length > 0 && (
 						<div className="bg-surface-container-lowest rounded-xl p-1 space-y-1 border border-outline-variant/15">
-							{versions.map(
-								(
-									v: {
-										id: string;
-										version: number;
-										createdAt: string;
-										changelog?: string | null;
-									},
-									index: number,
-								) => (
-									<div
+							{versionList.map((v) => {
+								const isCurrent = v.id === currentId;
+								const shown = v.id === shownVersion?.id;
+								return (
+									<button
 										key={v.id}
+										type="button"
+										aria-current={shown ? 'true' : undefined}
+										onClick={() => setSelectedVersion(isCurrent ? null : v.version)}
 										className={cn(
-											'w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all',
-											index === 0
-												? 'bg-surface-container-low text-primary font-bold'
-												: 'text-on-surface-variant font-medium hover:bg-surface-container-low',
+											'w-full flex items-start justify-between gap-3 px-4 py-3 rounded-lg text-left transition-colors cursor-pointer',
+											shown
+												? 'bg-surface-container-low text-primary'
+												: 'text-on-surface-variant hover:bg-surface-container-low',
 										)}
 									>
-										<div className="flex items-center gap-3">
-											<span className="text-xs font-mono">
-												{m.blueprint_detail_version({
-													version: v.version,
-												})}
-											</span>
-											{index === 0 && (
-												<span className="text-[10px] text-on-surface-variant font-normal">
-													Active
+										<span className="min-w-0 space-y-0.5">
+											<span className="flex items-center gap-2">
+												<span className="text-xs font-mono font-bold">
+													{m.blueprint_detail_version({ version: v.version })}
 												</span>
+												{isCurrent && (
+													<span className="text-xs text-on-surface-variant">
+														{m.blueprint_detail_active()}
+													</span>
+												)}
+											</span>
+											{v.changelog && (
+												<span className="block truncate text-xs text-outline">{v.changelog}</span>
 											)}
-										</div>
-										<span className="text-[10px]">
-											{new Date(v.createdAt).toLocaleDateString()}
 										</span>
-									</div>
-								),
-							)}
+										<span className="shrink-0 text-xs">{formatDate(v.createdAt)}</span>
+									</button>
+								);
+							})}
 						</div>
 					)}
 				</div>
@@ -290,7 +344,7 @@ function BlueprintDetailPage() {
 				<DialogDescription>{m.blueprint_detail_confirm_delete()}</DialogDescription>
 				<DialogFooter>
 					<Button variant="secondary" size="sm" onClick={() => setShowDeleteDialog(false)}>
-						Cancel
+						{m.dialog_cancel()}
 					</Button>
 					<Button variant="destructive" size="sm" onClick={handleDelete}>
 						<Trash2 className="h-4 w-4" />
