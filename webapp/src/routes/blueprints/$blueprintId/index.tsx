@@ -3,6 +3,7 @@ import { Copy, FolderOpen, GitFork, Info, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../../components/CommentSection.js';
+import { InlineCodeText } from '../../../components/InlineCodeText.js';
 import { LayerBadge } from '../../../components/LayerBadge.js';
 import { MarkdownRenderer } from '../../../components/MarkdownRenderer.js';
 import { MatchSection } from '../../../components/MatchSection.js';
@@ -113,7 +114,7 @@ function BlueprintDetailPage() {
 						</h1>
 						{blueprint.description && (
 							<p className="text-base text-on-surface-variant max-w-2xl leading-relaxed">
-								{blueprint.description}
+								<InlineCodeText text={blueprint.description} />
 							</p>
 						)}
 					</div>
@@ -208,7 +209,9 @@ function BlueprintDetailPage() {
 							<Info className="h-5 w-5 text-primary" />
 							When to use
 						</h3>
-						<p className="text-on-surface-variant leading-relaxed">{blueprint.usage}</p>
+						<p className="text-on-surface-variant leading-relaxed">
+							<InlineCodeText text={blueprint.usage} />
+						</p>
 					</CardContent>
 				</Card>
 			)}
