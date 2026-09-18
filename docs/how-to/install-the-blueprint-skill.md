@@ -9,6 +9,10 @@ publishes here.
 This guide covers installing it into a **consuming project** (any repo whose
 patterns you want to publish), from annotation to a synced catalogue.
 
+> The same walkthrough lives in the app at `/skill`, with copy-ready snippets.
+> That page is the one to send other teams to; keep the two in step when either
+> changes.
+
 ## Requirements
 
 - [`gh`](https://cli.github.com) authenticated against an account with access to
