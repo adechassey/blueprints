@@ -39,7 +39,7 @@ export function CommentSection({ blueprintId }: CommentSectionProps) {
 
 	return (
 		<div className="space-y-4">
-			<h3 className="font-headline text-xl font-extrabold">{m.comments_title()}</h3>
+			<h2 className="font-headline text-xl font-extrabold text-on-surface">{m.comments_title()}</h2>
 
 			{session?.user && (
 				<CommentForm onSubmit={handleCreate} isSubmitting={createMutation.isPending} />

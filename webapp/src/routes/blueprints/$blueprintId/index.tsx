@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Copy, FolderOpen, GitFork, Info, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Download, FolderOpen, GitFork, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../../components/CommentSection.js';
@@ -10,7 +10,6 @@ import { MatchSection } from '../../../components/MatchSection.js';
 import { markBlueprintViewed } from '../../../components/Onboarding.js';
 import { Badge } from '../../../components/ui/badge.js';
 import { Button } from '../../../components/ui/button.js';
-import { Card, CardContent } from '../../../components/ui/card.js';
 import {
 	Dialog,
 	DialogDescription,
@@ -41,6 +40,8 @@ import * as m from '../../../paraglide/messages.js';
 
 const filterLinkClass =
 	'inline-flex no-underline rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50';
+
+const sectionTitleClass = 'font-headline text-xl font-extrabold text-on-surface';
 
 export const Route = createFileRoute('/blueprints/$blueprintId/')({
 	component: BlueprintDetailPage,
@@ -98,7 +99,7 @@ function BlueprintDetailPage() {
 	const handleCopy = async () => {
 		if (content) {
 			await navigator.clipboard.writeText(content);
-			toast.success(m.blueprint_detail_copy(), {
+			toast.success(m.toast_code_copied(), {
 				description: blueprint.name,
 			});
 			api.api.blueprints[':id'].download
@@ -110,22 +111,22 @@ function BlueprintDetailPage() {
 	};
 
 	return (
-		<div className="space-y-12">
-			{/* Header Section */}
-			<section className="space-y-6">
+		<div className="space-y-10">
+			{/* Header: the name, what the pattern is for, and the actions */}
+			<section className="space-y-5">
 				<div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-					<div className="space-y-2">
+					<div className="space-y-3">
 						<h1 className="text-4xl md:text-5xl font-black font-headline text-on-surface tracking-tight">
 							{blueprint.name}
 						</h1>
-						{blueprint.description && (
+						{blueprint.usage && (
 							<p className="text-base text-on-surface-variant max-w-2xl leading-relaxed">
-								<InlineCodeText text={blueprint.description} />
+								<InlineCodeText text={blueprint.usage} />
 							</p>
 						)}
 					</div>
-					<div className="flex gap-2 shrink-0">
-						<Button variant="secondary" size="sm" onClick={handleCopy}>
+					<div className="flex flex-wrap gap-2 shrink-0">
+						<Button variant="primary" size="sm" onClick={handleCopy}>
 							<Copy className="h-4 w-4" />
 							{m.blueprint_detail_copy()}
 						</Button>
@@ -166,7 +167,7 @@ function BlueprintDetailPage() {
 					</p>
 				)}
 
-				{/* Layer, technologies and tags — each opens the matching filtered listing */}
+				{/* Layer, technologies, tags and project — each opens the matching listing */}
 				<div className="flex flex-wrap items-center gap-2">
 					<Link to="/" search={{ layer: blueprint.layer }} className={filterLinkClass}>
 						<LayerBadge layer={blueprint.layer} />
@@ -193,7 +194,8 @@ function BlueprintDetailPage() {
 							</Badge>
 						</Link>
 					)}
-					<span className="flex items-center text-xs text-on-surface-variant font-medium">
+					<span className="flex items-center gap-1 text-xs text-on-surface-variant font-medium">
+						<Download className="h-3 w-3" />
 						{m.blueprint_detail_downloads({ count: blueprint.downloadCount ?? 0 })}
 					</span>
 					{blueprint.forkCount > 0 && (
@@ -207,26 +209,26 @@ function BlueprintDetailPage() {
 				</div>
 			</section>
 
-			{/* When to use */}
-			{blueprint.usage && (
-				<Card className="border border-outline-variant/15">
-					<CardContent>
-						<h3 className="font-headline text-xl font-extrabold mb-4 flex items-center gap-2">
-							<Info className="h-5 w-5 text-primary" />
-							When to use
-						</h3>
-						<p className="text-on-surface-variant leading-relaxed">
-							<InlineCodeText text={blueprint.usage} />
-						</p>
-					</CardContent>
-				</Card>
+			{/* Context: what the pattern is, once */}
+			{blueprint.description && (
+				<section className="space-y-3">
+					<h2 className={sectionTitleClass}>{m.blueprint_detail_context()}</h2>
+					<p className="max-w-3xl text-base text-on-surface leading-relaxed">
+						<InlineCodeText text={blueprint.description} />
+					</p>
+				</section>
 			)}
 
-			{/* Reference implementation */}
-			{blueprint.currentVersion && (
-				<section className="space-y-6">
-					<h3 className="font-headline text-2xl font-extrabold">Reference implementation</h3>
-					<MarkdownRenderer content={content} />
+			{/* Implementation: where the exemplar lives, then its excerpt */}
+			{(content || blueprint.source) && (
+				<section className="space-y-3">
+					<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+						<h2 className={sectionTitleClass}>{m.blueprint_detail_implementation()}</h2>
+						{blueprint.source && (
+							<code className="font-mono text-xs text-on-surface-variant">{blueprint.source}</code>
+						)}
+					</div>
+					{content && <MarkdownRenderer content={content} />}
 				</section>
 			)}
 
@@ -237,7 +239,7 @@ function BlueprintDetailPage() {
 			<div className="grid md:grid-cols-3 gap-6">
 				{/* Version History */}
 				<div className="md:col-span-1 space-y-4">
-					<h3 className="font-headline text-xl font-extrabold">{m.blueprint_detail_versions()}</h3>
+					<h2 className={sectionTitleClass}>{m.blueprint_detail_versions()}</h2>
 					{versions && !('error' in versions) && versions.length > 0 && (
 						<div className="bg-surface-container-lowest rounded-xl p-1 space-y-1 border border-outline-variant/15">
 							{versions.map(
