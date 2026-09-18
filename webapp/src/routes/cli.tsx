@@ -37,9 +37,9 @@ const COMMANDS = [
 		code: 'theodo-blueprints list --techno react,hono --layer api',
 	},
 	{
-		name: 'stack',
-		description: m.cli_cmd_stack,
-		code: 'theodo-blueprints stack list\ntheodo-blueprints stack scaffold <stack> ./blueprints',
+		name: 'scaffold',
+		description: m.cli_cmd_scaffold,
+		code: 'theodo-blueprints scaffold <project> ./blueprints',
 	},
 	{
 		name: 'fork',

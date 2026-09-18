@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { groupBlueprintsByLayer, type StackBlueprint } from './stacks.core.js';
+import { groupBlueprintsByLayer, type ScaffoldBlueprint } from './scaffold.core.js';
 
-function bp(overrides: Partial<StackBlueprint>): StackBlueprint {
+function bp(overrides: Partial<ScaffoldBlueprint>): ScaffoldBlueprint {
 	return {
 		slug: 'test',
 		name: 'Test',
 		layer: 'domain',
 		description: null,
 		technologies: [],
-		projects: [],
 		content: '# content',
 		...overrides,
 	};

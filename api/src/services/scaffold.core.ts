@@ -1,18 +1,16 @@
 /**
- * Pure stack logic.
+ * Pure scaffold logic: grouping project blueprints by architecture layer.
  * No I/O — 100% test coverage required.
  */
 import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 
 /** One blueprint as returned to the scaffold command. */
-export interface StackBlueprint {
+export interface ScaffoldBlueprint {
 	slug: string;
 	name: string;
 	layer: string;
 	description: string | null;
 	technologies: string[];
-	/** Slugs of the projects the blueprint belongs to: slugs are only unique per project. */
-	projects: string[];
 	content: string;
 }
 

@@ -9,8 +9,6 @@ import {
 	comments,
 	projectMembers,
 	projects,
-	stacks,
-	stackTechnologies,
 	tags,
 	technologies,
 	technologyCategory,
@@ -30,8 +28,6 @@ describe('schema tables', () => {
 		expect(comments).toBeDefined();
 		expect(technologies).toBeDefined();
 		expect(blueprintTechnologies).toBeDefined();
-		expect(stacks).toBeDefined();
-		expect(stackTechnologies).toBeDefined();
 	});
 
 	it('users table has expected columns', () => {

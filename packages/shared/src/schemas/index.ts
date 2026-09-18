@@ -21,10 +21,3 @@ export {
 	type UpdateProjectInput,
 	updateProjectSchema,
 } from './project.js';
-
-export {
-	type CreateStackInput,
-	createStackSchema,
-	type UpdateStackInput,
-	updateStackSchema,
-} from './stack.js';

@@ -9,10 +9,9 @@ import {
 } from './helpers/db.js';
 
 /**
- * Webapp views of the taxonomy: filtering the listing by technology and layer,
- * and stacks (created through the dialog, blueprints grouped by layer).
+ * Webapp views of the taxonomy: filtering the listing by technology and layer.
  */
-test.describe('Technologies, layers and stacks (UI)', () => {
+test.describe('Technologies and layers (UI)', () => {
 	let user: TestUser;
 	let stamp: number;
 	let technology: { name: string; slug: string };
@@ -76,36 +75,5 @@ test.describe('Technologies, layers and stacks (UI)', () => {
 		await expect(page).toHaveURL(/layer=ui/);
 		await expect(page.getByText(`E2E Layered Table ${stamp}`)).toBeVisible();
 		await expect(page.getByText(`E2E Layered Route ${stamp}`)).toHaveCount(0);
-	});
-
-	test('creates a stack and lists its blueprints by layer', async ({ page }) => {
-		await authenticate(page, user);
-		await page.goto('/stacks');
-
-		const name = `E2E UI Stack ${stamp}`;
-		await page.getByRole('button', { name: 'New stack' }).first().click();
-		const dialog = page.getByRole('dialog');
-		await dialog.getByLabel('Name').fill(name);
-		await dialog.getByLabel('Technologies').click();
-		await page.getByPlaceholder('Search technologies...').fill(technology.name);
-		await page.getByRole('option', { name: technology.name }).click();
-		// Escape closes the picker only, not the dialog
-		await page.keyboard.press('Escape');
-		await expect(dialog).toBeVisible();
-		await dialog.getByRole('button', { name: 'Save' }).click();
-
-		await expect(page).toHaveURL(new RegExp(`/stacks/e2e-ui-stack-${stamp}$`));
-		await expect(page.getByRole('heading', { name, level: 1 })).toBeVisible();
-		await expect(page.getByText(`stack scaffold e2e-ui-stack-${stamp}`)).toBeVisible();
-
-		// The nearest section around each layer heading holds exactly that layer's blueprints
-		const layerSection = (label: string) =>
-			page
-				.getByRole('heading', { level: 3, name: new RegExp(`^${label}`) })
-				.locator('xpath=ancestor::section[1]');
-		await expect(layerSection('API').getByText(`E2E Layered Route ${stamp}`)).toBeVisible();
-		await expect(layerSection('API').getByText(`E2E Layered Table ${stamp}`)).toHaveCount(0);
-		await expect(layerSection('UI').getByText(`E2E Layered Table ${stamp}`)).toBeVisible();
-		await expect(page.getByText(`E2E Untagged ${stamp}`)).toHaveCount(0);
 	});
 });

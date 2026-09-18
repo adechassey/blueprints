@@ -282,7 +282,8 @@ Better Auth creates and manages its own tables:
 - **Versions are immutable** — editing creates a new version, never mutates
 - **Embedding on version, not blueprint** — each version has its own vector since content changes
 - **A blueprint belongs to exactly one project** — `blueprints.project_id` is NOT NULL. Blueprints are how a team records *its own* patterns, so ownership is singular: a project's members own, edit and delete its blueprints. Reuse across projects is a **fork**, not a shared link (see below). A project that still owns blueprints cannot be deleted.
-- **Forking, not sharing** — to start from another project's blueprint, you fork it: the content, metadata, technologies and tags are copied into your project as a new blueprint with its own version history, which you then edit freely. `forked_from_id` records the origin (nullable, `ON DELETE SET NULL`), so a blueprint can show where it came from and how many projects picked it up. The same pattern therefore legitimately exists once per project — which is what `blueprint_matches` surfaces, and why `stack scaffold` writes `<slug>.<project>.md` on a collision.
+- **Forking, not sharing** — to start from another project's blueprint, you fork it: the content, metadata, technologies and tags are copied into your project as a new blueprint with its own version history, which you then edit freely. `forked_from_id` records the origin (nullable, `ON DELETE SET NULL`), so a blueprint can show where it came from and how many projects picked it up. The same pattern therefore legitimately exists once per project — which is what `blueprint_matches` surfaces, and why scaffold output namespaces files by project when the same slug exists in several.
+- **No stacks — scaffolding is project-scoped** — an earlier `stacks` concept (a named technology preset matched cross-project by technology overlap) was removed: matching on "at least one shared technology" made every stack resolve most of the registry, and it duplicated the technology taxonomy. The scaffold need is covered by `GET /api/projects/:slug/scaffold` (all of a project's blueprints with their content, grouped by layer) and the CLI `scaffold <project> <dir>` command.
 - **Tags are shared globally** — normalized tag table, many-to-many with blueprints
 - **Comments support threading** — `parentId` enables nested replies
 - **Slug uniqueness** — blueprint slugs are unique per owning project, never globally, so two projects may each own a `form-field`. Enforced by a `UNIQUE (project_id, slug)` constraint now that ownership is singular: an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
@@ -311,6 +312,7 @@ Better Auth creates and manages its own tables:
 **Projects**:
 - `GET /api/projects` — List projects
 - `GET /api/projects/:slug` — Get project with its blueprints
+- `GET /api/projects/:slug/scaffold` — Project blueprints with content, grouped by layer (CLI `scaffold` feed)
 - `POST /api/projects` — Create project
 - `PUT /api/projects/:id` — Update project (creator/admin only)
 

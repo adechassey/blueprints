@@ -110,3 +110,10 @@
 - **Verify a sync by re-extracting, not by eyeballing**: fetch each blueprint, compare the fenced block of `currentVersion.content` against a fresh `extractExcerpt`. The content is under `currentVersion.content` — the detail payload has no top-level `content`, and reading `bp.content` silently yields `''`, which reports every row as changed. The list endpoint returns neither content nor `source`, and caps `limit` at 100.
 - Cap the concurrency when sweeping a whole project: ~99 parallel fetches trip local DNS (`ENOTFOUND`), while one-at-a-time takes minutes. Six at a time with a retry covers ~100 blueprints in seconds.
 - A sync that reports `N updated, 0 failed` says nothing about content quality — it only means the API accepted the writes. Dry-run output shows layer/technologies/source but never the excerpt, so a malformed excerpt passes both.
+
+## Stacks removed, scaffold is project-scoped (2026-09-18)
+- The `stacks` concept is gone (tables, /api/stacks, CLI `stack` command, stacks UI). It was a named technology preset matched cross-project on "at least one shared technology", which made every stack resolve most of the registry and duplicated the technology taxonomy. Scaffold is now `theodo-blueprints scaffold <project> <dir>`, fed by `GET /api/projects/:slug/scaffold`.
+- In-project scaffolding needs no file-collision namespacing: slugs are unique per project, so the old `<slug>.<project>.md` logic was deleted. The manifest is `scaffold.json` (key `project`, not `stack`).
+- Anyone who created stacks through the API/CLI should switch to `scaffold --project`-style flows; existing stack rows were dropped by migration 0012 (`DROP TABLE … CASCADE`).
+- Lefthook gotcha: a failed `pnpm check` (biome import order) makes `git commit` exit non-zero **after** printing only the tail of the hook output — if `git log` still shows the previous commit, run `pnpm exec biome check --write` on the touched paths and commit again; the files stay staged.
+- Drizzle migration 0012 (drop stacks) is applied locally; migration snapshots under `meta/` legitimately still mention stacks in older files — don't "clean" them.

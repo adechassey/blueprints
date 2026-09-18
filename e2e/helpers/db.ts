@@ -89,9 +89,6 @@ export async function cleanupE2eData(): Promise<void> {
 	// Ordered by FK dependencies (no ON DELETE cascade everywhere).
 	// The 'E2E ' name prefix also purges orphans left by interrupted runs.
 	await query(
-		`DELETE FROM stacks WHERE created_by IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
-	);
-	await query(
 		`DELETE FROM comments WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
 	);
 	await query(

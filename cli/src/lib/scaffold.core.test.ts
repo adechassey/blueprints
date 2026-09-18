@@ -4,7 +4,6 @@ import {
 	buildIndex,
 	buildManifest,
 	buildScaffoldFiles,
-	findSlugCollisions,
 	groupByLayer,
 	type ScaffoldBlueprint,
 } from './scaffold.core.js';
@@ -61,55 +60,27 @@ describe('blueprintFilePaths', () => {
 		]);
 	});
 
-	it('suffixes blueprints sharing a layer and a slug with their project', () => {
+	it('never collides: slugs are unique within the scaffolded project', () => {
 		expect(
-			blueprintFilePaths([
-				bp({ layer: 'ui', slug: 'form-field', projects: ['acme'] }),
-				bp({ layer: 'ui', slug: 'form-field', projects: ['zeta', 'globex'] }),
-				bp({ layer: 'ui', slug: 'form-field' }),
-				bp({ layer: 'domain', slug: 'form-field', projects: ['globex'] }),
-			]),
-		).toEqual([
-			'blueprints/ui/form-field.acme.md',
-			'blueprints/ui/form-field.globex.md',
-			'blueprints/ui/form-field.global.md',
-			'blueprints/domain/form-field.md',
-		]);
-	});
-});
-
-describe('findSlugCollisions', () => {
-	it('lists each colliding layer and slug with the namespaces involved', () => {
-		expect(
-			findSlugCollisions([
-				bp({ layer: 'ui', slug: 'form-field', projects: ['acme'] }),
-				bp({ layer: 'ui', slug: 'data-table', projects: ['globex'] }),
-				bp({ layer: 'ui', slug: 'form-field', projects: ['globex'] }),
-			]),
-		).toEqual([{ layer: 'ui', slug: 'form-field', namespaces: ['acme', 'globex'] }]);
-	});
-
-	it('is empty when every slug is unique within its layer', () => {
-		expect(findSlugCollisions([bp({ slug: 'a' }), bp({ slug: 'b' })])).toEqual([]);
+			blueprintFilePaths([bp({ layer: 'ui', slug: 'form-field' }), bp({ slug: 'form-field' })]),
+		).toEqual(['blueprints/ui/form-field.md', 'blueprints/domain/form-field.md']);
 	});
 });
 
 describe('buildManifest', () => {
-	it('serializes the stack, technologies and layer groups', () => {
+	it('serializes the project, technologies and layer groups', () => {
 		const manifest = JSON.parse(
-			buildManifest(
-				{ slug: 'theodo-node-react', name: 'Theodo Node/React', description: null },
-				TECHS,
-				[bp({ slug: 'login-form', layer: 'ui' })],
-			),
+			buildManifest({ slug: 'acme', name: 'Acme', description: null }, TECHS, [
+				bp({ slug: 'login-form', layer: 'ui' }),
+			]),
 		);
-		expect(manifest.stack).toBe('theodo-node-react');
-		expect(manifest.name).toBe('Theodo Node/React');
+		expect(manifest.project).toBe('acme');
+		expect(manifest.name).toBe('Acme');
 		expect(manifest.technologies).toEqual(TECHS);
 		expect(manifest.layers).toEqual([
 			{
 				layer: 'ui',
-				blueprints: [{ slug: 'login-form', projects: [], file: 'blueprints/ui/login-form.md' }],
+				blueprints: [{ slug: 'login-form', file: 'blueprints/ui/login-form.md' }],
 			},
 		]);
 		expect(manifest.generatedAt).toEqual(expect.any(String));
@@ -119,20 +90,20 @@ describe('buildManifest', () => {
 describe('buildIndex', () => {
 	it('renders a markdown index grouped by layer with links', () => {
 		const index = buildIndex(
-			{ slug: 'stack', name: 'My Stack', description: 'The reference stack' },
+			{ slug: 'acme', name: 'Acme', description: 'The reference project' },
 			TECHS,
 			[bp({ slug: 'login-form', name: 'Login Form', layer: 'ui', description: 'A login page' })],
 		);
 
-		expect(index).toContain('# My Stack');
-		expect(index).toContain('The reference stack');
+		expect(index).toContain('# Acme');
+		expect(index).toContain('The reference project');
 		expect(index).toContain('**Technologies:** React, Hono');
 		expect(index).toContain('## Ui');
 		expect(index).toContain('- [Login Form](./blueprints/ui/login-form.md) — A login page');
 	});
 
 	it('omits the description line when null', () => {
-		const index = buildIndex({ slug: 'stack', name: 'My Stack', description: null }, TECHS, [bp()]);
+		const index = buildIndex({ slug: 'acme', name: 'Acme', description: null }, TECHS, [bp()]);
 		expect(index).not.toContain(' — ');
 		expect(index).toContain('**Technologies:** React, Hono');
 	});
@@ -140,34 +111,15 @@ describe('buildIndex', () => {
 
 describe('buildScaffoldFiles', () => {
 	it('maps every blueprint, the index and the manifest', () => {
-		const files = buildScaffoldFiles(
-			{ slug: 'stack', name: 'My Stack', description: null },
-			TECHS,
-			[
-				bp({ slug: 'login-form', layer: 'ui', content: '# login' }),
-				bp({ slug: 'service-create', layer: 'domain', content: '# service' }),
-			],
-		);
+		const files = buildScaffoldFiles({ slug: 'acme', name: 'Acme', description: null }, TECHS, [
+			bp({ slug: 'login-form', layer: 'ui', content: '# login' }),
+			bp({ slug: 'service-create', layer: 'domain', content: '# service' }),
+		]);
 
 		expect(files.get('blueprints/ui/login-form.md')).toBe('# login');
 		expect(files.get('blueprints/domain/service-create.md')).toBe('# service');
-		expect(files.get('index.md')).toContain('# My Stack');
-		expect(JSON.parse(files.get('stack.json') ?? '{}').stack).toBe('stack');
+		expect(files.get('index.md')).toContain('# Acme');
+		expect(JSON.parse(files.get('scaffold.json') ?? '{}').project).toBe('acme');
 		expect(files.size).toBe(4);
-	});
-
-	it('keeps both files when two projects publish the same slug in a layer', () => {
-		const files = buildScaffoldFiles(
-			{ slug: 'stack', name: 'My Stack', description: null },
-			TECHS,
-			[
-				bp({ slug: 'form-field', layer: 'ui', projects: ['globex'], content: '# globex' }),
-				bp({ slug: 'form-field', layer: 'ui', projects: ['acme'], content: '# acme' }),
-			],
-		);
-
-		expect(files.get('blueprints/ui/form-field.globex.md')).toBe('# globex');
-		expect(files.get('blueprints/ui/form-field.acme.md')).toBe('# acme');
-		expect(files.get('index.md')).toContain('(./blueprints/ui/form-field.globex.md)');
 	});
 });
