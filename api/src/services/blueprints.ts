@@ -1,7 +1,6 @@
 import { and, count, desc, eq, inArray } from 'drizzle-orm';
 import type { DB } from '../db/index.js';
 import {
-	blueprintProjects,
 	blueprints,
 	blueprintTags,
 	blueprintTechnologies,
@@ -139,13 +138,6 @@ export async function createBlueprint(db: DB, input: CreateBlueprintInput, autho
 		.update(blueprints)
 		.set({ currentVersionId: version.id })
 		.where(eq(blueprints.id, blueprint.id));
-
-	// Dual-written until blueprint_projects is dropped: the previous release still reads it
-	await db.insert(blueprintProjects).values({
-		blueprintId: blueprint.id,
-		projectId: project.id,
-		addedBy: authorId,
-	});
 
 	// Generate embedding asynchronously — don't block create
 	try {
@@ -487,7 +479,7 @@ export async function getBlueprintById(db: DB, id: string, project?: string) {
 		project: owningProject,
 		forkedFrom: forkedFrom ?? null,
 		forkCount: forks?.total ?? 0,
-		// Compatibility with the previous release's clients; drop with blueprint_projects
+		// Kept for CLI releases that still read `projects`; drop once 0.6+ is adopted
 		projects: owningProject ? [owningProject] : [],
 	};
 }

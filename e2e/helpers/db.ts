@@ -100,9 +100,6 @@ export async function cleanupE2eData(): Promise<void> {
 	await query(
 		`DELETE FROM blueprint_tags WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
 	);
-	await query(
-		`DELETE FROM blueprint_projects WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
-	);
 	await query(`DELETE FROM blueprints WHERE name LIKE 'E2E %'`);
 	await query(
 		`DELETE FROM comments WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
@@ -112,9 +109,6 @@ export async function cleanupE2eData(): Promise<void> {
 	);
 	await query(
 		`DELETE FROM blueprint_tags WHERE blueprint_id IN (SELECT id FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local'))`,
-	);
-	await query(
-		`DELETE FROM blueprint_projects WHERE blueprint_id IN (SELECT id FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local'))`,
 	);
 	await query(
 		`DELETE FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
@@ -182,10 +176,6 @@ export async function seedBlueprint(
 		 VALUES ($1, $2, $3, 'Use when testing', $4, $5, $6)
 		 RETURNING id, name, slug`,
 		[name, slug, description, authorId, layer, owningProjectId],
-	);
-	await query(
-		`INSERT INTO blueprint_projects (blueprint_id, project_id, added_by) VALUES ($1, $2, $3)`,
-		[blueprintResult.rows[0].id, owningProjectId, authorId],
 	);
 	const versionResult = await query<{ id: string }>(
 		`INSERT INTO blueprint_versions (blueprint_id, version, content, author_id)
