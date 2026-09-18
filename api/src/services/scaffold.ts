@@ -47,8 +47,14 @@ export async function getProjectScaffold(db: DB, slug: string) {
 		}))
 		.sort((a, b) => a.name.localeCompare(b.name));
 
-	// Distinct technologies across the project's blueprints, alphabetically
-	const technologies = [...new Set(blueprintsByLayer.flatMap((b) => b.technologies))].sort();
+	// Distinct technologies across the project's blueprints, alphabetically by slug
+	const techNameBySlug = new Map<string, string>();
+	for (const list of techMap.values()) {
+		for (const t of list) techNameBySlug.set(t.slug, t.name);
+	}
+	const technologies = [...techNameBySlug.entries()] // [slug, name]
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([slug, name]) => ({ slug, name }));
 
 	return {
 		project: { slug: project.slug, name: project.name, description: project.description },

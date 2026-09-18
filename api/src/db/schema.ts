@@ -188,39 +188,6 @@ export const projectMembers = pgTable(
 	(t) => [unique('project_members_unique').on(t.projectId, t.userId)],
 );
 
-// Stacks — named technology presets (e.g. "Theodo Node/React") used to
-// scaffold a whole boilerplate: every blueprint carrying one of the stack's
-// technologies, grouped by architecture layer
-export const stacks = pgTable('stacks', {
-	id: uuid('id').primaryKey().defaultRandom(),
-	name: text('name').notNull().unique(),
-	slug: text('slug').notNull().unique(),
-	description: text('description'),
-	createdBy: text('created_by').references(() => users.id),
-	createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
-		.notNull()
-		.defaultNow()
-		.$onUpdate(() => new Date()),
-});
-
-// Stack-Technology join table (many-to-many)
-export const stackTechnologies = pgTable(
-	'stack_technologies',
-	{
-		stackId: uuid('stack_id')
-			.notNull()
-			.references(() => stacks.id, { onDelete: 'cascade' }),
-		technologyId: uuid('technology_id')
-			.notNull()
-			.references(() => technologies.id, { onDelete: 'cascade' }),
-	},
-	(t) => [
-		primaryKey({ columns: [t.stackId, t.technologyId] }),
-		index('stack_technologies_technology_idx').on(t.technologyId),
-	],
-);
-
 // Tags
 export const tags = pgTable('tags', {
 	id: uuid('id').primaryKey().defaultRandom(),
