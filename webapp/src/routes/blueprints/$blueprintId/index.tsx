@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Copy, Info, Pencil, Trash2 } from 'lucide-react';
+import { Copy, FolderOpen, GitFork, Info, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CommentSection } from '../../../components/CommentSection.js';
@@ -16,12 +16,21 @@ import {
 	DialogFooter,
 	DialogTitle,
 } from '../../../components/ui/dialog.js';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '../../../components/ui/select.js';
 import { Skeleton } from '../../../components/ui/skeleton.js';
 import {
 	useBlueprint,
 	useBlueprintVersions,
 	useDeleteBlueprint,
+	useForkBlueprint,
 } from '../../../hooks/useBlueprints.js';
+import { useProjects } from '../../../hooks/useProjects.js';
 import { api } from '../../../lib/api.js';
 import { authClient } from '../../../lib/auth-client.js';
 import { cn } from '../../../lib/utils.js';
@@ -49,6 +58,7 @@ function BlueprintDetailPage() {
 	const deleteMutation = useDeleteBlueprint();
 	const navigate = useNavigate();
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [showForkDialog, setShowForkDialog] = useState(false);
 
 	if (isLoading) {
 		return (
@@ -111,6 +121,10 @@ function BlueprintDetailPage() {
 							<Copy className="h-4 w-4" />
 							{m.blueprint_detail_copy()}
 						</Button>
+						<Button variant="secondary" size="sm" onClick={() => setShowForkDialog(true)}>
+							<GitFork className="h-4 w-4" />
+							{m.blueprint_fork()}
+						</Button>
 						{canEdit && (
 							<>
 								<a href={`/blueprints/${blueprintId}/edit`} className="no-underline">
@@ -128,6 +142,22 @@ function BlueprintDetailPage() {
 					</div>
 				</div>
 
+				{blueprint.forkedFrom && (
+					<p className="flex items-center gap-1.5 text-sm text-on-surface-variant">
+						<GitFork className="h-3.5 w-3.5" />
+						<Link
+							to="/blueprints/$blueprintId"
+							params={{ blueprintId: blueprint.forkedFrom.id }}
+							className="text-primary no-underline hover:underline"
+						>
+							{m.blueprint_forked_from({
+								name: blueprint.forkedFrom.name,
+								project: blueprint.forkedFrom.projectSlug ?? '—',
+							})}
+						</Link>
+					</p>
+				)}
+
 				{/* Layer, technologies and tags — each opens the matching filtered listing */}
 				<div className="flex flex-wrap items-center gap-2">
 					<Link to="/" search={{ layer: blueprint.layer }} className={filterLinkClass}>
@@ -143,9 +173,29 @@ function BlueprintDetailPage() {
 							<Badge variant="default">#{tag.name}</Badge>
 						</Link>
 					))}
+					{blueprint.project && (
+						<Link
+							to="/projects/$slug"
+							params={{ slug: blueprint.project.slug }}
+							className={filterLinkClass}
+						>
+							<Badge variant="tertiary">
+								<FolderOpen className="h-3 w-3" />
+								{blueprint.project.name}
+							</Badge>
+						</Link>
+					)}
 					<span className="flex items-center text-xs text-on-surface-variant font-medium">
 						{m.blueprint_detail_downloads({ count: blueprint.downloadCount ?? 0 })}
 					</span>
+					{blueprint.forkCount > 0 && (
+						<span className="flex items-center gap-1 text-xs text-on-surface-variant font-medium">
+							<GitFork className="h-3 w-3" />
+							{blueprint.forkCount === 1
+								? m.blueprint_fork_count_one({ count: blueprint.forkCount })
+								: m.blueprint_fork_count_other({ count: blueprint.forkCount })}
+						</span>
+					)}
 				</div>
 			</section>
 
@@ -227,6 +277,13 @@ function BlueprintDetailPage() {
 				</div>
 			</div>
 
+			<ForkDialog
+				open={showForkDialog}
+				onClose={() => setShowForkDialog(false)}
+				blueprintId={blueprintId}
+				currentProjectId={blueprint.project?.id}
+			/>
+
 			{/* Delete confirmation dialog */}
 			<Dialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
 				<DialogTitle>{m.blueprint_detail_delete()}</DialogTitle>
@@ -242,5 +299,67 @@ function BlueprintDetailPage() {
 				</DialogFooter>
 			</Dialog>
 		</div>
+	);
+}
+
+/** Picks the project the fork belongs to: a fork is a copy the project then owns. */
+function ForkDialog({
+	open,
+	onClose,
+	blueprintId,
+	currentProjectId,
+}: {
+	open: boolean;
+	onClose: () => void;
+	blueprintId: string;
+	currentProjectId: string | undefined;
+}) {
+	const { data: projects } = useProjects();
+	const forkMutation = useForkBlueprint(blueprintId);
+	const [projectId, setProjectId] = useState('');
+	const targets = (projects ?? []).filter((p) => p.id !== currentProjectId);
+
+	const handleFork = async () => {
+		const fork = await forkMutation.mutateAsync(projectId);
+		onClose();
+		if (fork && 'id' in fork) window.location.assign(`/blueprints/${fork.id}`);
+	};
+
+	return (
+		<Dialog open={open} onClose={onClose}>
+			<DialogTitle>{m.blueprint_fork_title()}</DialogTitle>
+			<DialogDescription>{m.blueprint_fork_hint()}</DialogDescription>
+			<div className="space-y-2">
+				<label htmlFor="fork-project" className="block text-sm font-semibold text-on-surface">
+					{m.blueprint_fork_target()}
+				</label>
+				<Select value={projectId} onValueChange={setProjectId}>
+					<SelectTrigger id="fork-project">
+						<SelectValue placeholder={m.form_project_placeholder()} />
+					</SelectTrigger>
+					<SelectContent>
+						{targets.map((p) => (
+							<SelectItem key={p.id} value={p.id}>
+								{p.name}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+			<DialogFooter>
+				<Button variant="secondary" size="sm" onClick={onClose}>
+					{m.dialog_cancel()}
+				</Button>
+				<Button
+					variant="primary"
+					size="sm"
+					onClick={handleFork}
+					disabled={!projectId || forkMutation.isPending}
+				>
+					<GitFork className="h-4 w-4" />
+					{m.blueprint_fork()}
+				</Button>
+			</DialogFooter>
+		</Dialog>
 	);
 }

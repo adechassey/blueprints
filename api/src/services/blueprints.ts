@@ -532,11 +532,15 @@ export async function forkBlueprint(
 	const full = await getBlueprintById(db, source.id);
 	if (!full) return null;
 
+	// Keep the original slug when it is free in the target project; otherwise let
+	// it be generated (and suffixed), so forking twice never fails on the slug
+	const slugTaken = await isSlugTaken(db, full.slug, targetProjectId);
+
 	return createBlueprint(
 		db,
 		{
 			name: full.name,
-			slug: full.slug,
+			slug: slugTaken ? undefined : full.slug,
 			description: full.description ?? undefined,
 			usage: full.usage ?? undefined,
 			source: full.source ?? undefined,

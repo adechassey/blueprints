@@ -2,6 +2,7 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { registerAuthCommands } from './commands/auth.js';
+import { registerForkCommand } from './commands/fork.js';
 import { registerIndexCommand } from './commands/index.js';
 import { registerInfoCommand } from './commands/info.js';
 import { registerListCommand } from './commands/list.js';
@@ -36,6 +37,7 @@ registerAuthCommands(program);
 registerPushCommand(program);
 registerSyncCommand(program);
 registerPullCommand(program);
+registerForkCommand(program);
 registerSearchCommand(program);
 registerListCommand(program);
 registerInfoCommand(program);

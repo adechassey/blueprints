@@ -221,5 +221,13 @@
 	"technologies_empty": "No technologies yet",
 	"cli_cmd_stack": "List stacks, or scaffold every blueprint of a stack into a directory, grouped by layer",
 	"form_project_placeholder": "Pick a project",
-	"form_project_hint": "The project that owns this blueprint. Another project reuses it by forking it."
+	"form_project_hint": "The project that owns this blueprint. Another project reuses it by forking it.",
+	"blueprint_fork": "Fork",
+	"blueprint_fork_title": "Fork into your project",
+	"blueprint_fork_hint": "Copies this blueprint into your project, with its own history. It is yours to edit afterwards.",
+	"blueprint_fork_target": "Project",
+	"blueprint_forked_from": "Forked from {name} in {project}",
+	"blueprint_fork_count_one": "{count} fork",
+	"blueprint_fork_count_other": "{count} forks",
+	"toast_blueprint_forked": "Blueprint forked"
 }

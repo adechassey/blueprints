@@ -108,6 +108,7 @@ export const blueprintRoutes = new Hono()
 			}
 
 			const fork = await forkBlueprint(db, source, projectId, user.id);
+			if (!fork) return c.json({ error: 'Blueprint not found' }, 404);
 			return c.json(fork, 201);
 		},
 	)

@@ -98,6 +98,9 @@ export async function cleanupE2eData(): Promise<void> {
 		`DELETE FROM blueprint_versions WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
 	);
 	await query(
+		`DELETE FROM blueprint_tags WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
+	);
+	await query(
 		`DELETE FROM blueprint_projects WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
 	);
 	await query(`DELETE FROM blueprints WHERE name LIKE 'E2E %'`);
@@ -106,6 +109,9 @@ export async function cleanupE2eData(): Promise<void> {
 	);
 	await query(
 		`DELETE FROM blueprint_versions WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
+	);
+	await query(
+		`DELETE FROM blueprint_tags WHERE blueprint_id IN (SELECT id FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local'))`,
 	);
 	await query(
 		`DELETE FROM blueprint_projects WHERE blueprint_id IN (SELECT id FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local'))`,
