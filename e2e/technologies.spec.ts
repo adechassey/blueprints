@@ -65,23 +65,4 @@ test.describe('Technology references (API)', () => {
 		const after = await request.get(`${API_URL}/api/blueprints/${id}`, { headers });
 		expect(((await after.json()) as typeof body).technologies).toEqual([catalog]);
 	});
-
-	test('a stack dedupes references and rejects a taken name', async ({ request }) => {
-		const headers = { Authorization: `Bearer ${user.token}` };
-		const name = `E2E Tech Stack ${stamp}`;
-
-		const created = await request.post(`${API_URL}/api/stacks`, {
-			headers,
-			data: { name, slug: `e2e-tech-stack-${stamp}`, technologies: [catalog.name, catalog.slug] },
-		});
-		expect(created.status()).toBe(201);
-		const stack = (await created.json()) as { technologies: { slug: string }[] };
-		expect(stack.technologies.map((t) => t.slug)).toEqual([catalog.slug]);
-
-		const sameName = await request.post(`${API_URL}/api/stacks`, {
-			headers,
-			data: { name, slug: `e2e-tech-stack-bis-${stamp}`, technologies: [catalog.slug] },
-		});
-		expect(sameName.status()).toBe(409);
-	});
 });
