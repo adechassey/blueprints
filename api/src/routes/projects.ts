@@ -7,6 +7,7 @@ import { auth } from '../lib/auth.js';
 import { createProjectSchema, updateProjectSchema } from '../lib/validation.js';
 import { getUser, requireAuth } from '../middleware/auth.js';
 import { generateBlueprintIndex } from '../services/blueprint-index.core.js';
+import { getProjectScaffold } from '../services/scaffold.js';
 import { technologiesOfMany } from '../services/technologies.js';
 
 export const projectRoutes = new Hono()
@@ -72,6 +73,12 @@ export const projectRoutes = new Hono()
 			memberCount: memberCountResult?.count ?? 0,
 			isMember,
 		});
+	})
+	.get('/projects/:slug/scaffold', async (c) => {
+		const slug = c.req.param('slug');
+		const scaffold = await getProjectScaffold(db, slug);
+		if (!scaffold) return c.json({ error: 'Project not found' }, 404);
+		return c.json(scaffold);
 	})
 	.post('/projects', requireAuth, zValidator('json', createProjectSchema), async (c) => {
 		const input = c.req.valid('json');
