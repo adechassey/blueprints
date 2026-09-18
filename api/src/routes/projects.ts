@@ -12,7 +12,19 @@ import { technologiesOfMany } from '../services/technologies.js';
 export const projectRoutes = new Hono()
 	.get('/projects', async (c) => {
 		const result = await db.select().from(projects).orderBy(desc(projects.createdAt));
-		return c.json(result);
+
+		// Blueprints belong to a project and only its members may publish there:
+		// clients need to know which projects the caller can write to.
+		const session = await auth.api.getSession({ headers: c.req.raw.headers });
+		if (!session) return c.json(result.map((project) => ({ ...project, isMember: false })));
+
+		const memberships = await db
+			.select({ projectId: projectMembers.projectId })
+			.from(projectMembers)
+			.where(eq(projectMembers.userId, session.user.id));
+		const mine = new Set(memberships.map((m) => m.projectId));
+
+		return c.json(result.map((project) => ({ ...project, isMember: mine.has(project.id) })));
 	})
 	.get('/projects/:slug', async (c) => {
 		const slug = c.req.param('slug');

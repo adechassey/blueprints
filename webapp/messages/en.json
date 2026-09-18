@@ -155,8 +155,8 @@
 	"cli_cmd_search": "Search blueprints with natural language",
 	"cli_cmd_list": "List blueprints, optionally filtered by technology, layer or tag",
 	"cli_cmd_pull": "Download a blueprint to a local markdown file",
-	"cli_cmd_push": "Publish a blueprint markdown file, optionally under a project",
-	"cli_cmd_sync": "Publish a whole @Blueprint catalog from its TSV index (see below)",
+	"cli_cmd_push": "Publish a blueprint markdown file into a project",
+	"cli_cmd_sync": "Publish a whole @Blueprint catalog from its TSV index into a project (see below)",
 	"cli_cmd_projects": "List the projects you can publish to, or join one",
 	"cli_cmd_update": "Update the CLI to the latest release (add --check to only look)",
 	"cli_sync_title": "Sync from the blueprint skill",
@@ -229,5 +229,6 @@
 	"blueprint_forked_from": "Forked from {name} in {project}",
 	"blueprint_fork_count_one": "{count} fork",
 	"blueprint_fork_count_other": "{count} forks",
-	"toast_blueprint_forked": "Blueprint forked"
+	"toast_blueprint_forked": "Blueprint forked",
+	"cli_cmd_fork": "Copy another project's blueprint into yours, as your own blueprint"
 }

@@ -54,6 +54,8 @@ export function BlueprintForm({
 	const [content, setContent] = useState(initialValues.content || '');
 	const [changelog, setChangelog] = useState('');
 	const { data: projects } = useProjects();
+	// Only a project's members may publish into it
+	const myProjects = (projects ?? []).filter((p) => p.isMember);
 
 	const handleParsed = (meta: BlueprintFrontmatter, parsedContent: string) => {
 		if (meta.name) setName(meta.name);
@@ -130,7 +132,7 @@ export function BlueprintForm({
 						<SelectValue placeholder={m.form_project_placeholder()} />
 					</SelectTrigger>
 					<SelectContent>
-						{projects?.map((p: { id: string; name: string }) => (
+						{myProjects.map((p) => (
 							<SelectItem key={p.id} value={p.id}>
 								{p.name}
 							</SelectItem>

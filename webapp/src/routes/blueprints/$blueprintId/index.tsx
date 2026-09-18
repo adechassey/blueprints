@@ -317,7 +317,8 @@ function ForkDialog({
 	const { data: projects } = useProjects();
 	const forkMutation = useForkBlueprint(blueprintId);
 	const [projectId, setProjectId] = useState('');
-	const targets = (projects ?? []).filter((p) => p.id !== currentProjectId);
+	// A fork belongs to a project the user can publish into
+	const targets = (projects ?? []).filter((p) => p.isMember && p.id !== currentProjectId);
 
 	const handleFork = async () => {
 		const fork = await forkMutation.mutateAsync(projectId);
