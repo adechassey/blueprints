@@ -82,6 +82,9 @@ function RootLayout() {
 								<Link to="/cli" className={navLinkClass}>
 									{m.nav_cli()}
 								</Link>
+								<Link to="/skill" className={navLinkClass}>
+									{m.nav_skill()}
+								</Link>
 								{isAdmin && (
 									<Link to="/admin" className={navLinkClass}>
 										{m.nav_admin()}
@@ -141,6 +144,9 @@ function RootLayout() {
 							</Link>
 							<Link to="/cli" onClick={closeMobile} className={navLinkClass}>
 								{m.nav_cli()}
+							</Link>
+							<Link to="/skill" onClick={closeMobile} className={navLinkClass}>
+								{m.nav_skill()}
 							</Link>
 							{isAdmin && (
 								<Link to="/admin" onClick={closeMobile} className={navLinkClass}>
