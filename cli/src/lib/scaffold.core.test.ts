@@ -64,14 +64,14 @@ describe('blueprintFilePaths', () => {
 	it('suffixes blueprints sharing a layer and a slug with their project', () => {
 		expect(
 			blueprintFilePaths([
-				bp({ layer: 'ui', slug: 'form-field', projects: ['lefebvre-dalloz'] }),
-				bp({ layer: 'ui', slug: 'form-field', projects: ['zeta', 'aquila'] }),
+				bp({ layer: 'ui', slug: 'form-field', projects: ['acme'] }),
+				bp({ layer: 'ui', slug: 'form-field', projects: ['zeta', 'globex'] }),
 				bp({ layer: 'ui', slug: 'form-field' }),
-				bp({ layer: 'domain', slug: 'form-field', projects: ['aquila'] }),
+				bp({ layer: 'domain', slug: 'form-field', projects: ['globex'] }),
 			]),
 		).toEqual([
-			'blueprints/ui/form-field.lefebvre-dalloz.md',
-			'blueprints/ui/form-field.aquila.md',
+			'blueprints/ui/form-field.acme.md',
+			'blueprints/ui/form-field.globex.md',
 			'blueprints/ui/form-field.global.md',
 			'blueprints/domain/form-field.md',
 		]);
@@ -82,11 +82,11 @@ describe('findSlugCollisions', () => {
 	it('lists each colliding layer and slug with the namespaces involved', () => {
 		expect(
 			findSlugCollisions([
-				bp({ layer: 'ui', slug: 'form-field', projects: ['lefebvre-dalloz'] }),
-				bp({ layer: 'ui', slug: 'data-table', projects: ['aquila'] }),
-				bp({ layer: 'ui', slug: 'form-field', projects: ['aquila'] }),
+				bp({ layer: 'ui', slug: 'form-field', projects: ['acme'] }),
+				bp({ layer: 'ui', slug: 'data-table', projects: ['globex'] }),
+				bp({ layer: 'ui', slug: 'form-field', projects: ['globex'] }),
 			]),
-		).toEqual([{ layer: 'ui', slug: 'form-field', namespaces: ['lefebvre-dalloz', 'aquila'] }]);
+		).toEqual([{ layer: 'ui', slug: 'form-field', namespaces: ['acme', 'globex'] }]);
 	});
 
 	it('is empty when every slug is unique within its layer', () => {
@@ -161,13 +161,13 @@ describe('buildScaffoldFiles', () => {
 			{ slug: 'stack', name: 'My Stack', description: null },
 			TECHS,
 			[
-				bp({ slug: 'form-field', layer: 'ui', projects: ['aquila'], content: '# aquila' }),
-				bp({ slug: 'form-field', layer: 'ui', projects: ['lefebvre-dalloz'], content: '# ld' }),
+				bp({ slug: 'form-field', layer: 'ui', projects: ['globex'], content: '# globex' }),
+				bp({ slug: 'form-field', layer: 'ui', projects: ['acme'], content: '# acme' }),
 			],
 		);
 
-		expect(files.get('blueprints/ui/form-field.aquila.md')).toBe('# aquila');
-		expect(files.get('blueprints/ui/form-field.lefebvre-dalloz.md')).toBe('# ld');
-		expect(files.get('index.md')).toContain('(./blueprints/ui/form-field.aquila.md)');
+		expect(files.get('blueprints/ui/form-field.globex.md')).toBe('# globex');
+		expect(files.get('blueprints/ui/form-field.acme.md')).toBe('# acme');
+		expect(files.get('index.md')).toContain('(./blueprints/ui/form-field.globex.md)');
 	});
 });

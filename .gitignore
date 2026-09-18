@@ -10,3 +10,6 @@ api/api/
 .claude/projects/
 .env*
 test-results
+
+# Local map of reference repositories (client paths stay out of the repo)
+.claude/reference-repos.local.md

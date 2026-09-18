@@ -1,23 +1,22 @@
 #!/usr/bin/env tsx
 /**
- * Seed script — imports 85 blueprints from webapp/src/assets/blueprints/
+ * Seed script — fills a local database with synthetic blueprints.
  *
  * Usage: pnpm --filter api db:seed
  *
- * Idempotent: checks by slug before creating.
+ * Idempotent: checks by slug before creating. The blueprints live in
+ * seed-blueprints.ts and are invented: real ones belong to the registry's
+ * database, never to this repository (see "Client data" in CLAUDE.md).
  */
 
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '../src/db/index.js';
 import {
-	blueprintProjects,
 	blueprints,
 	blueprintTags,
 	blueprintTechnologies,
 	blueprintVersions,
+	projectMembers,
 	projects,
 	stacks,
 	stackTechnologies,
@@ -28,80 +27,7 @@ import {
 import { generateSlug } from '../src/services/blueprints.core.js';
 import { prepareEmbeddingText } from '../src/services/embeddings.core.js';
 import { generateEmbedding } from '../src/services/embeddings.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const BLUEPRINTS_DIR = join(__dirname, '..', '..', 'webapp', 'src', 'assets', 'blueprints');
-
-interface FrontmatterMeta {
-	name?: string;
-	description?: string;
-	usage?: string;
-	project?: string;
-	layer?: string;
-	technologies?: string;
-	id?: string;
-	source?: string;
-}
-
-/** Fallback technologies per legacy `project` frontmatter field. */
-const STACK_TECHNOLOGIES: Record<string, string[]> = {
-	webapp: ['react', 'vite', 'tailwindcss'],
-	shared: ['typescript', 'zod'],
-	server: ['node', 'hono', 'drizzle'],
-};
-
-/** Maps legacy free-text layers onto the closed blueprint_layer enum. */
-const LAYER_MAP: Record<string, string> = {
-	adapter: 'database',
-	repository: 'database',
-	schema: 'database',
-	dto: 'database',
-	controller: 'api',
-	route: 'api',
-	middleware: 'api',
-	guard: 'api',
-	service: 'domain',
-	core: 'domain',
-	module: 'domain',
-	error: 'domain',
-	pattern: 'domain',
-	unknown: 'domain',
-	atom: 'ui',
-	molecule: 'ui',
-	organism: 'ui',
-	page: 'ui',
-	hook: 'ui',
-	component: 'ui',
-	state: 'state',
-	infra: 'infra',
-	testing: 'testing',
-	tooling: 'tooling',
-};
-
-function normalizeLayer(
-	layer: string | undefined,
-): 'database' | 'api' | 'domain' | 'ui' | 'state' | 'infra' | 'testing' | 'tooling' {
-	return (LAYER_MAP[layer ?? ''] ?? 'domain') as never;
-}
-
-function parseFrontmatter(raw: string): { meta: FrontmatterMeta; content: string } {
-	const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-	if (!match) return { meta: {}, content: raw };
-
-	const meta: FrontmatterMeta = {};
-	for (const line of match[1].split('\n')) {
-		const idx = line.indexOf(':');
-		if (idx === -1) continue;
-		const key = line.slice(0, idx).trim() as keyof FrontmatterMeta;
-		const value = line
-			.slice(idx + 1)
-			.trim()
-			.replace(/^["']|["']$/g, '');
-		meta[key] = value;
-	}
-	return { meta, content: match[2].trim() };
-}
+import { SEED_BLUEPRINTS } from './seed-blueprints.js';
 
 async function main() {
 	console.log('🌱 Starting seed...\n');
@@ -171,7 +97,7 @@ async function main() {
 	}
 
 	// 4. Create or find default project
-	const projectSlug = 'aquila-ap';
+	const projectSlug = 'demo-project';
 	let [defaultProject] = await db
 		.select()
 		.from(projects)
@@ -181,114 +107,103 @@ async function main() {
 		[defaultProject] = await db
 			.insert(projects)
 			.values({
-				name: 'Aquila AP',
+				name: 'Demo Project',
 				slug: projectSlug,
 				description: 'Default project for seeded blueprints',
 				createdBy: systemUser.id,
 			})
 			.returning();
-		console.log('  ✓ Created default project "aquila-ap"');
+		await db
+			.insert(projectMembers)
+			.values({ projectId: defaultProject.id, userId: systemUser.id, role: 'owner' });
+		console.log('  ✓ Created default project "demo-project"');
 	} else {
 		console.log('  ✓ Default project exists');
 	}
 
-	// 4. Read all markdown files
-	const files = readdirSync(BLUEPRINTS_DIR).filter((f) => f.endsWith('.md'));
-	console.log(`\n  Found ${files.length} blueprint files\n`);
+	// 4. Seed the synthetic blueprints, owned by the default project
+	console.log(`\n  Seeding ${SEED_BLUEPRINTS.length} synthetic blueprints\n`);
+
+	const techRecords = await db
+		.select({ id: technologies.id, slug: technologies.slug })
+		.from(technologies);
+	const techBySlug = new Map(techRecords.map((t) => [t.slug, t.id]));
 
 	let created = 0;
 	let skipped = 0;
 	let embeddings = 0;
 
-	for (const file of files) {
-		const raw = readFileSync(join(BLUEPRINTS_DIR, file), 'utf-8');
-		const { meta, content } = parseFrontmatter(raw);
+	for (const seed of SEED_BLUEPRINTS) {
+		const slug = generateSlug(seed.name);
 
-		const name = meta.name || file.replace(/\.md$/, '');
-		const slug = generateSlug(name);
-		const layer = normalizeLayer(meta.layer);
-
-		// Frontmatter `technologies` wins; fallback to the legacy `project` field mapping
-		const techSlugs = meta.technologies
-			? meta.technologies
-					.split(',')
-					.map((t) => t.trim().toLowerCase())
-					.filter(Boolean)
-			: (STACK_TECHNOLOGIES[meta.project ?? ''] ?? STACK_TECHNOLOGIES.server);
-
-		// Check if already exists
-		const [existing] = await db.select().from(blueprints).where(eq(blueprints.slug, slug)).limit(1);
-
+		const [existing] = await db
+			.select({ id: blueprints.id })
+			.from(blueprints)
+			.where(eq(blueprints.slug, slug))
+			.limit(1);
 		if (existing) {
 			skipped++;
 			continue;
 		}
 
-		// Create blueprint
 		const [blueprint] = await db
 			.insert(blueprints)
 			.values({
-				name,
+				name: seed.name,
 				slug,
-				description: meta.description || null,
-				usage: meta.usage || null,
-				layer,
+				description: seed.description,
+				usage: seed.usage,
+				layer: seed.layer,
 				authorId: systemUser.id,
+				projectId: defaultProject.id,
 			})
 			.returning();
+		if (!blueprint) throw new Error(`Insert blueprint failed: ${slug}`);
 
-		// Link to the default project
-		await db
-			.insert(blueprintProjects)
-			.values({ blueprintId: blueprint.id, projectId: defaultProject.id });
-
-		// Create version
 		const [version] = await db
 			.insert(blueprintVersions)
 			.values({
 				blueprintId: blueprint.id,
 				version: 1,
-				content,
+				content: seed.content,
 				authorId: systemUser.id,
 			})
 			.returning();
+		if (!version) throw new Error(`Insert version failed: ${slug}`);
 
 		await db
 			.update(blueprints)
 			.set({ currentVersionId: version.id })
 			.where(eq(blueprints.id, blueprint.id));
 
-		// Create tags from layer
-		if (layer && layer !== 'unknown') {
-			const tagName = layer.toLowerCase();
-			const tagSlug = generateSlug(tagName);
+		for (const tagName of seed.tags) {
 			let [tag] = await db.select().from(tags).where(eq(tags.name, tagName)).limit(1);
 			if (!tag) {
-				[tag] = await db.insert(tags).values({ name: tagName, slug: tagSlug }).returning();
+				[tag] = await db
+					.insert(tags)
+					.values({ name: tagName, slug: generateSlug(tagName) })
+					.returning();
 			}
-			await db.insert(blueprintTags).values({ blueprintId: blueprint.id, tagId: tag.id });
+			if (tag) await db.insert(blueprintTags).values({ blueprintId: blueprint.id, tagId: tag.id });
 		}
 
-		// Link technologies
-		const techRecords = await db
-			.select({ id: technologies.id, slug: technologies.slug })
-			.from(technologies);
-		const techBySlug = new Map(techRecords.map((t) => [t.slug, t.id]));
-		const techIds = techSlugs.map((s) => techBySlug.get(s)).filter((id) => id !== undefined);
+		const techIds = seed.technologies
+			.map((techSlug) => techBySlug.get(techSlug))
+			.filter((id) => id !== undefined);
 		if (techIds.length > 0) {
 			await db
 				.insert(blueprintTechnologies)
 				.values(techIds.map((technologyId) => ({ blueprintId: blueprint.id, technologyId })));
 		}
 
-		// Generate embedding
 		try {
-			const text = prepareEmbeddingText({
-				description: meta.description,
-				usage: meta.usage,
-				content,
-			});
-			const embedding = await generateEmbedding(text);
+			const embedding = await generateEmbedding(
+				prepareEmbeddingText({
+					description: seed.description,
+					usage: seed.usage,
+					content: seed.content,
+				}),
+			);
 			await db
 				.update(blueprintVersions)
 				.set({ embedding })
@@ -299,15 +214,14 @@ async function main() {
 		}
 
 		created++;
-		if (created % 10 === 0) {
-			console.log(`  ... ${created} blueprints created`);
-		}
+		console.log(`  ✓ ${seed.name}`);
 	}
 
 	console.log(`\n🌱 Seed complete!`);
 	console.log(`  Created: ${created}`);
 	console.log(`  Skipped: ${skipped}`);
 	console.log(`  Embeddings: ${embeddings}`);
+	console.log('\n  Join "demo-project" from the app to publish into it.');
 
 	process.exit(0);
 }

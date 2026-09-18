@@ -78,7 +78,7 @@ describe('detectTechnologies', () => {
 			"const mod = await import('@opentelemetry/api');",
 			"import './side-effect.css';",
 			"import { helper } from '../helper.js';",
-			"import { schema } from '@aquila-ap/schemas';",
+			"import { schema } from '@acme/schemas';",
 		].join('\n');
 		expect(detectTechnologies('src/area.service.ts', content)).toEqual([
 			'TypeScript',

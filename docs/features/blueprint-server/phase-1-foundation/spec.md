@@ -291,7 +291,7 @@
      }
    }
    ```
-   Note: Exact config to match pr-aquila-ap-v2 style. Adjust if needed.
+   Note: Exact config to match the reference project's style. Adjust if needed.
 
 3. **Remove ESLint from webapp**
    - Delete `webapp/eslint.config.js`

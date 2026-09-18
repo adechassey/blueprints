@@ -107,7 +107,7 @@ All three interfaces talk to the same **Hono API** deployed as Vercel serverless
 - Framework-agnostic — works natively with Hono (no Next.js glue code)
 - Built-in OAuth device flow (needed for CLI authentication)
 - Simpler API than Auth.js v5
-- Used successfully in pr-aquila-ap-v2
+- Used successfully in the reference project (see `.claude/reference-repos.local.md`)
 - Extensible — adding GitHub provider later is trivial
 
 **Auth flow (Web)**:
@@ -285,7 +285,7 @@ Better Auth creates and manages its own tables:
 - **Forking, not sharing** — to start from another project's blueprint, you fork it: the content, metadata, technologies and tags are copied into your project as a new blueprint with its own version history, which you then edit freely. `forked_from_id` records the origin (nullable, `ON DELETE SET NULL`), so a blueprint can show where it came from and how many projects picked it up. The same pattern therefore legitimately exists once per project — which is what `blueprint_matches` surfaces, and why `stack scaffold` writes `<slug>.<project>.md` on a collision.
 - **Tags are shared globally** — normalized tag table, many-to-many with blueprints
 - **Comments support threading** — `parentId` enables nested replies
-- **Slug uniqueness** — blueprint slugs are unique per owning project, never globally, so `aquila-ap` and `lefebvre-dalloz-sig-web` each own a `form-field`. Enforced by a `UNIQUE (project_id, slug)` constraint now that ownership is singular: an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
+- **Slug uniqueness** — blueprint slugs are unique per owning project, never globally, so two projects may each own a `form-field`. Enforced by a `UNIQUE (project_id, slug)` constraint now that ownership is singular: an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
 
 ## 4. API Design
 
@@ -393,7 +393,7 @@ Stored in `~/.theodo-blueprints/config.json`:
 {
   "server": "https://blueprints.example.com",
   "token": "...",
-  "defaultProject": "aquila-ap"
+  "defaultProject": "my-project"
 }
 ```
 
@@ -406,7 +406,7 @@ A Claude Code skill bundled in the repo at `.claude/skills/blueprint/` that prov
 - `/theodo-blueprints search [query]` — Search the registry
 - `/theodo-blueprints list` — Browse with filters
 
-The skill wraps the CLI commands and can also call the API directly. It follows the pattern from `pr-aquila-ap-v2/.claude/skills/blueprint/` but adapted for the remote registry.
+The skill wraps the CLI commands and can also call the API directly. It follows the blueprint skill of the reference project (see `.claude/reference-repos.local.md`), adapted for the remote registry.
 
 ## 7. Deployment Architecture
 

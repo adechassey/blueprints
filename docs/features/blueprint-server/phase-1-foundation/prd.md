@@ -87,7 +87,7 @@ Bootstrap the monorepo infrastructure, quality tooling, local dev environment, i
 - After any schema edit: always run `db:generate` then `db:migrate`
 
 ### FR-1.4: Quality tooling
-- Biome 2: lint + format config (strict mode, consistent with pr-aquila-ap-v2 style)
+- Biome 2: lint + format config (strict mode, consistent with the reference project's style)
 - Knip: unused code detection config per workspace
 - Lefthook: pre-commit hook running check, check-types, test, knip
 - Vitest: configured per workspace with coverage

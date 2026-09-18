@@ -1,0 +1,11 @@
+# Reference repositories (local only)
+
+Copy to `.claude/reference-repos.local.md` and fill in the paths on your machine.
+That file is gitignored: client repository names are database/local data, never
+repo content (see the "Client data" rule in CLAUDE.md).
+
+| Role | Local path |
+| --- | --- |
+| Quality tooling reference (Biome, Knip, Lefthook) | `/path/to/repo` |
+| Blueprint annotation reference (`.claude/skills/blueprint/`) | `/path/to/repo` |
+| Drizzle / Better Auth reference | `/path/to/repo` |
