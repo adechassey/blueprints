@@ -1,19 +1,17 @@
 /**
- * Pure logic for the `stack scaffold` command: turn the stack's blueprints
+ * Pure logic for the `scaffold` command: turn a project's blueprints
  * (grouped by architecture layer) into a file map written to disk.
  * No I/O — 100% test coverage required.
  */
 import { BLUEPRINT_LAYERS } from '@blueprints/shared';
 
-/** Blueprint entry as returned by GET /stacks/:id/blueprints. */
+/** Blueprint entry as returned by GET /projects/:slug/scaffold. */
 export interface ScaffoldBlueprint {
 	slug: string;
 	name: string;
 	layer: string;
 	description: string | null;
 	technologies: string[];
-	/** Slugs of the projects the blueprint belongs to (absent from older API responses). */
-	projects?: string[];
 	content: string;
 }
 
@@ -22,7 +20,7 @@ export interface ScaffoldLayerGroup {
 	blueprints: ScaffoldBlueprint[];
 }
 
-export interface ScaffoldStackInfo {
+export interface ScaffoldProjectInfo {
 	slug: string;
 	name: string;
 	description: string | null;
@@ -47,84 +45,32 @@ export function groupByLayer(blueprints: ScaffoldBlueprint[]): ScaffoldLayerGrou
 		.map(([layer, group]) => ({ layer, blueprints: group }));
 }
 
-/** Name of the slug namespace for blueprints outside any project. */
-const GLOBAL_NAMESPACE = 'global';
-
-/** The namespace a blueprint's file is suffixed with: its first project, alphabetically. */
-function namespaceOf(bp: ScaffoldBlueprint): string {
-	return [...(bp.projects ?? [])].sort()[0] ?? GLOBAL_NAMESPACE;
-}
-
-function collisionKey(bp: ScaffoldBlueprint): string {
-	return `${bp.layer}/${bp.slug}`;
-}
-
-/** Keys (layer and slug) shared by more than one blueprint. */
-function collidingKeys(blueprints: ScaffoldBlueprint[]): Set<string> {
-	const seen = new Set<string>();
-	const colliding = new Set<string>();
-	for (const bp of blueprints) {
-		const key = collisionKey(bp);
-		if (seen.has(key)) colliding.add(key);
-		seen.add(key);
-	}
-	return colliding;
-}
-
 /**
  * Relative file path of each blueprint inside the scaffold output, in input
- * order: `blueprints/<layer>/<slug>.md`. Slugs are only unique per project,
- * so blueprints sharing a layer and a slug are all suffixed with their
- * project (`<slug>.<project>.md`) instead of overwriting each other.
+ * order: `blueprints/<layer>/<slug>.md`. Slugs are unique within the owning
+ * project, so paths never collide.
  */
 export function blueprintFilePaths(blueprints: ScaffoldBlueprint[]): string[] {
-	const colliding = collidingKeys(blueprints);
-	return blueprints.map((bp) =>
-		colliding.has(collisionKey(bp))
-			? `blueprints/${bp.layer}/${bp.slug}.${namespaceOf(bp)}.md`
-			: `blueprints/${bp.layer}/${bp.slug}.md`,
-	);
+	return blueprints.map((bp) => `blueprints/${bp.layer}/${bp.slug}.md`);
 }
 
-interface SlugCollision {
-	layer: string;
-	slug: string;
-	/** Namespace (project slug, or "global") of each colliding blueprint. */
-	namespaces: string[];
-}
-
-/** Blueprints sharing a layer and a slug: the same pattern published by several projects. */
-export function findSlugCollisions(blueprints: ScaffoldBlueprint[]): SlugCollision[] {
-	const colliding = collidingKeys(blueprints);
-	const collisions = new Map<string, SlugCollision>();
-	for (const bp of blueprints) {
-		const key = collisionKey(bp);
-		if (!colliding.has(key)) continue;
-		const collision = collisions.get(key) ?? { layer: bp.layer, slug: bp.slug, namespaces: [] };
-		collision.namespaces.push(namespaceOf(bp));
-		collisions.set(key, collision);
-	}
-	return [...collisions.values()];
-}
-
-/** Serialized manifest (stack.json) describing the scaffold run. */
+/** Serialized manifest (scaffold.json) describing the scaffold run. */
 export function buildManifest(
-	stack: ScaffoldStackInfo,
+	project: ScaffoldProjectInfo,
 	technologies: { name: string; slug: string }[],
 	blueprints: ScaffoldBlueprint[],
 ): string {
 	const paths = pathsByBlueprint(blueprints);
 	return JSON.stringify(
 		{
-			stack: stack.slug,
-			name: stack.name,
+			project: project.slug,
+			name: project.name,
 			generatedAt: new Date().toISOString(),
 			technologies,
 			layers: groupByLayer(blueprints).map((g) => ({
 				layer: g.layer,
 				blueprints: g.blueprints.map((b) => ({
 					slug: b.slug,
-					projects: b.projects ?? [],
 					file: paths.get(b),
 				})),
 			})),
@@ -136,16 +82,16 @@ export function buildManifest(
 
 /** Markdown index of the scaffold, grouped by layer, linking each blueprint file. */
 export function buildIndex(
-	stack: ScaffoldStackInfo,
+	project: ScaffoldProjectInfo,
 	technologies: { name: string; slug: string }[],
 	blueprints: ScaffoldBlueprint[],
 ): string {
 	const paths = pathsByBlueprint(blueprints);
 	const lines: string[] = [];
-	lines.push(`# ${stack.name}`);
-	if (stack.description) {
+	lines.push(`# ${project.name}`);
+	if (project.description) {
 		lines.push('');
-		lines.push(stack.description);
+		lines.push(project.description);
 	}
 	lines.push('');
 	lines.push(`**Technologies:** ${technologies.map((t) => t.name).join(', ')}`);
@@ -164,12 +110,11 @@ export function buildIndex(
 
 /**
  * Full file map of the scaffold: blueprints under blueprints/<layer>/ (see
- * blueprintFilePaths),
- * plus index.md and stack.json at the root. Paths are relative to the output
- * directory.
+ * blueprintFilePaths), plus index.md and scaffold.json at the root. Paths are
+ * relative to the output directory.
  */
 export function buildScaffoldFiles(
-	stack: ScaffoldStackInfo,
+	project: ScaffoldProjectInfo,
 	technologies: { name: string; slug: string }[],
 	blueprints: ScaffoldBlueprint[],
 ): Map<string, string> {
@@ -177,8 +122,8 @@ export function buildScaffoldFiles(
 	for (const [bp, path] of pathsByBlueprint(blueprints)) {
 		files.set(path, bp.content);
 	}
-	files.set('index.md', buildIndex(stack, technologies, blueprints));
-	files.set('stack.json', buildManifest(stack, technologies, blueprints));
+	files.set('index.md', buildIndex(project, technologies, blueprints));
+	files.set('scaffold.json', buildManifest(project, technologies, blueprints));
 	return files;
 }
 
