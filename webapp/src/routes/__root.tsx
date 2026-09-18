@@ -27,14 +27,13 @@ const navLinkClass =
  * short enough to show from `lg` up instead of collapsing to the burger below
  * `xl`. `to` is a literal union the router checks, hence the shared type.
  */
-type NavTo = '/stacks' | '/technologies' | '/projects' | '/tags' | '/cli' | '/skill';
+type NavTo = '/technologies' | '/projects' | '/tags' | '/cli' | '/skill';
 type NavGroup = { label: () => string; items: { to: NavTo; label: () => string }[] };
 
 const NAV_GROUPS: NavGroup[] = [
 	{
 		label: m.nav_browse,
 		items: [
-			{ to: '/stacks', label: m.nav_stacks },
 			{ to: '/technologies', label: m.nav_technologies },
 			{ to: '/projects', label: m.nav_projects },
 			{ to: '/tags', label: m.nav_tags },
