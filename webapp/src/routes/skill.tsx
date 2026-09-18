@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { ExternalLink, Sparkles } from 'lucide-react';
-import { BlockLabel, Callout, CodeBlock, Section } from '../components/Guide.js';
+import { BlockLabel, Callout, CodeBlock, FileLabel, Section } from '../components/Guide.js';
 import { Badge } from '../components/ui/badge.js';
 import { Button } from '../components/ui/button.js';
 import { Card, CardContent } from '../components/ui/card.js';
@@ -25,8 +25,8 @@ FOS_REF=<tag> gh api repos/theodo-group/future-of-software/contents/install.sh \
 
 const ANNOTATE = `// @Blueprint controller-create
 // @BlueprintName Create Endpoint
-// @BlueprintUsage Use for POST endpoints that create a resource with DTO validation
-// @BlueprintDescription POST controller with nested DTO body, auth guard and plainToInstance response
+// @BlueprintUsage Use for POST endpoints that create a resource
+// @BlueprintDescription POST controller with a nested DTO body and auth guard
 // @BlueprintGlobs src/**/*.controller.ts
 export const create = ...
 
@@ -46,22 +46,44 @@ sh .claude/skills/blueprint/matcher.sh --path src/orders/orders.controller.ts`;
 const HOOKS = `{
   "hooks": {
     "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "sh .claude/skills/blueprint/hooks/inject-index.sh" }] }
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/skills/blueprint/hooks/inject-index.sh"
+          }
+        ]
+      }
     ],
     "PreToolUse": [
       {
         "matcher": "Write",
-        "hooks": [{ "type": "command", "command": "sh .claude/skills/blueprint/hooks/check-write.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/skills/blueprint/hooks/check-write.sh"
+          }
+        ]
       },
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "sh .claude/skills/blueprint/hooks/snapshot-bash.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/skills/blueprint/hooks/snapshot-bash.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "sh .claude/skills/blueprint/hooks/check-bash.sh" }]
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/skills/blueprint/hooks/check-bash.sh"
+          }
+        ]
       }
     ]
   }
@@ -72,9 +94,11 @@ theodo-blueprints auth login
 theodo-blueprints projects create my-project --name "My Project"
 
 # Always preview first: it prints the layer and technologies inferred per row
-theodo-blueprints sync docs/blueprints.tsv --project my-project --repo owner/repo --dry-run
+theodo-blueprints sync docs/blueprints.tsv \\
+  --project my-project --repo owner/repo --dry-run
 
-theodo-blueprints sync docs/blueprints.tsv --project my-project --repo owner/repo`;
+theodo-blueprints sync docs/blueprints.tsv \\
+  --project my-project --repo owner/repo`;
 
 // Globs stay in constants: `**/` written as JSX text reads as a comment opener.
 const SCOPED_GLOB = 'target/src/**/*.controller.ts';
@@ -150,7 +174,7 @@ function SkillPage() {
 				<CodeBlock
 					code={ANNOTATE}
 					language="plain"
-					header={<BlockLabel>src/areas/area.controller.ts</BlockLabel>}
+					header={<FileLabel>src/areas/area.controller.ts</FileLabel>}
 				/>
 				<Callout>
 					<p className="mb-2 font-medium text-on-surface">{m.skill_annotate_gotchas_title()}</p>
@@ -187,7 +211,7 @@ function SkillPage() {
 				<CodeBlock
 					code={HOOKS}
 					language="plain"
-					header={<BlockLabel>.claude/settings.json</BlockLabel>}
+					header={<FileLabel>.claude/settings.json</FileLabel>}
 				/>
 				<p className="text-on-surface-variant text-sm">{m.skill_hooks_behaviour()}</p>
 				<Callout>

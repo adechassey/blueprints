@@ -10,9 +10,17 @@ function keyedLines(code: string): { key: string; line: string }[] {
 	});
 }
 
-/** Renders shell lines: comments muted, commands prefixed with a non-selectable prompt. */
+/**
+ * Renders shell lines: comments muted, commands prefixed with a non-selectable
+ * prompt. A line continued with a trailing backslash carries the prompt only on
+ * its first line — the rest is the same command, not a new one.
+ */
 function ShellLines({ code }: { code: string }) {
+	let continuing = false;
 	return keyedLines(code).map(({ key, line }) => {
+		const wasContinuing = continuing;
+		continuing = line.trimEnd().endsWith('\\');
+
 		if (line.trim() === '') {
 			return (
 				<span key={key} className="block">
@@ -20,7 +28,7 @@ function ShellLines({ code }: { code: string }) {
 				</span>
 			);
 		}
-		if (line.startsWith('#')) {
+		if (!wasContinuing && line.startsWith('#')) {
 			return (
 				<span key={key} className="block text-on-surface-variant/80">
 					{line}
@@ -30,7 +38,7 @@ function ShellLines({ code }: { code: string }) {
 		return (
 			<span key={key} className="block">
 				<span aria-hidden="true" className="select-none text-primary/70">
-					${' '}
+					{wasContinuing ? ' ' : '$'}{' '}
 				</span>
 				{line}
 			</span>
@@ -80,11 +88,16 @@ export function CodeBlock({
 	);
 }
 
-/** The muted caption above a code block ("Terminal", "macOS / Linux", a file path). */
+/** The muted caption above a code block ("Terminal", "macOS / Linux"). */
 export function BlockLabel({ children }: { children: React.ReactNode }) {
 	return (
 		<span className="font-medium text-on-surface-variant uppercase tracking-wide">{children}</span>
 	);
+}
+
+/** Caption for a block that is a file: kept monospace and cased as written. */
+export function FileLabel({ children }: { children: React.ReactNode }) {
+	return <span className="font-medium font-mono text-on-surface-variant">{children}</span>;
 }
 
 /** A guide section, numbered when it is one step of an ordered walkthrough. */
