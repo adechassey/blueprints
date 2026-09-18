@@ -68,7 +68,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 						>
 							{comment.authorName || m.comment_anonymous()}
 						</Link>
-						<span className="text-[10px] text-outline">{formatDate(comment.createdAt)}</span>
+						<span className="text-xs text-outline">{formatDate(comment.createdAt)}</span>
 						<div className="flex gap-1 ml-auto">
 							{session?.user && (
 								<Button
@@ -157,7 +157,7 @@ export function CommentThread({ comment, onReply, onEdit, onDelete }: CommentThr
 										>
 											{reply.authorName || m.comment_anonymous()}
 										</Link>
-										<span className="text-[10px] text-outline">{formatDate(reply.createdAt)}</span>
+										<span className="text-xs text-outline">{formatDate(reply.createdAt)}</span>
 										<div className="flex gap-1 ml-auto">
 											{session?.user?.id === reply.authorId && (
 												<Button

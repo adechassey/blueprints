@@ -134,7 +134,7 @@ interface MarkdownRendererProps {
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 	return (
-		<div className="prose prose-sm max-w-none dark:prose-invert">
+		<div className="prose max-w-none dark:prose-invert">
 			<Markdown
 				remarkPlugins={[remarkGfm]}
 				components={{
@@ -143,6 +143,13 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
 					// double padded container.
 					pre({ children }) {
 						return <div className="not-prose">{children}</div>;
+					},
+					// Content headings sit under the page's own sections: never outrank them.
+					h1({ children }) {
+						return <h3>{children}</h3>;
+					},
+					h2({ children }) {
+						return <h3>{children}</h3>;
 					},
 					code({ className, children, ...props }) {
 						const match = /language-(\w+)/.exec(className || '');

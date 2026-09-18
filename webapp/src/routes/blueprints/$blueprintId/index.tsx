@@ -112,7 +112,7 @@ function BlueprintDetailPage() {
 							{blueprint.name}
 						</h1>
 						{blueprint.description && (
-							<p className="text-lg text-on-surface-variant max-w-2xl leading-relaxed">
+							<p className="text-base text-on-surface-variant max-w-2xl leading-relaxed">
 								{blueprint.description}
 							</p>
 						)}
@@ -257,12 +257,10 @@ function BlueprintDetailPage() {
 												})}
 											</span>
 											{index === 0 && (
-												<span className="text-[10px] text-on-surface-variant font-normal">
-													Active
-												</span>
+												<span className="text-xs text-on-surface-variant font-normal">Active</span>
 											)}
 										</div>
-										<span className="text-[10px]">{formatDate(v.createdAt)}</span>
+										<span className="text-xs">{formatDate(v.createdAt)}</span>
 									</div>
 								),
 							)}
