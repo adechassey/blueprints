@@ -99,13 +99,15 @@ The CLI is not published to npm yet. When it's time:
 If your repo uses the [`blueprint` skill](https://github.com/theodo-group/future-of-software) (`@Blueprint` annotations), you can publish its whole catalog to the registry in one command. Generate the TSV index with the skill (`bash .claude/skills/blueprint/index.sh`), then:
 
 ```sh
-theodo-blueprints sync --repo owner/repo [--project my-project] [--stack server] [--layer layer] [--dry-run]
+theodo-blueprints sync [docs/blueprints.tsv] --repo owner/repo [--project my-project] [--techno Next.js,Kysely] [--layer layer] [--dry-run]
 ```
 
 - Each `@Blueprint` becomes a registry blueprint whose slug is the pattern-id, so re-running `sync` updates in place (never duplicates).
 - Slugs are unique **per project**, not globally: pass `--project` so the lookup is scoped to your namespace and your `form-field` never collides with another project's. An unscoped sync skips (and reports) any pattern-id that already belongs to a project instead of overwriting it.
 - The layer is inferred from the declared globs (`*.controller.ts` → `controller`, `/hooks/` → `hook`, `.tsx` → `component`, …); `--layer` overrides the fallback.
 - The exemplar excerpt is embedded in the content, and `source` records `--repo:path:line` for traceability.
+
+Setting the skill up in a project from scratch — install, annotations, index, hooks, first sync — is covered in [How to install the `blueprint` skill](./docs/how-to/install-the-blueprint-skill.md).
 
 ## Development
 
