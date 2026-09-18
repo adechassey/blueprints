@@ -11,7 +11,7 @@ export function registerIndexCommand(program: Command) {
 		.action(async (slug: string, opts: { output?: string }) => {
 			try {
 				const client = createApiClient();
-				const res = await client.api.projects[':slug'].index.$get({
+				const res = await client.api.projects[':slug']['blueprint-index'].$get({
 					param: { slug },
 				});
 				const result = await unwrapResponse(res);

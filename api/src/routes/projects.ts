@@ -195,7 +195,8 @@ export const projectRoutes = new Hono()
 
 		return c.json(members);
 	})
-	.get('/projects/:slug/index', async (c) => {
+	// Not `/index`: the Hono client strips that trailing segment from every URL it builds
+	.get('/projects/:slug/blueprint-index', async (c) => {
 		const slug = c.req.param('slug');
 
 		const [project] = await db.select().from(projects).where(eq(projects.slug, slug)).limit(1);
