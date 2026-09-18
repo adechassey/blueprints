@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add semantic search powered by Transformers.js and pgvector. Seed the database with the existing 85 blueprints and generate embeddings for all of them. At the end of this phase, users can search for blueprints using natural language queries.
+Add semantic search powered by Transformers.js and pgvector. Seed the database with the 85 blueprints and generate embeddings for all of them. At the end of this phase, users can search for blueprints using natural language queries.
 
 ## User Stories
 
@@ -31,11 +31,11 @@ Add semantic search powered by Transformers.js and pgvector. Seed the database w
 
 ### US-3.3: Existing blueprints are seeded
 **As a** user,
-**I want** the 85 existing blueprints available in the registry,
+**I want** the seed blueprints available in the registry,
 **So that** the platform has content from day one.
 
 **Acceptance criteria:**
-- All 85 markdown files from `webapp/src/assets/blueprints/` imported
+- The whole synthetic seed corpus imported
 - Metadata parsed from YAML frontmatter (name, description, usage, project, layer)
 - Stack inferred from `project` field (server/webapp/shared)
 - Embeddings generated for all seeded blueprints
@@ -84,7 +84,7 @@ Add semantic search powered by Transformers.js and pgvector. Seed the database w
 
 ### FR-3.5: Seed script
 - Script at `api/scripts/seed.ts` (run via `pnpm db:seed`)
-- Reads all 85 markdown files from `webapp/src/assets/blueprints/`
+- Reads the synthetic corpus from `api/scripts/seed-blueprints.ts`
 - Parses YAML frontmatter for metadata
 - Creates a default project, author (system user), and all tags
 - Generates embeddings for each blueprint (batched, with progress output)
@@ -100,7 +100,7 @@ Add semantic search powered by Transformers.js and pgvector. Seed the database w
 
 - Embedding generation: < 15s per blueprint (including cold start)
 - Search query response: < 3s (including embedding generation for query + DB query)
-- Seed script: completes within 10 minutes for 85 blueprints
+- Seed script: completes within 10 minutes for the whole corpus
 - All search UI strings use Paraglide i18n
 
 ## Dependencies
@@ -119,6 +119,6 @@ Add semantic search powered by Transformers.js and pgvector. Seed the database w
 1. Dedicated Transformers.js embeddings serverless function
 2. Embedding generation integrated into blueprint create/update flow
 3. Semantic search API endpoint
-4. Seed script importing 85 existing blueprints with embeddings
+4. Seed script importing the blueprint corpus with embeddings
 5. Frontend search UI integrated with filters
 6. Backfill script for null embeddings

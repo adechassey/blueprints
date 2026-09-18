@@ -8,7 +8,7 @@ Phase 2 complete:
 - Tag/project management
 - SPA connected to API with TanStack Query
 - All 7 Drizzle tables with pgvector `embedding vector(384)` column on `blueprint_versions`
-- 85 blueprint markdown files in `webapp/src/assets/blueprints/`
+- The synthetic seed corpus in `api/scripts/seed-blueprints.ts`
 
 ---
 
@@ -151,7 +151,7 @@ export const searchBlueprintsSchema = z.object({
    ```typescript
    // 1. Create system user (or find existing)
    // 2. Create default project "demo-project"
-   // 3. Read all 85 .md files from webapp/src/assets/blueprints/
+   // 3. Read the seed corpus from scripts/seed-blueprints.ts
    // 4. Parse YAML frontmatter
    // 5. Infer stack from "project" field
    // 6. Create blueprints + versions
@@ -245,7 +245,7 @@ export const searchBlueprintsSchema = z.object({
 - [ ] Embedding generated on blueprint version create
 - [ ] Embedding stored in `blueprint_versions.embedding`
 - [ ] If embedding fails, blueprint still saved
-- [ ] Seed script imports 85 blueprints from markdown files
+- [ ] Seed script imports the synthetic blueprint corpus
 - [ ] Seed creates default project, tags, system user
 - [ ] Seed generates embeddings for all blueprints
 - [ ] Seed is idempotent
