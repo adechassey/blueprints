@@ -54,7 +54,10 @@ export const createBlueprintSchema = z.object({
 	/** Technology slugs the blueprint applies to (created on the fly if unknown). */
 	technologies: z.array(z.string().min(1).max(100)).max(20).optional(),
 	layer: blueprintLayerSchema,
-	projectId: z.string().uuid().optional(),
+	/** The owning project: every blueprint belongs to exactly one. */
+	projectId: z.string().uuid(),
+	/** Set when the blueprint is a fork of another project's blueprint. */
+	forkedFromId: z.string().uuid().optional(),
 	tags: z.array(z.string()).optional(),
 	content: z.string().min(1),
 	isPublic: z.boolean().optional().default(true),
@@ -94,3 +97,10 @@ export const listBlueprintsSchema = z.object({
 });
 
 export type ListBlueprintsInput = z.infer<typeof listBlueprintsSchema>;
+
+export const forkBlueprintSchema = z.object({
+	/** The project the fork is created in (the caller must be a member). */
+	projectId: z.string().uuid(),
+});
+
+export type ForkBlueprintInput = z.infer<typeof forkBlueprintSchema>;

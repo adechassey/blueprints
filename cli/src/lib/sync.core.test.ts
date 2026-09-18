@@ -3,7 +3,6 @@ import {
 	buildBlueprintContent,
 	buildSource,
 	extractExcerpt,
-	foreignProjects,
 	MAX_EXCERPT_LINES,
 	parseIndexTsv,
 	type ScanState,
@@ -546,30 +545,5 @@ describe('buildBlueprintContent', () => {
 			location: 'src/a.ts',
 		};
 		expect(buildBlueprintContent(row)).toContain('Pattern `my-pattern` — canonical exemplar');
-	});
-});
-
-describe('foreignProjects', () => {
-	const aquila = { id: 'id-aquila', slug: 'aquila-ap' };
-	const lds = { id: 'id-lds', slug: 'lefebvre-dalloz-sig-web' };
-
-	it('treats a project-less blueprint as never foreign', () => {
-		expect(foreignProjects([], undefined)).toEqual([]);
-		expect(foreignProjects([], 'id-lds')).toEqual([]);
-	});
-
-	it('treats a blueprint already in the target project as ours, even when shared', () => {
-		expect(foreignProjects([aquila, lds], 'id-lds')).toEqual([]);
-	});
-
-	it('names the owning projects when the sync targets another project', () => {
-		expect(foreignProjects([aquila], 'id-lds')).toEqual(['aquila-ap']);
-	});
-
-	it('names the owning projects when the sync is unscoped', () => {
-		expect(foreignProjects([aquila, lds], undefined)).toEqual([
-			'aquila-ap',
-			'lefebvre-dalloz-sig-web',
-		]);
 	});
 });

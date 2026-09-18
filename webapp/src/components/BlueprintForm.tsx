@@ -18,9 +18,6 @@ import { Input } from './ui/input.js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select.js';
 import { Textarea } from './ui/textarea.js';
 
-/** Radix Select items cannot carry an empty value: sentinel for "no project". */
-const NO_PROJECT = 'none';
-
 export interface BlueprintFormData extends Omit<CreateBlueprintInput, 'isPublic'> {
 	changelog?: string;
 }
@@ -57,6 +54,8 @@ export function BlueprintForm({
 	const [content, setContent] = useState(initialValues.content || '');
 	const [changelog, setChangelog] = useState('');
 	const { data: projects } = useProjects();
+	// Only a project's members may publish into it
+	const myProjects = (projects ?? []).filter((p) => p.isMember);
 
 	const handleParsed = (meta: BlueprintFrontmatter, parsedContent: string) => {
 		if (meta.name) setName(meta.name);
@@ -78,7 +77,7 @@ export function BlueprintForm({
 			usage: usage || undefined,
 			technologies,
 			layer,
-			projectId: projectId || undefined,
+			projectId,
 			tags: parseList(tagsInput),
 			content,
 		};
@@ -128,22 +127,21 @@ export function BlueprintForm({
 				<label htmlFor="bp-project" className="block text-sm font-semibold text-on-surface">
 					{m.form_project()}
 				</label>
-				<Select
-					value={projectId || NO_PROJECT}
-					onValueChange={(v) => setProjectId(v === NO_PROJECT ? '' : v)}
-				>
-					<SelectTrigger id="bp-project">
-						<SelectValue />
+				<Select value={projectId} onValueChange={setProjectId}>
+					<SelectTrigger id="bp-project" aria-describedby="bp-project-description">
+						<SelectValue placeholder={m.form_project_placeholder()} />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value={NO_PROJECT}>{m.form_project_none()}</SelectItem>
-						{projects?.map((p: { id: string; name: string }) => (
+						{myProjects.map((p) => (
 							<SelectItem key={p.id} value={p.id}>
 								{p.name}
 							</SelectItem>
 						))}
 					</SelectContent>
 				</Select>
+				<p id="bp-project-description" className="text-xs text-on-surface-variant">
+					{m.form_project_hint()}
+				</p>
 			</div>
 
 			<div className="grid grid-cols-2 gap-4">
@@ -222,7 +220,7 @@ export function BlueprintForm({
 				</div>
 			)}
 
-			<Button type="submit" variant="primary" size="lg" disabled={isSubmitting}>
+			<Button type="submit" variant="primary" size="lg" disabled={isSubmitting || !projectId}>
 				{isSubmitting ? m.form_submitting() : m.form_submit()}
 			</Button>
 		</form>

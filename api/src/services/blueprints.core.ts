@@ -33,22 +33,31 @@ export function shouldCreateNewVersion(
 }
 
 /**
- * Blueprint slugs are unique within a namespace, never globally: the project a
- * blueprint belongs to, or the project-less ("global") pool. Two projects may
- * each hold their own `form-field`.
+ * Blueprint slugs are unique within their owning project, never globally: two
+ * projects may each hold their own `form-field`.
  */
 export class SlugConflictError extends Error {
 	readonly status = 409;
 
-	constructor(slug: string, projectLabel: string | null) {
-		const where = projectLabel === null ? 'the global namespace' : `project ${projectLabel}`;
-		super(`Slug "${slug}" already exists in ${where}`);
+	constructor(slug: string, projectLabel: string) {
+		super(`Slug "${slug}" already exists in project ${projectLabel}`);
 		this.name = 'SlugConflictError';
+	}
+}
+
+/** Thrown when a write targets a project that does not exist (HTTP 404). */
+export class UnknownProjectError extends Error {
+	readonly status = 404;
+
+	constructor(project: string) {
+		super(`Project "${project}" not found`);
+		this.name = 'UnknownProjectError';
 	}
 }
 
 export interface SlugCandidate {
 	id: string;
+	/** The owning project's slug (empty while a blueprint has no project yet). */
 	projectSlugs: string[];
 }
 
@@ -77,7 +86,7 @@ export function pickSlug(input: {
 	requested: string;
 	explicit: boolean;
 	taken: boolean;
-	projectLabel: string | null;
+	projectLabel: string;
 }): string {
 	if (!input.taken) return input.requested;
 	if (input.explicit) throw new SlugConflictError(input.requested, input.projectLabel);

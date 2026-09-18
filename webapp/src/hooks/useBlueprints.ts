@@ -96,6 +96,28 @@ export function useUpdateBlueprint(id: string) {
 	});
 }
 
+export function useForkBlueprint(id: string) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async (projectId: string) => {
+			const res = await api.api.blueprints[':id'].fork.$post({
+				param: { id },
+				query: {},
+				json: { projectId },
+			});
+			return unwrapResponse(res);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['blueprints'] });
+			queryClient.invalidateQueries({ queryKey: ['blueprint', id] });
+			toast.success(m.toast_blueprint_forked());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
+		},
+	});
+}
+
 export function useDeleteBlueprint() {
 	const queryClient = useQueryClient();
 	return useMutation({

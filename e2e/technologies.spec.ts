@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { cleanupE2eData, createTestUser, query, type TestUser } from './helpers/db.js';
+import { cleanupE2eData, createTestUser, query, seedProject, type TestUser } from './helpers/db.js';
 
 const API_URL = 'http://localhost:3002';
 
@@ -13,12 +13,14 @@ test.describe('Technology references (API)', () => {
 	let user: TestUser;
 	let stamp: number;
 	let catalog: { name: string; slug: string };
+	let project: { id: string; slug: string };
 
 	test.beforeEach(async () => {
 		user = await createTestUser('Tech Referencer', 'admin');
 		stamp = Date.now();
 		// The name slugifies to `e2e-techjs-<stamp>`, not to the catalog slug
 		catalog = { name: `E2E Tech.js ${stamp}`, slug: `e2e-tech-${stamp}` };
+		project = await seedProject(user.id);
 		await query('INSERT INTO technologies (name, slug) VALUES ($1, $2)', [
 			catalog.name,
 			catalog.slug,
@@ -36,6 +38,7 @@ test.describe('Technology references (API)', () => {
 			headers,
 			data: {
 				name: `E2E Tech Blueprint ${stamp}`,
+				projectId: project.id,
 				layer: 'api',
 				content: '# Technology references',
 				technologies: [catalog.slug, catalog.name.toLowerCase(), catalog.slug.toUpperCase()],

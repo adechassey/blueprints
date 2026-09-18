@@ -103,7 +103,18 @@ export const adminRoutes = new Hono()
 			.where(eq(projects.id, id))
 			.limit(1);
 		if (!existing) return c.json({ error: 'Project not found' }, 404);
-		// blueprint_projects and project_members cascade via FK onDelete: 'cascade'
+		// Blueprints belong to their project: deleting it would orphan them
+		const [owned] = await db
+			.select({ total: count() })
+			.from(blueprints)
+			.where(eq(blueprints.projectId, id));
+		if ((owned?.total ?? 0) > 0) {
+			return c.json(
+				{ error: `Project still owns ${owned?.total} blueprint(s): delete or move them first` },
+				409,
+			);
+		}
+		// project_members cascades via FK onDelete: 'cascade'
 		await db.delete(projects).where(eq(projects.id, id));
 		return c.json({ success: true });
 	});

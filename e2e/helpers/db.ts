@@ -97,12 +97,24 @@ export async function cleanupE2eData(): Promise<void> {
 	await query(
 		`DELETE FROM blueprint_versions WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
 	);
+	await query(
+		`DELETE FROM blueprint_tags WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
+	);
+	await query(
+		`DELETE FROM blueprint_projects WHERE blueprint_id IN (SELECT id FROM blueprints WHERE name LIKE 'E2E %')`,
+	);
 	await query(`DELETE FROM blueprints WHERE name LIKE 'E2E %'`);
 	await query(
 		`DELETE FROM comments WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
 	);
 	await query(
 		`DELETE FROM blueprint_versions WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
+	);
+	await query(
+		`DELETE FROM blueprint_tags WHERE blueprint_id IN (SELECT id FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local'))`,
+	);
+	await query(
+		`DELETE FROM blueprint_projects WHERE blueprint_id IN (SELECT id FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local'))`,
 	);
 	await query(
 		`DELETE FROM blueprints WHERE author_id IN (SELECT id FROM users WHERE email LIKE '%@e2e.local')`,
@@ -121,6 +133,30 @@ interface SeededBlueprint {
 	slug: string;
 }
 
+/**
+ * The project owning a user's seeded blueprints, created on first use: every
+ * blueprint belongs to exactly one project.
+ */
+export async function seedProject(userId: string): Promise<{ id: string; slug: string }> {
+	const slug = `e2e-project-${userId.slice(-12)}`;
+	const existing = await query<{ id: string; slug: string }>(
+		'SELECT id, slug FROM projects WHERE slug = $1',
+		[slug],
+	);
+	if (existing.rows[0]) return existing.rows[0];
+
+	const created = await query<{ id: string; slug: string }>(
+		`INSERT INTO projects (name, slug, description, created_by)
+		 VALUES ($1, $2, 'Seeded by the E2E suite', $3) RETURNING id, slug`,
+		[`E2E Project ${userId.slice(-12)}`, slug, userId],
+	);
+	await query(`INSERT INTO project_members (project_id, user_id, role) VALUES ($1, $2, 'owner')`, [
+		created.rows[0].id,
+		userId,
+	]);
+	return created.rows[0];
+}
+
 /** Inserts a blueprint + initial version directly (bypasses the API). */
 export async function seedBlueprint(
 	authorId: string,
@@ -129,20 +165,27 @@ export async function seedBlueprint(
 		description,
 		content,
 		layer = 'ui',
+		projectId,
 	}: {
 		name: string;
 		description: string;
 		content: string;
 		layer?: string;
+		projectId?: string;
 	},
 ): Promise<SeededBlueprint> {
 	// Random suffix avoids unique-constraint collisions across runs
 	const slug = `e2e-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${crypto.randomUUID().slice(0, 8)}`;
+	const owningProjectId = projectId ?? (await seedProject(authorId)).id;
 	const blueprintResult = await query<{ id: string; name: string; slug: string }>(
-		`INSERT INTO blueprints (name, slug, description, usage, author_id, layer)
-		 VALUES ($1, $2, $3, 'Use when testing', $4, $5)
+		`INSERT INTO blueprints (name, slug, description, usage, author_id, layer, project_id)
+		 VALUES ($1, $2, $3, 'Use when testing', $4, $5, $6)
 		 RETURNING id, name, slug`,
-		[name, slug, description, authorId, layer],
+		[name, slug, description, authorId, layer, owningProjectId],
+	);
+	await query(
+		`INSERT INTO blueprint_projects (blueprint_id, project_id, added_by) VALUES ($1, $2, $3)`,
+		[blueprintResult.rows[0].id, owningProjectId, authorId],
 	);
 	const versionResult = await query<{ id: string }>(
 		`INSERT INTO blueprint_versions (blueprint_id, version, content, author_id)

@@ -42,6 +42,11 @@ const COMMANDS = [
 		code: 'theodo-blueprints stack list\ntheodo-blueprints stack scaffold <stack> ./blueprints',
 	},
 	{
+		name: 'fork',
+		description: m.cli_cmd_fork,
+		code: 'theodo-blueprints fork <slug> --from <project> --into <my-project>',
+	},
+	{
 		name: 'pull',
 		description: m.cli_cmd_pull,
 		code: 'theodo-blueprints pull <slug> -o output.md',

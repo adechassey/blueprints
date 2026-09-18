@@ -4,6 +4,7 @@ import {
 	createTestUser,
 	query,
 	seedBlueprint,
+	seedProject,
 	type TestUser,
 } from './helpers/db.js';
 
@@ -76,7 +77,7 @@ test.describe('Stacks (API)', () => {
 		expect(found).toBeDefined();
 		expect(found?.content).toBe('# E2E layered blueprint');
 		// Project slugs let the scaffold tell apart blueprints sharing a slug
-		expect(found?.projects).toEqual([]);
+		expect(found?.projects).toEqual([(await seedProject(user.id)).slug]);
 
 		// ── Duplicate slug is rejected with 409 ──
 		const duplicate = await request.post(`${API_URL}/api/stacks`, {

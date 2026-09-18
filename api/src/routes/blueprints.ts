@@ -1,12 +1,13 @@
 import { zValidator } from '@hono/zod-validator';
-import { and, eq, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { db } from '../db/index.js';
-import { blueprints as blueprintsTable, projectMembers, projects } from '../db/schema.js';
+import { blueprints as blueprintsTable } from '../db/schema.js';
 import {
 	blueprintLayerSchema,
 	createBlueprintSchema,
+	forkBlueprintSchema,
 	listBlueprintsSchema,
 	technoFilterSchema,
 	updateBlueprintSchema,
@@ -16,8 +17,10 @@ import { downloadRateLimit, strictRateLimit } from '../middleware/rate-limit.js'
 import {
 	createBlueprint,
 	deleteBlueprintById,
+	forkBlueprint,
 	getBlueprintById,
 	getVersion,
+	isProjectMember,
 	listBlueprints,
 	listVersions,
 	updateBlueprint,
@@ -40,6 +43,19 @@ const searchSchema = z.object({
  * `?project=` (slug or UUID). Without it, an ambiguous slug answers 409.
  */
 const scopeSchema = z.object({ project: z.string().optional() });
+
+/**
+ * A project's blueprints belong to the whole team: any member may publish,
+ * edit or delete them. Admins bypass membership.
+ */
+async function canWriteProject(
+	user: { id: string; role: string },
+	projectId: string | null,
+): Promise<boolean> {
+	if (user.role === 'admin') return true;
+	if (!projectId) return false;
+	return isProjectMember(db, projectId, user.id);
+}
 
 export const blueprintRoutes = new Hono()
 	.get('/blueprints/search', strictRateLimit, zValidator('query', searchSchema), async (c) => {
@@ -65,31 +81,37 @@ export const blueprintRoutes = new Hono()
 		const input = c.req.valid('json');
 		const user = getUser(c);
 
-		if (input.projectId && user.role !== 'admin') {
-			// Resolve projectId (may be UUID or slug — we accept UUID here)
-			const [project] = await db
-				.select({ id: projects.id })
-				.from(projects)
-				.where(eq(projects.id, input.projectId))
-				.limit(1);
-			if (!project) {
-				return c.json({ error: 'Project not found' }, 404);
-			}
-			const [membership] = await db
-				.select({ id: projectMembers.id })
-				.from(projectMembers)
-				.where(
-					and(eq(projectMembers.projectId, input.projectId), eq(projectMembers.userId, user.id)),
-				)
-				.limit(1);
-			if (!membership) {
-				return c.json({ error: 'You must be a member of this project to add blueprints' }, 403);
-			}
+		if (!(await canWriteProject(user, input.projectId))) {
+			return c.json({ error: 'You must be a member of this project to add blueprints' }, 403);
 		}
 
 		const blueprint = await createBlueprint(db, input, user.id);
 		return c.json(blueprint, 201);
 	})
+	.post(
+		'/blueprints/:id/fork',
+		requireAuth,
+		zValidator('query', scopeSchema),
+		zValidator('json', forkBlueprintSchema),
+		async (c) => {
+			const id = c.req.param('id');
+			const { project } = c.req.valid('query');
+			const { projectId } = c.req.valid('json');
+			const user = getUser(c);
+
+			const source = await getBlueprintById(db, id, project);
+			if (!source || (!source.isPublic && !(await canWriteProject(user, source.projectId)))) {
+				return c.json({ error: 'Blueprint not found' }, 404);
+			}
+			if (!(await canWriteProject(user, projectId))) {
+				return c.json({ error: 'You must be a member of this project to fork into it' }, 403);
+			}
+
+			const fork = await forkBlueprint(db, source, projectId, user.id);
+			if (!fork) return c.json({ error: 'Blueprint not found' }, 404);
+			return c.json(fork, 201);
+		},
+	)
 	.put(
 		'/blueprints/:id',
 		requireAuth,
@@ -105,7 +127,7 @@ export const blueprintRoutes = new Hono()
 			if (!existing) {
 				return c.json({ error: 'Blueprint not found' }, 404);
 			}
-			if (existing.authorId !== user.id && user.role !== 'admin') {
+			if (!(await canWriteProject(user, existing.projectId))) {
 				return c.json({ error: 'Forbidden' }, 403);
 			}
 
@@ -122,7 +144,7 @@ export const blueprintRoutes = new Hono()
 		if (!existing) {
 			return c.json({ error: 'Blueprint not found' }, 404);
 		}
-		if (existing.authorId !== user.id && user.role !== 'admin') {
+		if (!(await canWriteProject(user, existing.projectId))) {
 			return c.json({ error: 'Forbidden' }, 403);
 		}
 
