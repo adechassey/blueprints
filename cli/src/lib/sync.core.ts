@@ -44,6 +44,13 @@ export function splitLocation(location: string): { path: string; line: number | 
 
 const COMMENT_LINE_RE = /^\s*(\/\/|\/\*|\*|#)/;
 
+/** Opens a block comment (`/*`, `/**`). */
+const BLOCK_COMMENT_OPEN_RE = /^\s*\/\*/;
+/** Continues a block comment (` * …`) without closing it. */
+const BLOCK_COMMENT_BODY_RE = /^\s*\*(?!\/)/;
+/** Opens and closes on the same line (`/** … *​/`), so it opens nothing. */
+const BLOCK_COMMENT_SELF_CONTAINED_RE = /\/\*.*\*\//;
+
 /**
  * Maximum number of lines in an extracted excerpt (annotation block + body).
  * A safety net for pathological inputs: the excerpt is truncated rather than
@@ -161,6 +168,26 @@ export interface Excerpt {
 }
 
 /**
+ * Index of the line the excerpt starts on: the `/**` that opens the comment
+ * carrying the annotation, when there is one. Without it the excerpt opens on
+ * a dangling `*` and closes on an orphan comment terminator — an unbalanced
+ * block comment in the published code. Line-comment annotations (`//`, `#`)
+ * need no opener, so they start on the annotation itself.
+ */
+function blockCommentStart(lines: string[], annotation: number): number {
+	for (let i = annotation - 1; i >= 0; i--) {
+		const current = lines[i] as string;
+		if (BLOCK_COMMENT_OPEN_RE.test(current)) {
+			return BLOCK_COMMENT_SELF_CONTAINED_RE.test(current) ? annotation : i;
+		}
+		// Only a ` * …` line continues the search upwards; code, a line comment or
+		// the terminator of an earlier block means this annotation has no opener.
+		if (!BLOCK_COMMENT_BODY_RE.test(current)) return annotation;
+	}
+	return annotation;
+}
+
+/**
  * Extracts the exemplar excerpt: the annotation comment block starting at
  * `line`, plus the full declaration that follows it — its decorators, then
  * one statement, which ends once its brackets are balanced (string/comment
@@ -173,8 +200,9 @@ export interface Excerpt {
  */
 export function extractExcerpt(content: string, line: number, path = ''): Excerpt | undefined {
 	const lines = content.split('\n');
-	const start = line - 1;
-	if (!Number.isInteger(line) || line < 1 || start >= lines.length) return undefined;
+	const annotation = line - 1;
+	if (!Number.isInteger(line) || line < 1 || annotation >= lines.length) return undefined;
+	const start = blockCommentStart(lines, annotation);
 
 	// 1) The annotation comment block: every line up to the first code line.
 	let declIndex = start;
