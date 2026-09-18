@@ -32,6 +32,24 @@ A blueprint registry and discovery platform where developers can publish, browse
 - NEVER read or commit .env files — secrets are already configured by the user
 - Use .env.example for documenting required variables
 
+## Client data
+
+Client identities are **database data, not repo content**. The registry's
+database legitimately holds real project names, slugs and client repositories —
+it sits behind auth. This repository does not: it is cloned, shared, indexed and
+read far more widely.
+
+- NEVER write a client name, a client project/slug or a client repository name
+  into this repo: code, tests, fixtures, seeds, docs, `.claude/notes.md`, commit
+  messages, branch names, or pull request titles and bodies.
+- Use neutral placeholders instead — `acme`, `globex`, `project-a`, `owner/repo`
+  — and describe the situation rather than the customer: "two projects each own
+  a `form-field` blueprint", never the client names.
+- Real values belong in the database, in a local `.env`, or in throwaway files
+  outside the repo.
+- This applies to anything generated from production data (sync reports, sample
+  payloads, migration notes): sanitize before it lands in a file or a message.
+
 ## Commands
 
 - `pnpm dev` — Start all dev servers (via Turbo)
