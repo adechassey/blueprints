@@ -61,27 +61,19 @@ function LoginPage() {
 			/>
 			<Card className="relative max-w-md w-full shadow-hover">
 				<CardContent className="flex flex-col items-center gap-8 py-12">
-					<span className="flex items-center gap-3">
+					<h1 className="flex items-center gap-3 text-2xl font-extrabold text-on-surface tracking-tight font-headline">
 						<img src="/logo.svg" alt="" className="h-11 w-11 rounded-xl shadow-xs" />
-						<span className="text-2xl font-extrabold text-on-surface tracking-tight font-headline">
-							{m.app_title()}
-						</span>
-					</span>
-					<div className="text-center space-y-2">
-						<h1 className="text-2xl font-bold font-headline">{m.auth_login_title()}</h1>
-						<p className="text-sm text-on-surface-variant">{m.auth_login_subtitle()}</p>
-					</div>
+						{m.app_title()}
+					</h1>
+					{/* What a visitor gets, before being asked for anything */}
+					<p className="max-w-sm text-center text-base leading-relaxed text-on-surface-variant">
+						{m.auth_login_tagline()}
+					</p>
 					<Button variant="secondary" size="lg" onClick={handleSignIn} className="w-full max-w-xs">
 						<GoogleIcon />
 						{m.auth_sign_in_google()}
 					</Button>
-					<p className="text-center text-xs text-outline">
-						Press{' '}
-						<kbd className="rounded border border-outline-variant bg-surface-container-high px-1.5 py-0.5 font-mono">
-							⌘K
-						</kbd>{' '}
-						anywhere to search blueprints
-					</p>
+					<p className="text-center text-xs text-outline">{m.auth_login_access()}</p>
 				</CardContent>
 			</Card>
 		</div>
