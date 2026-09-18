@@ -8,6 +8,7 @@ import { LayerBadge } from '../../../components/LayerBadge.js';
 import { MarkdownRenderer } from '../../../components/MarkdownRenderer.js';
 import { MatchSection } from '../../../components/MatchSection.js';
 import { markBlueprintViewed } from '../../../components/Onboarding.js';
+import { Avatar } from '../../../components/ui/avatar.js';
 import { Badge } from '../../../components/ui/badge.js';
 import { Button } from '../../../components/ui/button.js';
 import {
@@ -206,6 +207,24 @@ function BlueprintDetailPage() {
 								: m.blueprint_fork_count_other({ count: blueprint.forkCount })}
 						</span>
 					)}
+				</div>
+
+				{/* Who maintains it, and how fresh it is */}
+				<div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-on-surface-variant">
+					{blueprint.author && (
+						<>
+							<Link
+								to="/users/$userId"
+								params={{ userId: blueprint.author.id }}
+								className="inline-flex items-center gap-1.5 font-medium text-on-surface no-underline transition-colors hover:text-primary"
+							>
+								<Avatar src={blueprint.author.image} fallback={blueprint.author.name} size="sm" />
+								{blueprint.author.name}
+							</Link>
+							<span aria-hidden="true">·</span>
+						</>
+					)}
+					<span>{m.blueprint_detail_updated({ date: formatDate(blueprint.updatedAt) })}</span>
 				</div>
 			</section>
 
