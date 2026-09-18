@@ -124,7 +124,9 @@ export const blueprints = pgTable(
 		currentVersionId: uuid('current_version_id'),
 		// The owning project: a blueprint records one team's pattern. Reuse across
 		// projects is a fork (a copy), never a shared link.
-		projectId: uuid('project_id').references((): AnyPgColumn => projects.id),
+		projectId: uuid('project_id')
+			.notNull()
+			.references((): AnyPgColumn => projects.id),
 		// Set when the blueprint was forked from another project's blueprint
 		forkedFromId: uuid('forked_from_id').references((): AnyPgColumn => blueprints.id, {
 			onDelete: 'set null',
@@ -145,7 +147,12 @@ export const blueprints = pgTable(
 			.defaultNow()
 			.$onUpdate(() => new Date()),
 	},
-	(t) => [index('blueprints_slug_idx').on(t.slug), index('blueprints_project_idx').on(t.projectId)],
+	(t) => [
+		index('blueprints_slug_idx').on(t.slug),
+		index('blueprints_project_idx').on(t.projectId),
+		// Slugs are unique per owning project, never globally
+		unique('blueprints_project_slug_unique').on(t.projectId, t.slug),
+	],
 );
 
 // Blueprint versions
@@ -179,22 +186,6 @@ export const projectMembers = pgTable(
 		joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
 	},
 	(t) => [unique('project_members_unique').on(t.projectId, t.userId)],
-);
-
-// Blueprint-Project join table (many-to-many)
-export const blueprintProjects = pgTable(
-	'blueprint_projects',
-	{
-		blueprintId: uuid('blueprint_id')
-			.notNull()
-			.references(() => blueprints.id, { onDelete: 'cascade' }),
-		projectId: uuid('project_id')
-			.notNull()
-			.references(() => projects.id, { onDelete: 'cascade' }),
-		addedBy: text('added_by').references(() => users.id),
-		addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow(),
-	},
-	(t) => [primaryKey({ columns: [t.blueprintId, t.projectId] })],
 );
 
 // Stacks — named technology presets (e.g. "Theodo Node/React") used to

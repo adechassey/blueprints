@@ -2,7 +2,6 @@ import { getTableColumns } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import {
 	blueprintLayer,
-	blueprintProjects,
 	blueprints,
 	blueprintTags,
 	blueprintTechnologies,
@@ -25,7 +24,6 @@ describe('schema tables', () => {
 		expect(projects).toBeDefined();
 		expect(projectMembers).toBeDefined();
 		expect(blueprints).toBeDefined();
-		expect(blueprintProjects).toBeDefined();
 		expect(blueprintVersions).toBeDefined();
 		expect(tags).toBeDefined();
 		expect(blueprintTags).toBeDefined();
@@ -75,15 +73,6 @@ describe('schema tables', () => {
 		expect(cols).toEqual(expect.arrayContaining(['id', 'projectId', 'userId', 'role', 'joinedAt']));
 	});
 
-	it('blueprint_projects table has expected columns', () => {
-		const cols = Object.keys(getTableColumns(blueprintProjects));
-		expect(cols).toEqual(
-			expect.arrayContaining(['blueprintId', 'projectId', 'addedBy', 'addedAt']),
-		);
-	});
-});
-
-describe('schema enums', () => {
 	it('userRole has expected values', () => {
 		expect(userRole.enumValues).toEqual(['admin', 'maintainer', 'user']);
 	});
