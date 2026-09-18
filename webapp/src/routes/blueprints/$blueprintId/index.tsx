@@ -35,6 +35,7 @@ import { useProjects } from '../../../hooks/useProjects.js';
 import { api } from '../../../lib/api.js';
 import { authClient } from '../../../lib/auth-client.js';
 import { formatDate } from '../../../lib/format-date.js';
+import { stripSyncedPreamble } from '../../../lib/synced-preamble.core.js';
 import { cn } from '../../../lib/utils.js';
 import * as m from '../../../paraglide/messages.js';
 
@@ -84,14 +85,19 @@ function BlueprintDetailPage() {
 	const isAdmin = session?.user?.role === 'admin';
 	const canEdit = isOwner || isAdmin;
 
+	// Older synced content repeats the fields the page already renders
+	const content = blueprint.currentVersion
+		? stripSyncedPreamble(blueprint.currentVersion.content, blueprint)
+		: '';
+
 	const handleDelete = async () => {
 		await deleteMutation.mutateAsync(blueprintId);
 		navigate({ to: '/' });
 	};
 
 	const handleCopy = async () => {
-		if (blueprint.currentVersion?.content) {
-			await navigator.clipboard.writeText(blueprint.currentVersion.content);
+		if (content) {
+			await navigator.clipboard.writeText(content);
 			toast.success(m.blueprint_detail_copy(), {
 				description: blueprint.name,
 			});
@@ -220,7 +226,7 @@ function BlueprintDetailPage() {
 			{blueprint.currentVersion && (
 				<section className="space-y-6">
 					<h3 className="font-headline text-2xl font-extrabold">Reference implementation</h3>
-					<MarkdownRenderer content={blueprint.currentVersion.content} />
+					<MarkdownRenderer content={content} />
 				</section>
 			)}
 
