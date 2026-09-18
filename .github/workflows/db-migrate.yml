@@ -6,6 +6,10 @@ on:
     paths:
       - 'api/src/db/migrations/**'
 
+permissions:
+  contents: read
+  deployments: read
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
@@ -20,6 +24,33 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      # Migrations race the Vercel deploy: this workflow starts on the merge, while
+      # the previous release is still serving. Applying a contract migration (dropping
+      # a column or a table) then breaks every write until the new code is live, which
+      # is how the 2026-09-16 outage happened. Wait for the API deployment of this very
+      # commit, and fail rather than migrate blindly if it never becomes ready.
+      - name: Wait for the API production deployment of this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            id=$(gh api "repos/$GITHUB_REPOSITORY/deployments?sha=$GITHUB_SHA" \
+                   --jq '[.[] | select(.environment | test("Production.*blueprints-api"))][0].id // empty')
+            state=""
+            if [ -n "$id" ]; then
+              state=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" --jq '.[0].state // empty')
+            fi
+            echo "attempt $attempt: deployment=${id:-none} state=${state:-pending}"
+            case "$state" in
+              success) echo "Deployment is live, migrating."; exit 0 ;;
+              failure|error) echo "::error::API deployment failed; not migrating."; exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::Timed out waiting for the API deployment; run db:migrate manually once it is live."
+          exit 1
 
       - run: pnpm --filter api run db:migrate
         env:
