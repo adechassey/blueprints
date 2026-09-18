@@ -78,7 +78,8 @@ const LazyCodeBlock = lazy(async () => {
 				PreTag="div"
 				customStyle={{
 					margin: '1.25rem 0',
-					padding: '1.25rem',
+					// Room on the right for the copy button, so the first line never runs under it
+					padding: '1.25rem 3.5rem 1.25rem 1.25rem',
 					borderRadius: '0.75rem',
 					fontSize: '0.875rem',
 					border: dark ? '1px solid rgba(255,255,255,0.08)' : '1px solid var(--outline-variant)',
