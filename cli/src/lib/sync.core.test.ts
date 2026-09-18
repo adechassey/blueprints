@@ -188,6 +188,41 @@ describe('extractExcerpt', () => {
 		expect(extractExcerpt(py, 1)?.code).toBe('# @Blueprint ctrl\nclass A: ...');
 	});
 
+	it('starts on the opener of the block comment carrying the annotation', () => {
+		const src = ['/**', ' * @Blueprint ctrl', ' */', 'export const a = 1;'].join('\n');
+		// Without the opener the excerpt is an unbalanced comment: ` * …` then `*/`
+		expect(extractExcerpt(src, 2)?.code).toBe(src);
+	});
+
+	it('keeps the prose written above the annotation inside the block', () => {
+		const src = ['/**', ' * Why this exists.', ' * @Blueprint ctrl', ' */', 'const a = 1;'].join(
+			'\n',
+		);
+		expect(extractExcerpt(src, 3)?.code).toBe(src);
+	});
+
+	it('stops at the code above the comment rather than swallowing it', () => {
+		const src = ['const before = 0;', '/**', ' * @Blueprint ctrl', ' */', 'const a = 1;'].join(
+			'\n',
+		);
+		expect(extractExcerpt(src, 3)?.code).toBe(src.split('\n').slice(1).join('\n'));
+	});
+
+	it('stops at an earlier block comment that already closed', () => {
+		const src = ['/** unrelated */', ' * @Blueprint ctrl', 'const a = 1;'].join('\n');
+		expect(extractExcerpt(src, 2)?.code).toBe(' * @Blueprint ctrl\nconst a = 1;');
+	});
+
+	it('leaves a line-comment annotation on its own line', () => {
+		const src = ['const before = 0;', '// @Blueprint ctrl', 'const a = 1;'].join('\n');
+		expect(extractExcerpt(src, 2)?.code).toBe('// @Blueprint ctrl\nconst a = 1;');
+	});
+
+	it('handles a block body that reaches the top of the file with no opener', () => {
+		const src = [' * @BlueprintName A', ' * @Blueprint ctrl', 'const a = 1;'].join('\n');
+		expect(extractExcerpt(src, 2)?.code).toBe(' * @Blueprint ctrl\nconst a = 1;');
+	});
+
 	it('returns undefined for out-of-bounds lines', () => {
 		expect(extractExcerpt(file, 0)).toBeUndefined();
 		expect(extractExcerpt(file, 99)).toBeUndefined();
