@@ -171,7 +171,7 @@ async function main() {
 	}
 
 	// 4. Create or find default project
-	const projectSlug = 'aquila-ap';
+	const projectSlug = 'demo-project';
 	let [defaultProject] = await db
 		.select()
 		.from(projects)
@@ -181,13 +181,13 @@ async function main() {
 		[defaultProject] = await db
 			.insert(projects)
 			.values({
-				name: 'Aquila AP',
+				name: 'Demo Project',
 				slug: projectSlug,
 				description: 'Default project for seeded blueprints',
 				createdBy: systemUser.id,
 			})
 			.returning();
-		console.log('  ✓ Created default project "aquila-ap"');
+		console.log('  ✓ Created default project "demo-project"');
 	} else {
 		console.log('  ✓ Default project exists');
 	}

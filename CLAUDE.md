@@ -52,9 +52,11 @@ A blueprint registry and discovery platform where developers can publish, browse
 
 - Architectural and technical decisions go in `docs/features/blueprint-server/architecture.md`
 - Preferences and project organization go in this file (CLAUDE.md)
-- Follow patterns from `keskon-mange-ce-midi` for Drizzle / Auth setup
-- Follow patterns from `pr-aquila-ap-v2` for quality tooling (Biome, Knip, etc.)
-- Blueprint annotation format follows `pr-aquila-ap-v2/.claude/skills/blueprint/`
+- Reference projects (Drizzle/Auth setup, quality tooling, blueprint annotations) are
+  listed by role in `.claude/reference-repos.local.md` — gitignored, since repository
+  names are local data (see "Client data"); copy it from the `.example` file
+- Blueprint annotation format follows the blueprint skill of the annotation reference
+  project, in its `.claude/skills/blueprint/`
 - English only in code. i18n for user-facing strings via Paraglide JS.
 
 # Guidelines

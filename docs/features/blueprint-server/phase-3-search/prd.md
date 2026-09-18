@@ -39,7 +39,7 @@ Add semantic search powered by Transformers.js and pgvector. Seed the database w
 - Metadata parsed from YAML frontmatter (name, description, usage, project, layer)
 - Stack inferred from `project` field (server/webapp/shared)
 - Embeddings generated for all seeded blueprints
-- A default project created for the seed data (e.g., "aquila-ap")
+- A default project created for the seed data (e.g., "demo-project")
 
 ### US-3.4: User sees search suggestions
 **As a** user,

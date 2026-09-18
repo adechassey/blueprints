@@ -94,7 +94,7 @@ describe('pickSlug', () => {
 				requested: 'form-field',
 				explicit: true,
 				taken: false,
-				projectLabel: 'aquila-ap',
+				projectLabel: 'acme',
 			}),
 		).toBe('form-field');
 	});
@@ -105,27 +105,27 @@ describe('pickSlug', () => {
 				requested: 'form-field',
 				explicit: false,
 				taken: true,
-				projectLabel: 'aquila-ap',
+				projectLabel: 'acme',
 			}),
 		).toMatch(/^form-field-[a-z0-9]+$/);
 	});
 
 	it('rejects an explicit slug on collision, naming the project', () => {
 		expect(() =>
-			pickSlug({ requested: 'form-field', explicit: true, taken: true, projectLabel: 'aquila-ap' }),
-		).toThrow(new SlugConflictError('form-field', 'aquila-ap'));
+			pickSlug({ requested: 'form-field', explicit: true, taken: true, projectLabel: 'acme' }),
+		).toThrow(new SlugConflictError('form-field', 'acme'));
 	});
 
 	it('reports an unknown target project as a 404', () => {
-		const err = new UnknownProjectError('aquila-ap');
-		expect(err.message).toBe('Project "aquila-ap" not found');
+		const err = new UnknownProjectError('acme');
+		expect(err.message).toBe('Project "acme" not found');
 		expect(err.status).toBe(404);
 		expect(err.name).toBe('UnknownProjectError');
 	});
 
 	it('names the owning project in the conflict message', () => {
-		const err = new SlugConflictError('form-field', 'aquila-ap');
-		expect(err.message).toBe('Slug "form-field" already exists in project aquila-ap');
+		const err = new SlugConflictError('form-field', 'acme');
+		expect(err.message).toBe('Slug "form-field" already exists in project acme');
 		expect(err.status).toBe(409);
 		expect(err.name).toBe('SlugConflictError');
 	});
@@ -137,13 +137,13 @@ describe('pickSlugCandidate', () => {
 	});
 
 	it('returns the single match', () => {
-		const only = { id: 'a', projectSlugs: ['aquila-ap'] };
+		const only = { id: 'a', projectSlugs: ['acme'] };
 		expect(pickSlugCandidate('form-field', [only])).toBe(only);
 	});
 
 	it('throws an ambiguity error listing every namespace', () => {
 		const candidates: SlugCandidate[] = [
-			{ id: 'a', projectSlugs: ['aquila-ap'] },
+			{ id: 'a', projectSlugs: ['acme'] },
 			{ id: 'b', projectSlugs: [] },
 			{ id: 'c', projectSlugs: ['x', 'y'] },
 		];
@@ -156,7 +156,7 @@ describe('pickSlugCandidate', () => {
 		expect(caught).toBeInstanceOf(AmbiguousSlugError);
 		const err = caught as AmbiguousSlugError;
 		expect(err.message).toBe(
-			'Slug "form-field" exists in several namespaces (aquila-ap, global, x+y): pass project= to disambiguate',
+			'Slug "form-field" exists in several namespaces (acme, global, x+y): pass project= to disambiguate',
 		);
 		expect(err.status).toBe(409);
 		expect(err.name).toBe('AmbiguousSlugError');

@@ -150,7 +150,7 @@ export const searchBlueprintsSchema = z.object({
 1. **Create seed script** — `api/scripts/seed.ts`
    ```typescript
    // 1. Create system user (or find existing)
-   // 2. Create default project "aquila-ap"
+   // 2. Create default project "demo-project"
    // 3. Read all 85 .md files from webapp/src/assets/blueprints/
    // 4. Parse YAML frontmatter
    // 5. Infer stack from "project" field
