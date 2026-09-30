@@ -215,6 +215,7 @@ projects (owns its blueprints; membership via project_members)
 ├── name (unique)
 ├── slug (unique)
 ├── description
+├── architecture (jsonb, nullable — architecture map config; null = one zone)
 ├── createdBy (FK → users)
 ├── createdAt
 └── updatedAt
@@ -284,6 +285,7 @@ Better Auth creates and manages its own tables:
 - **A blueprint belongs to exactly one project** — `blueprints.project_id` is NOT NULL. Blueprints are how a team records *its own* patterns, so ownership is singular: a project's members own, edit and delete its blueprints. Reuse across projects is a **fork**, not a shared link (see below). A project that still owns blueprints cannot be deleted.
 - **Forking, not sharing** — to start from another project's blueprint, you fork it: the content, metadata, technologies and tags are copied into your project as a new blueprint with its own version history, which you then edit freely. `forked_from_id` records the origin (nullable, `ON DELETE SET NULL`), so a blueprint can show where it came from and how many projects picked it up. The same pattern therefore legitimately exists once per project — which is what `blueprint_matches` surfaces, and why scaffold output namespaces files by project when the same slug exists in several.
 - **No stacks — scaffolding is project-scoped** — an earlier `stacks` concept (a named technology preset matched cross-project by technology overlap) was removed: matching on "at least one shared technology" made every stack resolve most of the registry, and it duplicated the technology taxonomy. The scaffold need is covered by `GET /api/projects/:slug/scaffold` (all of a project's blueprints with their content, grouped by layer) and the CLI `scaffold <project> <dir>` command.
+- **Architecture map: zones over the closed layer vocabulary** — the project page draws a map of the project's blueprints. Layers alone mix front and back on a full-stack project (the `api` layer holds both webapp routes and server endpoints), so a project can configure **zones** in `projects.architecture` (jsonb, validated by `projectArchitectureSchema` in `@blueprints/shared`). A blueprint goes to the first zone listing one of its technology slugs; exactly one zone lists none and takes the rest. A zone may be `shared` (drawn as a band under the others, which all import it) and may rename layers for display (`layerLabels`); `edges` draw an arrow between the same layer of two side-by-side zones (e.g. webapp `api` → server `api`, "HTTP"). Layers themselves are never extended: the map regroups them, so every blueprint lands in a box without anyone filing it. Without a config the map is one zone holding every blueprint — guessing zones from technologies would be wrong wherever tags are. Cross-cutting layers (`infra`, `testing`, `tooling`) get their own band. The config is edited in the webapp (JSON with a live preview) by the project's creator or an admin, the same rule as `PUT /api/projects/:id`; it is not synced from the source repository. Layout is pure (`webapp/src/lib/architecture.core.ts`) and rendered as inline SVG, no diagram library.
 - **Tags are shared globally** — normalized tag table, many-to-many with blueprints
 - **Comments support threading** — `parentId` enables nested replies
 - **Slug uniqueness** — blueprint slugs are unique per owning project, never globally, so two projects may each own a `form-field`. Enforced by a `UNIQUE (project_id, slug)` constraint now that ownership is singular: an explicit slug that collides is a 409, a slug generated from the name gets a suffix. `GET /api/blueprints/:slug?project=` scopes a lookup; unscoped, an ambiguous slug answers 409.
@@ -314,7 +316,7 @@ Better Auth creates and manages its own tables:
 - `GET /api/projects/:slug` — Get project with its blueprints
 - `GET /api/projects/:slug/scaffold` — Project blueprints with content, grouped by layer (CLI `scaffold` feed)
 - `POST /api/projects` — Create project
-- `PUT /api/projects/:id` — Update project (creator/admin only)
+- `PUT /api/projects/:id` — Update project (creator/admin only); `architecture` sets the architecture map config, `null` resets it
 
 **Tags**:
 - `GET /api/tags` — List all tags (with counts)
