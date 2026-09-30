@@ -21,14 +21,16 @@ const PAD = 24;
 
 /**
  * A project's architecture map: its zones with their layers and blueprint
- * counts. Selecting a layer lists its blueprints under the map.
+ * counts. With `drillDown`, selecting a layer lists its blueprints under the map.
  */
 export function ArchitectureMap({
 	blueprints,
 	architecture,
+	drillDown = true,
 }: {
 	blueprints: Blueprints;
 	architecture: ProjectArchitecture | null;
+	drillDown?: boolean;
 }) {
 	const titleId = useId();
 	const arrowId = useId();
@@ -68,18 +70,22 @@ export function ArchitectureMap({
 					{map.edges.map((edge) => (
 						<Edge key={edge.id} edge={edge} marker={`url(#${arrowId})`} />
 					))}
-					{map.nodes.map((node) => (
-						<LayerNode
-							key={node.id}
-							node={node}
-							selected={node.id === selected?.id}
-							onSelect={() => setSelectedId(node.id)}
-						/>
-					))}
+					{map.nodes.map((node) =>
+						drillDown ? (
+							<LayerNode
+								key={node.id}
+								node={node}
+								selected={node.id === selected?.id}
+								onSelect={() => setSelectedId(node.id)}
+							/>
+						) : (
+							<LayerNode key={node.id} node={node} />
+						),
+					)}
 				</svg>
 			</div>
 
-			{selected && (
+			{drillDown && selected && (
 				<section className="space-y-3">
 					<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-outline-variant/50 pb-2">
 						<h3 className="flex flex-wrap items-center gap-2 font-headline text-lg font-bold">
@@ -172,31 +178,17 @@ function Edge({ edge, marker }: { edge: MapEdge; marker: string }) {
 
 function LayerNode({
 	node,
-	selected,
+	selected = false,
 	onSelect,
 }: {
 	node: Node;
-	selected: boolean;
-	onSelect: () => void;
+	selected?: boolean;
+	onSelect?: () => void;
 }) {
 	const Icon = LAYER_META[node.layer].icon;
 	const layerLabel = LAYER_META[node.layer].label();
-	return (
-		// biome-ignore lint/a11y/useSemanticElements: SVG has no <button>; the group is focusable and handles Enter/Space
-		<g
-			role="button"
-			tabIndex={0}
-			aria-pressed={selected}
-			aria-label={`${node.label ?? layerLabel}: ${node.items.length}`}
-			className="group cursor-pointer outline-none"
-			onClick={onSelect}
-			onKeyDown={(event) => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
-					onSelect();
-				}
-			}}
-		>
+	const shape = (
+		<>
 			<rect
 				x={node.x}
 				y={node.y}
@@ -230,6 +222,26 @@ function LayerNode({
 			>
 				{node.items.length}
 			</text>
+		</>
+	);
+	if (!onSelect) return <g>{shape}</g>;
+	return (
+		// biome-ignore lint/a11y/useSemanticElements: SVG has no <button>; the group is focusable and handles Enter/Space
+		<g
+			role="button"
+			tabIndex={0}
+			aria-pressed={selected}
+			aria-label={`${node.label ?? layerLabel}: ${node.items.length}`}
+			className="group cursor-pointer outline-none"
+			onClick={onSelect}
+			onKeyDown={(event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					onSelect();
+				}
+			}}
+		>
+			{shape}
 		</g>
 	);
 }

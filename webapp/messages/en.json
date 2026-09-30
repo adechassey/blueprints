@@ -278,5 +278,17 @@
 	"architecture_map_title": "Architecture map",
 	"architecture_default_zone": "Application",
 	"architecture_cross_cutting": "Cross-cutting",
-	"architecture_imports": "imports"
+	"architecture_imports": "imports",
+	"architecture_configure": "Configure",
+	"architecture_editor_description": "Zones group this project's blueprints, for example a webapp and a server. A blueprint goes to the first zone listing one of its technologies; the zone without technologies takes the rest. A shared zone is drawn under the others, and edges link the same layer of two side-by-side zones.",
+	"architecture_editor_config": "Configuration (JSON)",
+	"architecture_editor_technologies": "Technologies in this project",
+	"architecture_editor_example": "Example",
+	"architecture_editor_use_example": "Use this example",
+	"architecture_editor_preview": "Preview",
+	"architecture_editor_invalid": "Fix these issues to see the preview and save:",
+	"architecture_editor_save": "Save",
+	"architecture_editor_reset": "Reset to default",
+	"architecture_editor_cancel": "Cancel",
+	"toast_project_updated": "Project updated"
 }
