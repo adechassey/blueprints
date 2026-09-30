@@ -273,5 +273,10 @@
 	"skill_update_body": "It pulls the latest version, prompts before overwriting .claude/skills/blueprint/ and refreshes the entry in the lockfile. The lockfile stores a hash of the installed files, so a diff tells you whether the project has drifted locally.",
 	"cli_sync_skill_hint": "Don't have the blueprint skill in your repo yet?",
 	"cli_sync_skill_cta": "Install the skill",
-	"cli_cmd_scaffold": "Scaffold every blueprint of a project into a directory, one markdown file per blueprint, grouped by layer"
+	"cli_cmd_scaffold": "Scaffold every blueprint of a project into a directory, one markdown file per blueprint, grouped by layer",
+	"architecture_title": "Architecture",
+	"architecture_map_title": "Architecture map",
+	"architecture_default_zone": "Application",
+	"architecture_cross_cutting": "Cross-cutting",
+	"architecture_imports": "imports"
 }

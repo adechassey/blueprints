@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Blocks } from 'lucide-react';
-import { LayerSections } from '../../components/LayerSections.js';
+import { ArchitectureMap } from '../../components/ArchitectureMap.js';
 import { EmptyState } from '../../components/ui/empty.js';
 import { Skeleton } from '../../components/ui/skeleton.js';
 import { useProject } from '../../hooks/useProjects.js';
@@ -47,9 +47,10 @@ function ProjectDetailPage() {
 				)}
 			</div>
 			{project.blueprints?.length ? (
-				<div className="space-y-8">
-					<LayerSections blueprints={project.blueprints} />
-				</div>
+				<section className="space-y-4">
+					<h2 className="font-headline text-xl font-bold">{m.architecture_title()}</h2>
+					<ArchitectureMap blueprints={project.blueprints} architecture={project.architecture} />
+				</section>
 			) : (
 				<EmptyState icon={Blocks} title={m.empty_state()} />
 			)}

@@ -5,7 +5,7 @@ import { cn } from '../lib/utils.js';
 import { Badge } from './ui/badge.js';
 
 /** Icon tint per layer, matching the layer badge variants. */
-const LAYER_ICON_COLOR: Record<BlueprintLayer, string> = {
+export const LAYER_ICON_COLOR: Record<BlueprintLayer, string> = {
 	database: 'text-emerald-600 dark:text-emerald-400',
 	api: 'text-blue-600 dark:text-blue-400',
 	domain: 'text-amber-600 dark:text-amber-400',
