@@ -1,4 +1,6 @@
 export {
+	type ArchitectureEdge,
+	type ArchitectureZone,
 	BLUEPRINT_LAYERS,
 	type BlueprintLayer,
 	blueprintLayerSchema,
@@ -10,6 +12,8 @@ export {
 	forkBlueprintSchema,
 	type ListBlueprintsInput,
 	listBlueprintsSchema,
+	type ProjectArchitecture,
+	projectArchitectureSchema,
 	TECHNOLOGY_CATEGORIES,
 	type TechnologyCategory,
 	technoFilterSchema,
