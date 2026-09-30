@@ -37,6 +37,12 @@ describe('schema tables', () => {
 		);
 	});
 
+	it('projects table stores an optional architecture map config', () => {
+		const { architecture } = getTableColumns(projects);
+		expect(architecture.dataType).toBe('json');
+		expect(architecture.notNull).toBe(false);
+	});
+
 	it('blueprints table is owned by a project and can link to its origin', () => {
 		const cols = Object.keys(getTableColumns(blueprints));
 		expect(cols).toEqual(
