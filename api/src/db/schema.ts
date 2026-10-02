@@ -1,8 +1,10 @@
+import type { ProjectArchitecture } from '@blueprints/shared';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
 	boolean,
 	index,
 	integer,
+	jsonb,
 	pgEnum,
 	pgTable,
 	primaryKey,
@@ -101,6 +103,8 @@ export const projects = pgTable('projects', {
 	name: text('name').notNull().unique(),
 	slug: text('slug').notNull().unique(),
 	description: text('description'),
+	// Architecture map config (zones, labels, edges); null = one zone holding every blueprint
+	architecture: jsonb('architecture').$type<ProjectArchitecture>(),
 	createdBy: text('created_by')
 		.notNull()
 		.references(() => users.id),

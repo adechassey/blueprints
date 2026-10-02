@@ -1,4 +1,4 @@
-import type { CreateProjectInput } from '@blueprints/shared';
+import type { CreateProjectInput, UpdateProjectInput } from '@blueprints/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api, unwrapResponse } from '../lib/api.js';
@@ -35,6 +35,24 @@ export function useCreateProject() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['projects'] });
 			toast.success(m.toast_project_created());
+		},
+		onError: (error) => {
+			toast.error(m.toast_error(), { description: error.message });
+		},
+	});
+}
+
+export function useUpdateProject(slug: string) {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: async ({ id, ...json }: UpdateProjectInput & { id: string }) => {
+			const res = await api.api.projects[':id'].$put({ param: { id }, json });
+			return unwrapResponse(res);
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['project', slug] });
+			queryClient.invalidateQueries({ queryKey: ['projects'] });
+			toast.success(m.toast_project_updated());
 		},
 		onError: (error) => {
 			toast.error(m.toast_error(), { description: error.message });

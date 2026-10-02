@@ -1,4 +1,10 @@
 export {
+	type ArchitectureEdge,
+	type ArchitectureZone,
+	type ProjectArchitecture,
+	projectArchitectureSchema,
+} from './architecture.js';
+export {
 	BLUEPRINT_LAYERS,
 	type BlueprintLayer,
 	blueprintLayerSchema,
